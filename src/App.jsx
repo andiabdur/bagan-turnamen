@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
   Users, 
@@ -589,19 +589,32 @@ export default function App() {
                 <div className="max-w-xl mx-auto p-8 animate-slide-up"><div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100"><div className="flex items-center gap-4 mb-8"><div className="bg-brand-50 p-4 rounded-2xl text-brand-600"><UserPlus size={32}/></div><div><h2 className="text-2xl font-black text-slate-800 leading-none">Input Peserta</h2><p className="text-xs text-slate-500 font-bold mt-1">MASUKKAN 32 NAMA UNTUK BAGAN {activePool}</p></div></div><textarea value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Tulis nama per baris..." rows={10} className="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 outline-none resize-none transition-all" /><button onClick={generateBracket} className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3"><LayoutGrid size={20}/> GENERATE BAGAN SEKARANG</button></div></div>
               ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
             ) : (
-              <div>
-                {/* Zoom Controls */}
-                <div className="sticky top-[117px] z-20 flex justify-end px-6 py-2 bg-slate-50/80 backdrop-blur-sm border-b border-slate-100">
-                  <div className="flex items-center gap-2 bg-white border-2 border-slate-100 rounded-xl p-1 shadow-sm">
-                    <button onClick={() => setBracketZoom(z => Math.max(0.5, parseFloat((z - 0.1).toFixed(1))))} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ZoomOut size={16} className="text-slate-600"/></button>
-                    <span className="text-xs font-black text-slate-500 w-12 text-center">{Math.round(bracketZoom * 100)}%</span>
-                    <button onClick={() => setBracketZoom(z => Math.min(2, parseFloat((z + 0.1).toFixed(1))))} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ZoomIn size={16} className="text-slate-600"/></button>
-                    <div className="w-px h-5 bg-slate-200"></div>
-                    <button onClick={() => setBracketZoom(1)} className="px-3 py-1 text-[10px] font-black text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">RESET</button>
-                  </div>
-                </div>
-
-                <div className="p-8 md:p-16 min-w-max pb-32" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.2s ease' }}>
+              <div className="relative">
+                {/* Pinch-to-zoom bracket container */}
+                <div
+                  className="overflow-auto"
+                  style={{ touchAction: 'pan-x pan-y' }}
+                  onTouchStart={(e) => {
+                    if (e.touches.length === 2) {
+                      e._startDist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                      );
+                      e._startZoom = bracketZoom;
+                    }
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length === 2 && e._startDist) {
+                      const dist = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                      );
+                      const next = Math.min(2, Math.max(0.4, parseFloat((e._startZoom * (dist / e._startDist)).toFixed(2))));
+                      setBracketZoom(next);
+                    }
+                  }}
+                >
+                  <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
                   <div className="flex items-start gap-0">
                     {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
                       const roundNum = idx + 1;
@@ -648,6 +661,36 @@ export default function App() {
                        </div>
                     </div>
                   </div>
+                </div>
+                </div>
+
+                {/* Floating Zoom Controls — fixed bottom-right, never overlaps content */}
+                <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1 select-none">
+                  <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col items-center">
+                    <button
+                      onClick={() => setBracketZoom(z => Math.min(2, parseFloat((z + 0.1).toFixed(1))))}
+                      className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                    >
+                      <ZoomIn size={18} className="text-slate-700"/>
+                    </button>
+                    <div className="w-8 h-px bg-slate-200"/>
+                    <div className="w-11 h-8 flex items-center justify-center">
+                      <span className="text-[9px] font-black text-slate-500">{Math.round(bracketZoom * 100)}%</span>
+                    </div>
+                    <div className="w-8 h-px bg-slate-200"/>
+                    <button
+                      onClick={() => setBracketZoom(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
+                      className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                    >
+                      <ZoomOut size={18} className="text-slate-700"/>
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setBracketZoom(1)}
+                    className="mt-1 bg-white/90 backdrop-blur-md border border-slate-200 rounded-xl shadow-lg px-3 py-1.5 text-[9px] font-black text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                  >
+                    RESET
+                  </button>
                 </div>
               </div>
             )}
