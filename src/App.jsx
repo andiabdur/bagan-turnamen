@@ -164,13 +164,59 @@ export default function App() {
   };
 
   const generateBracket = async () => {
-    let names = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
-    if (names.length === 0) return showError("Daftar nama tidak boleh kosong.");
+    let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
+    if (rawNames.length === 0) return showError("Daftar nama tidak boleh kosong.");
     
     let counter = 1;
-    while (names.length < 32) names.push(`Peserta ${counter++}`);
-    if (names.length > 32) names = names.slice(0, 32);
-    names = names.sort(() => Math.random() - 0.5);
+    while (rawNames.length < 32) rawNames.push(`Peserta ${counter++}`);
+    if (rawNames.length > 32) rawNames = rawNames.slice(0, 32);
+
+    // 1. Identifikasi Tim via Format "[Nama Tim] Peserta"
+    const players = rawNames.map((raw, idx) => {
+      const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
+      if (match) return { team: match[1].trim().toLowerCase(), name: raw };
+      return { team: `NONE_${idx}`, name: raw }; // Solo player
+    });
+
+    // 2. Kelompokkan berdasarkan tim
+    const teamGroups = {};
+    players.forEach(p => {
+      if (!teamGroups[p.team]) teamGroups[p.team] = [];
+      teamGroups[p.team].push(p.name);
+    });
+
+    // 3. Urutkan dari tim dengan anggota terbanyak
+    const sortedTeams = Object.keys(teamGroups).sort((a, b) => teamGroups[b].length - teamGroups[a].length);
+
+    // 4. Siapkan 8 Sub-Blok (masing-masing 4 slot)
+    // Berada di sub-blok berbeda menjamin tidak bertemu di 32 atau 16 besar
+    const subBlocks = Array.from({ length: 8 }, () => []);
+
+    // 5. Distribusi Cerdas (Smart Seeding)
+    for (const team of sortedTeams) {
+      for (const member of teamGroups[team]) {
+        // Blok yang masih punya sisa slot
+        const validBlocks = subBlocks.filter(b => b.length < 4);
+        
+        // Cari blok yang jumlah anggota tim INI paling sedikit (Mencegah numpuk)
+        const minTeamCount = Math.min(...validBlocks.map(b => b.filter(name => teamGroups[team].includes(name)).length));
+        const bestBlocksByTeam = validBlocks.filter(b => b.filter(name => teamGroups[team].includes(name)).length === minTeamCount);
+        
+        // Supaya pembagian merata, pilih blok yang isinya paling kosong
+        const minTotalCount = Math.min(...bestBlocksByTeam.map(b => b.length));
+        const finalBestBlocks = bestBlocksByTeam.filter(b => b.length === minTotalCount);
+        
+        // Pilih acak dari blok terbaik untuk menambah unsur random
+        const chosenBlock = finalBestBlocks[Math.floor(Math.random() * finalBestBlocks.length)];
+        chosenBlock.push(member);
+      }
+    }
+
+    // 6. Acak internal masing-masing sub-blok agar letak pastinya diundi
+    subBlocks.forEach(b => b.sort(() => Math.random() - 0.5));
+    
+    // 7. Gabungkan 8 sub-blok menjadi daftar urut 32 peserta
+    let names = subBlocks.flat();
 
     let matches = [];
     let matchIdCounter = 1;
@@ -627,7 +673,62 @@ export default function App() {
           <div>
             {!activeBracket ? (
               role === 'referee' ? (
-                <div className="max-w-xl mx-auto p-8 animate-slide-up"><div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100"><div className="flex items-center gap-4 mb-8"><div className="bg-brand-50 p-4 rounded-2xl text-brand-600"><UserPlus size={32}/></div><div><h2 className="text-2xl font-black text-slate-800 leading-none">Input Peserta</h2><p className="text-xs text-slate-500 font-bold mt-1">MASUKKAN 32 NAMA UNTUK BAGAN {activePool}</p></div></div><textarea value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Tulis nama per baris..." rows={10} className="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 outline-none resize-none transition-all" /><button onClick={generateBracket} className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3"><LayoutGrid size={20}/> GENERATE BAGAN SEKARANG</button></div></div>
+                <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slide-up">
+                  <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    {/* Hero Header */}
+                    <div className="bg-slate-800 p-8 text-white relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-4 opacity-10"><Shield size={120}/></div>
+                      <h2 className="text-2xl font-black leading-none mb-2 relative z-10">Input Peserta & Oclok Otomatis</h2>
+                      <p className="text-slate-300 text-sm font-bold relative z-10">Bagan {activePool} • 32 Slot Tersedia</p>
+                    </div>
+                    
+                    {/* Rules & Narrative */}
+                    <div className="p-8 bg-slate-50 border-b border-slate-100">
+                      <div className="flex items-start gap-4">
+                        <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
+                          <Shield className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-sm text-slate-800 mb-1.5">Logika Seeding & Anti-Perang Saudara</h3>
+                          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                            Sistem menggunakan algoritma <strong className="text-brand-600">Smart Distribution</strong>. Peserta dari tim yang sama akan disebar paksa ke blok berbeda agar <strong>TIDAK BERTEMU</strong> di babak 32 Besar & 16 Besar. Paling cepat mereka baru bisa saling bertemu di babak <strong>8 Besar (Perempat Final)</strong>. Sisanya akan diacak murni!
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-5 bg-white border border-brand-200 shadow-sm p-5 rounded-2xl">
+                        <h4 className="font-black text-[11px] text-brand-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                          <Check size={14}/> Format Penulisan (Wajib):
+                        </h4>
+                        <code className="block bg-slate-50 p-4 rounded-xl text-sm font-bold text-slate-700 border border-slate-200 mb-3 leading-relaxed">
+                          [Senyap] Andi<br/>
+                          [Senyap] Budi<br/>
+                          Joko
+                        </code>
+                        <p className="text-[11px] font-bold text-slate-500 flex items-start gap-2">
+                          <AlertCircle size={14} className="shrink-0 text-brand-500 mt-0.5"/>
+                          Gunakan kurung siku <strong>[Nama Tim]</strong> di awal nama. Sistem akan membaca format ini untuk memisahkan peserta tersebut agar adil.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="p-8">
+                      <textarea 
+                        value={bulkInput} 
+                        onChange={(e) => setBulkInput(e.target.value)} 
+                        placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
+                        rows={12} 
+                        className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
+                      />
+                      <button 
+                        onClick={generateBracket} 
+                        className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+                      >
+                        <LayoutGrid size={20}/> OCLOK & GENERATE BAGAN
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
             ) : (
               <div className="relative">
