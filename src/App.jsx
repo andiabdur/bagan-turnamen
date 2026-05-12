@@ -13,7 +13,8 @@ import {
   X,
   ChevronRight,
   ZoomIn,
-  ZoomOut
+  ZoomOut,
+  Search
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -87,6 +88,12 @@ export default function App() {
   const [bracketZoom, setBracketZoom] = useState(1);
   // Ref to persist pinch state across synthetic event calls
   const pinchRef = useRef({ active: false, startDist: 0, startZoom: 1 });
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchResult, setSearchResult] = useState(null); // { matchId, slot }
+  const matchRefs = useRef({});
+  const searchInputRef = useRef(null);
 
   const poolsList = ['A', 'B', 'C', 'Final'];
   const activeBracket = tournamentData.pools?.[activePool];
@@ -356,6 +363,25 @@ export default function App() {
     return Object.values(points).sort((a, b) => b.pts - a.pts || b.w - a.w);
   };
 
+  // Search participant handler
+  const handleSearch = () => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q || !activeBracket?.matches) return;
+    const found = activeBracket.matches.find(m =>
+      m.player1?.toLowerCase().includes(q) || m.player2?.toLowerCase().includes(q)
+    );
+    if (!found) { showError('Peserta tidak ditemukan di bagan ini.'); return; }
+    const slot = found.player1?.toLowerCase().includes(q) ? 1 : 2;
+    setSearchResult({ matchId: found.id, slot });
+    // Scroll to card
+    setTimeout(() => {
+      matchRefs.current[found.id]?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }, 50);
+    // Auto-clear highlight after 3 seconds
+    setTimeout(() => setSearchResult(null), 3500);
+  };
+
+
   // 4. CONDITIONAL RENDERING
   if (!hasConfig) {
     return (
@@ -465,12 +491,51 @@ export default function App() {
       {/* Pool Tabs */}
       <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto sticky top-[77px] z-30 no-scrollbar shadow-sm">
         {poolsList.map(pool => (
-          <button key={pool} onClick={() => setActivePool(pool)} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
+          <button key={pool} onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
             {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
             {activePool === pool && <div className={cn("absolute bottom-0 left-0 right-0 h-1 rounded-t-full", pool === 'Final' ? 'bg-yellow-500 shadow-[0_-2px_10px_rgba(234,179,8,0.4)]' : 'bg-brand-600 shadow-[0_-2px_10px_rgba(16,137,226,0.3)]')}></div>}
           </button>
         ))}
+        {/* Search toggle button */}
+        {activeBracket && activePool !== 'Final' && (
+          <button
+            onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 100); }}
+            className={cn('ml-auto p-2.5 rounded-xl transition-colors shrink-0', showSearch ? 'bg-brand-600 text-white' : 'hover:bg-slate-100 text-slate-500')}
+          >
+            <Search size={16}/>
+          </button>
+        )}
       </div>
+
+      {/* Search bar — slides in below tabs */}
+      {showSearch && activeBracket && activePool !== 'Final' && (
+        <div className="bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3 sticky top-[117px] z-30 shadow-sm">
+          <div className="flex-1 relative">
+            <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder="Cari nama peserta..."
+              className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
+            />
+          </div>
+          <button
+            onClick={handleSearch}
+            className="bg-brand-600 text-white px-5 py-3 rounded-xl font-black text-sm hover:bg-brand-700 transition-all shadow-md shadow-brand-200 active:scale-95"
+          >
+            Cari
+          </button>
+          {searchResult && (
+            <button onClick={() => { setSearchResult(null); setSearchQuery(''); }} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+              <X size={16} className="text-slate-500"/>
+            </button>
+          )}
+        </div>
+      )}
+
 
       {/* Edit Modal */}
       {editingPlayer && (
@@ -637,7 +702,14 @@ export default function App() {
                           <div className="flex flex-col">
                             {matches.map(match => (
                               <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
-                                <MatchCard match={match} role={role} onSetWinner={setWinner} onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}/>
+                                <MatchCard
+                                  match={match}
+                                  role={role}
+                                  onSetWinner={setWinner}
+                                  onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
+                                  matchRef={el => { matchRefs.current[match.id] = el; }}
+                                  highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
+                                />
                                 {match.nextMatchId && (
                                   <>
                                     <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
@@ -725,28 +797,39 @@ export default function App() {
   );
 }
 
-function MatchCard({ match, role, onSetWinner, onEditName }) {
+function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlightedSlot }) {
   const isReferee = role === 'referee';
   return (
-    <div className="relative group w-full">
+    <div className="relative group w-full" ref={matchRef}>
       <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20">
          <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m','')}</p>
       </div>
-      <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300">
+      <div className={cn(
+        "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300",
+        highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' : 'border-slate-100'
+      )}>
         {[1, 2].map(slot => {
           const playerName = slot === 1 ? match.player1 : match.player2;
           const isWinner = match.winner === playerName && playerName;
+          const isHighlighted = highlightedSlot === slot;
           return (
             <div key={slot} className={cn(
-              "p-4 flex items-center justify-between border-b-2 last:border-0 transition-all",
-              isWinner ? "bg-brand-600 text-white" : "bg-white"
+              "p-4 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300",
+              isHighlighted ? "bg-emerald-500 text-white" : isWinner ? "bg-brand-600 text-white" : "bg-white"
             )}>
               <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-4 text-left min-w-0">
-                <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200")}/>
-                <span className={cn("text-[13px] font-black truncate leading-none", !playerName ? "text-slate-300 italic" : isWinner ? "text-white" : "text-slate-800")}>{playerName || 'TBA'}</span>
+                <div className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
+                )}/>
+                <span className={cn(
+                  "text-[13px] font-black truncate leading-none",
+                  !playerName ? "text-slate-300 italic" : (isHighlighted || isWinner) ? "text-white" : "text-slate-800"
+                )}>{playerName || 'TBA'}</span>
+                {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
               </button>
               {isReferee && playerName && (
-                <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors", isWinner ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
+                <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors", (isHighlighted || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
               )}
             </div>
           );
