@@ -367,17 +367,19 @@ export default function App() {
   const handleSearch = () => {
     const q = searchQuery.trim().toLowerCase();
     if (!q || !activeBracket?.matches) return;
-    const found = activeBracket.matches.find(m =>
+    // Find ALL matches containing the player, then pick the HIGHEST round (rightmost/most advanced)
+    const candidates = activeBracket.matches.filter(m =>
       m.player1?.toLowerCase().includes(q) || m.player2?.toLowerCase().includes(q)
     );
-    if (!found) { showError('Peserta tidak ditemukan di bagan ini.'); return; }
+    if (!candidates.length) { showError('Peserta tidak ditemukan di bagan ini.'); return; }
+    const found = candidates.sort((a, b) => b.round - a.round)[0];
     const slot = found.player1?.toLowerCase().includes(q) ? 1 : 2;
     setSearchResult({ matchId: found.id, slot });
     // Scroll to card
     setTimeout(() => {
       matchRefs.current[found.id]?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
     }, 50);
-    // Auto-clear highlight after 3 seconds
+    // Auto-clear highlight after 3.5 seconds
     setTimeout(() => setSearchResult(null), 3500);
   };
 
@@ -472,6 +474,15 @@ export default function App() {
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> ONLINE
             </p>
           </div>
+          {/* Search button in header - only when bracket is active */}
+          {activeBracket && activePool !== 'Final' && (
+            <button
+              onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 80); }}
+              className={cn('p-2.5 rounded-xl transition-colors', showSearch ? 'bg-emerald-500 text-white' : 'hover:bg-slate-100 text-slate-600')}
+            >
+              <Search className="w-5 h-5"/>
+            </button>
+          )}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors">
             <Settings className="w-5 h-5 text-slate-600"/>
           </button>
