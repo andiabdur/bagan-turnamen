@@ -20,7 +20,8 @@ import {
   Pause,
   Square,
   Clock,
-  Flag
+  Flag,
+  Megaphone
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -347,25 +348,35 @@ export default function App() {
     const match = poolData.matches.find(m => m.id === matchId);
     if (!match) return;
 
-    const now = Date.now();
-
-    if (action === 'play') {
-      match.playState = 'playing';
-      match.startTime = now;
-      if (match.accumulatedTime === undefined) match.accumulatedTime = 0;
-    } else if (action === 'prep') {
-      match.playState = 'prep';
-      match.startTime = null;
-      match.accumulatedTime = 0;
-    } else if (action === 'pause') {
-      if (match.playState === 'playing') {
-        match.accumulatedTime = (match.accumulatedTime || 0) + (now - (match.startTime || now));
-      }
-      match.playState = 'paused';
-    } else if (action === 'stop') {
+    // Toggle logic: If same action clicked, reset to idle
+    if (match.playState === action || (action === 'play' && match.playState === 'playing')) {
       match.playState = 'idle';
       match.startTime = null;
       match.accumulatedTime = 0;
+    } else {
+      const now = Date.now();
+      if (action === 'play') {
+        match.playState = 'playing';
+        match.startTime = now;
+        if (match.accumulatedTime === undefined) match.accumulatedTime = 0;
+      } else if (action === 'prep') {
+        match.playState = 'prep';
+        match.startTime = null;
+        match.accumulatedTime = 0;
+      } else if (action === 'call') {
+        match.playState = 'call';
+        match.startTime = null;
+        match.accumulatedTime = 0;
+      } else if (action === 'pause') {
+        if (match.playState === 'playing') {
+          match.accumulatedTime = (match.accumulatedTime || 0) + (now - (match.startTime || now));
+        }
+        match.playState = 'paused';
+      } else if (action === 'stop') {
+        match.playState = 'idle';
+        match.startTime = null;
+        match.accumulatedTime = 0;
+      }
     }
 
     try {
@@ -1088,6 +1099,7 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
 
   const isPlaying = match.playState === 'playing';
   const isPrep = match.playState === 'prep';
+  const isCall = match.playState === 'call';
 
   return (
     <div className="relative group w-full" ref={matchRef}>
@@ -1095,6 +1107,7 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
          <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m','')}</p>
          {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
          {isPrep && <span className="flex h-2 w-2 relative"><span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span></span>}
+         {isCall && <span className="flex h-2 w-2 relative"><span className="animate-bounce absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
       </div>
       
       {isPlaying && (
@@ -1107,12 +1120,18 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
           SEDANG PERSIAPAN
         </div>
       )}
+      {isCall && (
+        <div className="absolute -top-4 right-4 bg-blue-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
+          HARAP MENUJU LAPAK
+        </div>
+      )}
 
       <div className={cn(
         "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300 relative z-10 flex flex-col",
         highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' : 
         isPlaying ? 'border-red-500 shadow-lg shadow-red-200 ring-4 ring-red-500/20' : 
-        isPrep ? 'border-yellow-500 shadow-lg shadow-yellow-200 ring-4 ring-yellow-500/20' : 'border-slate-100'
+        isPrep ? 'border-yellow-500 shadow-lg shadow-yellow-200 ring-4 ring-yellow-500/20' : 
+        isCall ? 'border-blue-500 shadow-lg shadow-blue-200 ring-4 ring-blue-500/20' : 'border-slate-100'
       )}>
         <div className="flex-1 flex flex-col">
           {[1, 2].map(slot => {
@@ -1154,14 +1173,15 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
             </div>
             {isReferee && (
               <div className="flex gap-1">
-                <button onClick={() => onSetMatchState(match.id, 'prep')} className={cn("p-1.5 rounded transition-colors", isPrep ? "bg-yellow-500 text-white" : "text-slate-400 hover:bg-yellow-100 hover:text-yellow-600")}><Flag size={14}/></button>
+                <button onClick={() => onSetMatchState(match.id, 'call')} className={cn("p-1.5 rounded transition-colors", isCall ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-blue-100 hover:text-blue-600")} title="Harap Menuju Lapak"><Megaphone size={14}/></button>
+                <button onClick={() => onSetMatchState(match.id, 'prep')} className={cn("p-1.5 rounded transition-colors", isPrep ? "bg-yellow-500 text-white" : "text-slate-400 hover:bg-yellow-100 hover:text-yellow-600")} title="Sedang Persiapan"><Flag size={14}/></button>
                 {isPlaying ? (
-                  <button onClick={() => onSetMatchState(match.id, 'pause')} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded transition-colors"><Pause size={14}/></button>
+                  <button onClick={() => onSetMatchState(match.id, 'pause')} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded transition-colors" title="Pause"><Pause size={14}/></button>
                 ) : (
-                  <button onClick={() => onSetMatchState(match.id, 'play')} className="p-1.5 text-emerald-500 hover:bg-emerald-100 rounded transition-colors"><Play size={14}/></button>
+                  <button onClick={() => onSetMatchState(match.id, 'play')} className="p-1.5 text-emerald-500 hover:bg-emerald-100 rounded transition-colors" title="Play"><Play size={14}/></button>
                 )}
                 {(match.accumulatedTime > 0 || isPlaying) && (
-                  <button onClick={() => onSetMatchState(match.id, 'stop')} className="p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-600 rounded transition-colors"><Square size={14}/></button>
+                  <button onClick={() => onSetMatchState(match.id, 'stop')} className="p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-600 rounded transition-colors" title="Stop/Reset"><Square size={14}/></button>
                 )}
               </div>
             )}
