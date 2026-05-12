@@ -900,7 +900,7 @@ export default function App() {
                       const roundNum = idx + 1;
                       const matches = activeBracket.matches.filter(m => m.round === roundNum);
                       const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
-                      const matchHeight = 164 * Math.pow(2, idx);
+                      const matchHeight = 180 * Math.pow(2, idx);
                       return (
                         <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
                           <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
@@ -935,7 +935,7 @@ export default function App() {
                        <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
                           <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
                        </div>
-                       <div className="flex items-center" style={{ height: '164px' }}>
+                       <div className="flex items-center" style={{ height: '180px' }}>
                           <div className="relative group ml-4">
                             <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
                             <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
