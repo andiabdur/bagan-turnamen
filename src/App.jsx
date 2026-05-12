@@ -313,26 +313,36 @@ export default function App() {
 
   if (!role) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
-          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-8 text-center text-white">
-            <Trophy className="w-12 h-12 text-white mx-auto mb-4"/>
-            <h1 className="text-3xl font-extrabold tracking-tight">Turnamen Layangan</h1>
-            <p className="text-brand-100 text-sm mt-2 opacity-90">Sistem Bagan Digital v2.1</p>
+          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white">
+            <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg"/>
+            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">PIALA BERGILIR MAJALENGKA</h1>
           </div>
           <div className="p-8 space-y-6">
-            <button onClick={() => setRole('spectator')} className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border border-slate-200 p-5 rounded-2xl transition-all">
+            <button onClick={() => setRole('spectator')} className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border-2 border-slate-100 hover:border-brand-200 p-6 rounded-2xl transition-all group">
               <div className="flex items-center gap-4 text-left">
-                <Users className="w-6 h-6 text-brand-600"/>
-                <div><h3 className="font-bold text-slate-800">Mode Penonton</h3><p className="text-xs text-slate-500">Lihat skor & bagan</p></div>
+                <div className="bg-white p-3 rounded-xl shadow-sm text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                  <Users className="w-6 h-6"/>
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800">Lihat Bagan</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pantau Skor Real-time</p>
+                </div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-300"/>
             </button>
             <form onSubmit={handleLoginReferee} className="space-y-4">
-              <input type="password" name="pin" placeholder="PIN Wasit" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none" required />
-              <button type="submit" className="w-full bg-slate-900 text-white p-4 rounded-2xl font-bold flex items-center justify-center gap-2"><Shield size={18}/> Masuk Wasit</button>
+              <div className="relative">
+                <input type="password" name="pin" placeholder="Login Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
+              </div>
+              <button type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-xl active:scale-95">Login</button>
             </form>
           </div>
+        </div>
+        {/* Footer for Landing Page */}
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">© Copyright by Senyap</p>
         </div>
       </div>
     );
@@ -416,7 +426,10 @@ export default function App() {
                 const roundNum = idx + 1;
                 const matches = activeBracket.matches.filter(m => m.round === roundNum);
                 const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
-                const matchHeight = 110 * Math.pow(2, idx); // Slightly taller for better spacing
+                
+                // Increase vertical padding to prevent labels from overlapping
+                // Round 1: 140px (was 110px), Round 2: 280px...
+                const matchHeight = 140 * Math.pow(2, idx);
                 
                 return (
                   <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
@@ -444,7 +457,7 @@ export default function App() {
                  <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
                     <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
                  </div>
-                 <div className="flex items-center" style={{ height: '110px' }}>
+                 <div className="flex items-center" style={{ height: '140px' }}>
                     <div className="relative group ml-4">
                       <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
                       <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
