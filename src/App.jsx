@@ -292,12 +292,34 @@ export default function App() {
 
   if (!user || loadingData) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="relative">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
+        <div className="relative mb-4">
           <RefreshCw className="animate-spin text-brand-600 w-12 h-12"/>
           <Trophy className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-brand-400 opacity-50"/>
         </div>
-        <p className="mt-4 text-slate-500 font-medium animate-pulse">Menghubungkan ke Server...</p>
+        <p className="text-slate-500 font-medium animate-pulse">Menghubungkan ke Server...</p>
+        
+        {errorMessage && (
+          <div className="mt-8 max-w-sm w-full bg-red-50 border border-red-100 p-4 rounded-2xl animate-slide-up">
+            <div className="flex items-center gap-3 text-red-600 mb-2">
+              <AlertCircle size={18}/>
+              <span className="font-bold text-sm">Terjadi Kendala</span>
+            </div>
+            <p className="text-xs text-red-500 font-medium leading-relaxed mb-4">
+              {errorMessage}
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full bg-white border border-red-200 text-red-600 py-2 rounded-xl text-xs font-bold hover:bg-red-50 transition-colors"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        )}
+
+        <div className="mt-12 text-center opacity-40">
+           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Pastikan Auth & Firestore sudah Aktif di Firebase Console</p>
+        </div>
       </div>
     );
   }
