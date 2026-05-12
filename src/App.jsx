@@ -15,7 +15,11 @@ import {
   ZoomIn,
   ZoomOut,
   Search,
-  Shuffle
+  Shuffle,
+  Play,
+  Pause,
+  Square,
+  Clock
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -330,6 +334,40 @@ export default function App() {
       await setDoc(docRef, newData);
     } catch (err) {
       showError("Gagal mengupdate pemenang.");
+    }
+  };
+
+  const setMatchState = async (matchId, action) => {
+    if (role !== 'referee') return;
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const poolData = newData.pools[activePool];
+    if (!poolData) return;
+
+    const match = poolData.matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    const now = Date.now();
+
+    if (action === 'play') {
+      match.playState = 'playing';
+      match.startTime = now;
+      if (match.accumulatedTime === undefined) match.accumulatedTime = 0;
+    } else if (action === 'pause') {
+      if (match.playState === 'playing') {
+        match.accumulatedTime = (match.accumulatedTime || 0) + (now - (match.startTime || now));
+      }
+      match.playState = 'paused';
+    } else if (action === 'stop') {
+      match.playState = 'idle';
+      match.startTime = null;
+      match.accumulatedTime = 0;
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal mengupdate status pertandingan.");
     }
   };
 
@@ -875,6 +913,7 @@ export default function App() {
                                   match={match}
                                   role={role}
                                   onSetWinner={setWinner}
+                                  onSetMatchState={setMatchState}
                                   onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
                                   matchRef={el => { matchRefs.current[match.id] = el; }}
                                   highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
@@ -1020,43 +1059,101 @@ export default function App() {
   );
 }
 
-function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlightedSlot }) {
+function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlightedSlot, onSetMatchState }) {
   const isReferee = role === 'referee';
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    let interval;
+    if (match.playState === 'playing') {
+      interval = setInterval(() => {
+        setElapsed((match.accumulatedTime || 0) + (Date.now() - match.startTime));
+      }, 1000);
+    } else {
+      setElapsed(match.accumulatedTime || 0);
+    }
+    return () => clearInterval(interval);
+  }, [match.playState, match.startTime, match.accumulatedTime]);
+
+  const formatTime = (ms) => {
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+    const s = (totalSec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const isPlaying = match.playState === 'playing';
+
   return (
     <div className="relative group w-full" ref={matchRef}>
-      <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20">
+      <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20 flex items-center gap-2">
          <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m','')}</p>
+         {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
       </div>
+      
+      {isPlaying && (
+        <div className="absolute -top-4 right-4 bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
+          SEDANG BERTANDING
+        </div>
+      )}
+
       <div className={cn(
-        "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300",
-        highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' : 'border-slate-100'
+        "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300 relative z-10 flex flex-col",
+        highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' : 
+        isPlaying ? 'border-red-500 shadow-lg shadow-red-200 ring-4 ring-red-500/20' : 'border-slate-100'
       )}>
-        {[1, 2].map(slot => {
-          const playerName = slot === 1 ? match.player1 : match.player2;
-          const isWinner = match.winner === playerName && playerName;
-          const isHighlighted = highlightedSlot === slot;
-          return (
-            <div key={slot} className={cn(
-              "p-4 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300",
-              isHighlighted ? "bg-emerald-500 text-white" : isWinner ? "bg-brand-600 text-white" : "bg-white"
-            )}>
-              <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-4 text-left min-w-0">
-                <div className={cn(
-                  "w-2.5 h-2.5 rounded-full shrink-0",
-                  isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
-                )}/>
-                <span className={cn(
-                  "text-[13px] font-black truncate leading-none",
-                  !playerName ? "text-slate-300 italic" : (isHighlighted || isWinner) ? "text-white" : "text-slate-800"
-                )}>{playerName || 'TBA'}</span>
-                {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
-              </button>
-              {isReferee && playerName && (
-                <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors", (isHighlighted || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
-              )}
+        <div className="flex-1 flex flex-col">
+          {[1, 2].map(slot => {
+            const playerName = slot === 1 ? match.player1 : match.player2;
+            const isWinner = match.winner === playerName && playerName;
+            const isHighlighted = highlightedSlot === slot;
+            return (
+              <div key={slot} className={cn(
+                "p-4 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300 flex-1",
+                isHighlighted ? "bg-emerald-500 text-white" : isWinner ? "bg-brand-600 text-white" : "bg-white"
+              )}>
+                <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-4 text-left min-w-0">
+                  <div className={cn(
+                    "w-2.5 h-2.5 rounded-full shrink-0",
+                    isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
+                  )}/>
+                  <span className={cn(
+                    "text-[13px] font-black truncate leading-none",
+                    !playerName ? "text-slate-300 italic" : (isHighlighted || isWinner) ? "text-white" : "text-slate-800"
+                  )}>{playerName || 'TBA'}</span>
+                  {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
+                </button>
+                {isReferee && playerName && (
+                  <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors ml-2", (isHighlighted || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Live Match Controls / Stopwatch */}
+        {(match.playState || isReferee) && (
+          <div className={cn(
+            "flex items-center justify-between px-4 py-2.5 border-t-2",
+            isPlaying ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100"
+          )}>
+            <div className={cn("flex items-center gap-2 font-mono text-xs font-black", isPlaying ? "text-red-600" : "text-slate-500")}>
+              <Clock size={14}/> {formatTime(elapsed)}
             </div>
-          );
-        })}
+            {isReferee && (
+              <div className="flex gap-1">
+                {isPlaying ? (
+                  <button onClick={() => onSetMatchState(match.id, 'pause')} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded transition-colors"><Pause size={14}/></button>
+                ) : (
+                  <button onClick={() => onSetMatchState(match.id, 'play')} className="p-1.5 text-emerald-500 hover:bg-emerald-100 rounded transition-colors"><Play size={14}/></button>
+                )}
+                {(match.accumulatedTime > 0 || isPlaying) && (
+                  <button onClick={() => onSetMatchState(match.id, 'stop')} className="p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-600 rounded transition-colors"><Square size={14}/></button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
