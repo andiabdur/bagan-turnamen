@@ -35,21 +35,41 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// Firebase Configuration
-const firebaseConfig = typeof __firebase_config !== 'undefined' 
-  ? JSON.parse(__firebase_config) 
-  : {
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID
-    };
+// Firebase Configuration Helper
+const getFirebaseConfig = () => {
+  if (typeof __firebase_config !== 'undefined') {
+    try {
+      return JSON.parse(__firebase_config);
+    } catch (e) {
+      console.error("Failed to parse __firebase_config", e);
+    }
+  }
+  
+  return {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID
+  };
+};
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const firebaseConfig = getFirebaseConfig();
+const hasConfig = firebaseConfig && firebaseConfig.apiKey;
+
+// Initialize Firebase only if config exists
+let app, auth, db;
+if (hasConfig) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (error) {
+    console.error("Firebase initialization failed", error);
+  }
+}
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : (import.meta.env.VITE_APP_ID || 'default-app-id');
 
 export default function App() {
@@ -65,6 +85,7 @@ export default function App() {
   const poolsList = ['A', 'B', 'C', 'D'];
 
   useEffect(() => {
+    if (!hasConfig || !auth) return;
     const initAuth = async () => {
       try {
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
@@ -82,7 +103,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !db) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
     const unsub = onSnapshot(docRef, (snap) => {
         if (snap.exists()) setTournamentData(snap.data());
@@ -248,6 +269,26 @@ export default function App() {
       }
     }
   };
+
+  if (!hasConfig) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 text-center">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-red-100">
+          <div className="bg-red-100 p-4 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-10 h-10 text-red-600"/>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-4">Firebase Belum Dikonfigurasi</h1>
+          <p className="text-slate-600 mb-8">
+            Silahkan atur <strong>Environment Variables</strong> di Dashboard Vercel Anda (VITE_FIREBASE_API_KEY, dll) untuk menggunakan aplikasi ini.
+          </p>
+          <div className="bg-slate-50 p-4 rounded-2xl text-left text-xs font-mono text-slate-500 overflow-x-auto">
+            VITE_FIREBASE_API_KEY=...<br/>
+            VITE_FIREBASE_PROJECT_ID=...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || loadingData) {
     return (
