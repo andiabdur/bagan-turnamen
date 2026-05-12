@@ -14,7 +14,8 @@ import {
   ChevronRight,
   ZoomIn,
   ZoomOut,
-  Search
+  Search,
+  Shuffle
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -92,6 +93,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [searchResult, setSearchResult] = useState(null); // { matchId, slot }
+  const [showGlobalSetup, setShowGlobalSetup] = useState(false);
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
 
@@ -163,13 +165,14 @@ export default function App() {
     setIsMenuOpen(false);
   };
 
-  const generateBracket = async () => {
+  const generateGlobalBracket = async () => {
     let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
     if (rawNames.length === 0) return showError("Daftar nama tidak boleh kosong.");
     
     let counter = 1;
-    while (rawNames.length < 32) rawNames.push(`Peserta ${counter++}`);
-    if (rawNames.length > 32) rawNames = rawNames.slice(0, 32);
+    // We need exactly 96 players for 3 pools
+    while (rawNames.length < 96) rawNames.push(`Peserta ${counter++}`);
+    if (rawNames.length > 96) rawNames = rawNames.slice(0, 96);
 
     // 1. Identifikasi Tim via Format "[Nama Tim] Peserta"
     const players = rawNames.map((raw, idx) => {
@@ -188,90 +191,99 @@ export default function App() {
     // 3. Urutkan dari tim dengan anggota terbanyak
     const sortedTeams = Object.keys(teamGroups).sort((a, b) => teamGroups[b].length - teamGroups[a].length);
 
-    // 4. Siapkan 8 Sub-Blok (masing-masing 4 slot)
-    // Berada di sub-blok berbeda menjamin tidak bertemu di 32 atau 16 besar
-    const subBlocks = Array.from({ length: 8 }, () => []);
+    // 4. Siapkan 3 Pool (A, B, C), masing-masing 8 Sub-Blok (4 slot/blok)
+    const poolsMap = {
+      'A': Array.from({ length: 8 }, () => []),
+      'B': Array.from({ length: 8 }, () => []),
+      'C': Array.from({ length: 8 }, () => []),
+    };
 
-    // 5. Distribusi Cerdas (Smart Seeding)
+    const getPoolMembers = (poolId, teamId) => poolsMap[poolId].flat().filter(name => teamGroups[teamId].includes(name));
+
+    // 5. Distribusi Cerdas Global
     for (const team of sortedTeams) {
       for (const member of teamGroups[team]) {
-        // Blok yang masih punya sisa slot
-        const validBlocks = subBlocks.filter(b => b.length < 4);
-        
-        // Cari blok yang jumlah anggota tim INI paling sedikit (Mencegah numpuk)
-        const minTeamCount = Math.min(...validBlocks.map(b => b.filter(name => teamGroups[team].includes(name)).length));
-        const bestBlocksByTeam = validBlocks.filter(b => b.filter(name => teamGroups[team].includes(name)).length === minTeamCount);
-        
-        // Supaya pembagian merata, pilih blok yang isinya paling kosong
-        const minTotalCount = Math.min(...bestBlocksByTeam.map(b => b.length));
-        const finalBestBlocks = bestBlocksByTeam.filter(b => b.length === minTotalCount);
-        
-        // Pilih acak dari blok terbaik untuk menambah unsur random
-        const chosenBlock = finalBestBlocks[Math.floor(Math.random() * finalBestBlocks.length)];
-        chosenBlock.push(member);
+        let validOptions = [];
+        for (const poolId of ['A', 'B', 'C']) {
+          poolsMap[poolId].forEach((block, bIdx) => {
+            if (block.length < 4) validOptions.push({ poolId, bIdx, block });
+          });
+        }
+
+        // Hitung skor prioritas tiap opsi
+        validOptions.forEach(opt => {
+          opt.poolCount = getPoolMembers(opt.poolId, team).length; // Jauhkan antar pool
+          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length; // Jauhkan dalam pool
+          opt.totalPoolLength = poolsMap[opt.poolId].flat().length; // Rata jumlah
+          opt.totalBlockLength = opt.block.length;
+        });
+
+        // Urutkan prioritas: antar pool -> antar blok -> seimbang
+        validOptions.sort((a, b) => {
+          if (a.poolCount !== b.poolCount) return a.poolCount - b.poolCount;
+          if (a.blockCount !== b.blockCount) return a.blockCount - b.blockCount;
+          if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
+          if (a.totalBlockLength !== b.totalBlockLength) return a.totalBlockLength - b.totalBlockLength;
+          return 0;
+        });
+
+        const bestScore = validOptions[0];
+        const bests = validOptions.filter(o => 
+          o.poolCount === bestScore.poolCount &&
+          o.blockCount === bestScore.blockCount &&
+          o.totalPoolLength === bestScore.totalPoolLength &&
+          o.totalBlockLength === bestScore.totalBlockLength
+        );
+        const chosen = bests[Math.floor(Math.random() * bests.length)];
+        poolsMap[chosen.poolId][chosen.bIdx].push(member);
       }
     }
 
-    // 6. Acak internal masing-masing sub-blok agar letak pastinya diundi
-    subBlocks.forEach(b => b.sort(() => Math.random() - 0.5));
-    
-    // 7. Gabungkan 8 sub-blok menjadi daftar urut 32 peserta
-    let names = subBlocks.flat();
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    if (!newData.pools) newData.pools = {};
 
-    let matches = [];
-    let matchIdCounter = 1;
-    let currentRoundMatches = [];
+    // 6. Bangun Bracket untuk A, B, C
+    ['A', 'B', 'C'].forEach(poolId => {
+      poolsMap[poolId].forEach(b => b.sort(() => Math.random() - 0.5));
+      const poolNames = poolsMap[poolId].flat();
 
-    // Round 1
-    for (let i = 0; i < 32; i += 2) {
-      const match = { 
-        id: `m${matchIdCounter++}`, 
-        round: 1, 
-        player1: names[i], 
-        player2: names[i + 1], 
-        winner: null, 
-        nextMatchId: null, 
-        nextMatchSlot: null 
-      };
-      matches.push(match);
-      currentRoundMatches.push(match);
-    }
+      let matches = [];
+      let matchIdCounter = 1;
+      let currentRoundMatches = [];
 
-    let roundNum = 2;
-    let previousRoundMatches = currentRoundMatches;
-
-    while (previousRoundMatches.length > 1) {
-      currentRoundMatches = [];
-      for (let i = 0; i < previousRoundMatches.length; i += 2) {
-        const match = { 
-          id: `m${matchIdCounter++}`, 
-          round: roundNum, 
-          player1: null, 
-          player2: null, 
-          winner: null, 
-          nextMatchId: null, 
-          nextMatchSlot: null 
-        };
+      for (let i = 0; i < 32; i += 2) {
+        const match = { id: `m${matchIdCounter++}`, round: 1, player1: poolNames[i], player2: poolNames[i + 1], winner: null, nextMatchId: null, nextMatchSlot: null };
         matches.push(match);
         currentRoundMatches.push(match);
-        
-        previousRoundMatches[i].nextMatchId = match.id;
-        previousRoundMatches[i].nextMatchSlot = 1;
-        previousRoundMatches[i + 1].nextMatchId = match.id;
-        previousRoundMatches[i + 1].nextMatchSlot = 2;
       }
-      previousRoundMatches = currentRoundMatches;
-      roundNum++;
-    }
 
-    const newTournamentData = { ...tournamentData };
-    if (!newTournamentData.pools) newTournamentData.pools = {};
-    newTournamentData.pools[activePool] = { matches, totalRounds: roundNum - 1 };
+      let roundNum = 2;
+      let prevMatches = currentRoundMatches;
+      while (prevMatches.length > 1) {
+        currentRoundMatches = [];
+        for (let i = 0; i < prevMatches.length; i += 2) {
+          const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+          matches.push(match);
+          currentRoundMatches.push(match);
+          prevMatches[i].nextMatchId = match.id;
+          prevMatches[i].nextMatchSlot = 1;
+          prevMatches[i + 1].nextMatchId = match.id;
+          prevMatches[i + 1].nextMatchSlot = 2;
+        }
+        prevMatches = currentRoundMatches;
+        roundNum++;
+      }
+      newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
+    });
+
+    if (newData.pools['Final']) delete newData.pools['Final'];
 
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
-      await setDoc(docRef, newTournamentData);
+      await setDoc(docRef, newData);
       setBulkInput('');
+      setShowGlobalSetup(false);
+      setActivePool('A');
     } catch (err) {
       showError("Gagal membuat bagan.");
     }
@@ -539,7 +551,12 @@ export default function App() {
             <div className="px-4 py-2 border-b border-slate-50 mb-2">
                <p className="text-[9px] font-black text-slate-400 uppercase">Akses: {role === 'referee' ? 'Wasit' : 'Penonton'}</p>
             </div>
-            {role === 'referee' && activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+            {role === 'referee' && (
+              <>
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14}/> Pengoclokan Otomatis</button>
+                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+              </>
+            )}
             <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50"><LogOut size={14}/> Keluar Sistem</button>
           </div>
         )}
@@ -574,8 +591,74 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-slate-50">
-        {/* ===== BAGAN FINAL (ROUND-ROBIN) ===== */}
-        {activePool === 'Final' ? (
+        {/* ===== GLOBAL SEEDING SETUP ===== */}
+        {(showGlobalSetup || (!tournamentData.pools?.A && !tournamentData.pools?.B && !tournamentData.pools?.C)) ? (
+          role === 'referee' ? (
+            <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slide-up">
+              <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                {/* Hero Header */}
+                <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
+                  <div className="absolute top-0 right-0 p-4 opacity-10"><Shuffle size={120}/></div>
+                  <div className="relative z-10">
+                    <h2 className="text-2xl font-black leading-none mb-2">Pengoclokan Global 96 Slot</h2>
+                    <p className="text-slate-300 text-sm font-bold">Membangun Bagan A, B, & C Secara Serentak</p>
+                  </div>
+                  {showGlobalSetup && (
+                    <button onClick={() => setShowGlobalSetup(false)} className="relative z-10 bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
+                      <X size={20}/>
+                    </button>
+                  )}
+                </div>
+                
+                {/* Rules & Narrative */}
+                <div className="p-8 bg-slate-50 border-b border-slate-100">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
+                      <Shield className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm text-slate-800 mb-1.5">Algoritma Keadilan: 3 Bagan x 32 Slot</h3>
+                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                        Sistem menggunakan <strong>Smart Distribution Global</strong>. Peserta dari tim yang sama (maks 9 orang) akan dibagi rata ke Bagan A, Bagan B, dan Bagan C. Di dalam masing-masing bagan, mereka juga akan dipisah ke blok berbeda agar <strong>TIDAK BERTEMU</strong> di babak awal. Semua sisa slot diisi otomatis & diacak murni!
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 bg-white border border-brand-200 shadow-sm p-5 rounded-2xl">
+                    <h4 className="font-black text-[11px] text-brand-800 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <Check size={14}/> Format Penulisan (Wajib):
+                    </h4>
+                    <code className="block bg-slate-50 p-4 rounded-xl text-sm font-bold text-slate-700 border border-slate-200 mb-3 leading-relaxed">
+                      [Senyap] Andi<br/>
+                      [Senyap] Budi<br/>
+                      Joko
+                    </code>
+                    <p className="text-[11px] font-bold text-slate-500 flex items-start gap-2">
+                      <AlertCircle size={14} className="shrink-0 text-brand-500 mt-0.5"/>
+                      Masukkan seluruh peserta (maks 96). Gunakan awalan <strong>[Nama Tim]</strong> agar sistem bisa menjauhkan mereka satu sama lain.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Input Area */}
+                <div className="p-8">
+                  <textarea 
+                    value={bulkInput} 
+                    onChange={(e) => setBulkInput(e.target.value)} 
+                    placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
+                    rows={12} 
+                    className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
+                  />
+                  <button 
+                    onClick={generateGlobalBracket} 
+                    className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+                  >
+                    <Shuffle size={20}/> OCLOK 96 SLOT SEKARANG
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar 96 peserta.</p></div>
+        ) : activePool === 'Final' ? (
           <div className="max-w-3xl mx-auto p-6 md:p-12 animate-slide-up">
             {/* Header Final */}
             <div className="relative mb-8">
