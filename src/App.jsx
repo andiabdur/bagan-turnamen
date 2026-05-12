@@ -74,7 +74,7 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : (import.meta.env.VITE
 export default function App() {
   // 1. ALL HOOKS AT TOP LEVEL
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState(() => localStorage.getItem('tournament_role'));
   const [tournamentData, setTournamentData] = useState({ pools: {} });
   const [loadingData, setLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
@@ -130,6 +130,7 @@ export default function App() {
     e.preventDefault();
     if (e.target.pin.value === '1234') {
       setRole('referee');
+      localStorage.setItem('tournament_role', 'referee');
       setIsMenuOpen(false);
     } else {
       showError('PIN Wasit salah!');
@@ -138,6 +139,7 @@ export default function App() {
 
   const logout = () => {
     setRole(null);
+    localStorage.removeItem('tournament_role');
     setIsMenuOpen(false);
   };
 
@@ -320,7 +322,13 @@ export default function App() {
             <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">PIALA BERGILIR MAJALENGKA</h1>
           </div>
           <div className="p-8 space-y-6">
-            <button onClick={() => setRole('spectator')} className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border-2 border-slate-100 hover:border-brand-200 p-6 rounded-2xl transition-all group">
+            <button 
+              onClick={() => {
+                setRole('spectator');
+                localStorage.setItem('tournament_role', 'spectator');
+              }} 
+              className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border-2 border-slate-100 hover:border-brand-200 p-6 rounded-2xl transition-all group"
+            >
               <div className="flex items-center gap-4 text-left">
                 <div className="bg-white p-3 rounded-xl shadow-sm text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
                   <Users className="w-6 h-6"/>
