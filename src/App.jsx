@@ -388,27 +388,80 @@ export default function App() {
           ) : <div className="p-20 text-center"><Trophy size={60} className="mx-auto text-slate-200 mb-4"/><h2 className="text-xl font-bold text-slate-300">Bagan Belum Siap</h2></div>
         ) : (
           <div className="p-8 md:p-16 min-w-max">
-            <div className="flex gap-16 md:gap-32 items-start">
+            <div className="flex items-start gap-0">
               {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
                 const roundNum = idx + 1;
                 const matches = activeBracket.matches.filter(m => m.round === roundNum);
+                const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+                
+                // Scale height based on round
+                const matchHeight = 100 * Math.pow(2, idx);
+                
                 return (
-                  <div key={roundNum} className="flex flex-col w-64 md:w-72">
-                    <div className="py-2 mb-8 border-b font-black text-xs text-slate-400 uppercase tracking-widest">Babak {idx === 0 ? '32 Besar' : idx === 1 ? '16 Besar' : idx === 2 ? '8 Besar' : idx === 3 ? 'Semifinal' : 'Final'}</div>
-                    <div className="flex flex-col justify-around flex-grow gap-8 min-h-[800px]">
+                  <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
+                    <div className="h-12 flex items-center border-b border-slate-200 mb-8 mx-4">
+                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{roundLabels[idx]}</span>
+                    </div>
+
+                    <div className="flex flex-col">
                       {matches.map(match => (
-                        <MatchCard key={match.id} match={match} role={role} onSetWinner={setWinner} onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}/>
+                        <div 
+                          key={match.id} 
+                          className="relative flex items-center px-4" 
+                          style={{ height: `${matchHeight}px` }}
+                        >
+                          <MatchCard 
+                            match={match} 
+                            role={role} 
+                            onSetWinner={setWinner} 
+                            onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
+                          />
+                          
+                          {/* Connector lines logic */}
+                          {match.nextMatchId && (
+                            <>
+                              <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors"></div>
+                              <div 
+                                className="absolute -right-4 w-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors"
+                                style={{ 
+                                  height: `${matchHeight / 2}px`,
+                                  top: match.nextMatchSlot === 1 ? '50%' : 'auto',
+                                  bottom: match.nextMatchSlot === 2 ? '50%' : 'auto'
+                                }}
+                              ></div>
+                              {match.nextMatchSlot === 1 && (
+                                <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors"></div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
                 );
               })}
-              <div className="pt-20 flex flex-col items-center sticky top-20">
-                <div className="bg-white border-2 border-yellow-200 rounded-3xl p-10 shadow-2xl text-center">
-                  <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4"/>
-                  <p className="text-[10px] font-black text-yellow-600 uppercase mb-2">Juara Pool {activePool}</p>
-                  <h2 className="text-2xl font-black">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'MENUNGGU'}</h2>
-                </div>
+
+              {/* Grand Champion Section */}
+              <div className="flex flex-col ml-8">
+                 <div className="h-12 flex items-center border-b border-slate-200 mb-8 mx-4">
+                    <span className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.2em]">Pemenang Pool</span>
+                 </div>
+                 <div className="flex items-center" style={{ height: '100px' }}>
+                    <div className="relative group ml-4">
+                      <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                      <div className="relative bg-white border border-yellow-100 rounded-2xl p-6 shadow-xl flex items-center gap-4 min-w-[200px]">
+                        <div className="bg-yellow-400 p-2 rounded-lg text-white">
+                          <Trophy size={20}/>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-black text-yellow-600 uppercase">Juara Pool {activePool}</p>
+                          <p className="text-sm font-black text-slate-800">
+                            {activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'Menunggu...'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
@@ -422,29 +475,48 @@ export default function App() {
 function MatchCard({ match, role, onSetWinner, onEditName }) {
   const isReferee = role === 'referee';
   return (
-    <div className="relative group w-full py-2">
-      <div className="absolute -top-1 left-2 text-[6px] font-black text-slate-300 uppercase z-20">M{match.id.replace('m','')}</div>
-      <div className="bg-white border-2 border-slate-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+    <div className="relative group w-full">
+      <div className="absolute -top-3 left-2 text-[7px] font-black text-slate-400 uppercase z-20">Match {match.id.replace('m','')}</div>
+      <div className="bg-white border-2 border-slate-100 rounded-xl overflow-hidden shadow-sm hover:border-brand-300 hover:shadow-lg transition-all">
         {[1, 2].map(slot => {
           const playerName = slot === 1 ? match.player1 : match.player2;
           const isWinner = match.winner === playerName && playerName;
           return (
-            <div key={slot} className={cn("p-3 flex items-center justify-between border-b last:border-0", isWinner ? "bg-brand-50" : "bg-white")}>
-              <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-2 text-left min-w-0">
-                <div className={cn("w-2 h-2 rounded-full", isWinner ? "bg-brand-500" : "bg-slate-200")}/>
-                <span className={cn("text-xs font-black truncate", !playerName ? "text-slate-300 italic" : "text-slate-800", isWinner && "text-brand-700")}>{playerName || 'TBA'}</span>
+            <div key={slot} className={cn(
+              "p-3 flex items-center justify-between border-b last:border-0 transition-colors",
+              isWinner ? "bg-brand-600 text-white" : "bg-white"
+            )}>
+              <button 
+                onClick={() => onSetWinner(match.id, playerName)} 
+                disabled={!isReferee || !playerName} 
+                className="flex-1 flex items-center gap-3 text-left min-w-0"
+              >
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  isWinner ? "bg-white" : "bg-slate-200"
+                )}/>
+                <span className={cn(
+                  "text-[11px] font-black truncate",
+                  !playerName ? "text-slate-300 italic" : isWinner ? "text-white" : "text-slate-800"
+                )}>
+                  {playerName || 'Menunggu...'}
+                </span>
               </button>
-              {isReferee && playerName && <button onClick={() => onEditName(slot, playerName)} className="p-1 hover:bg-white rounded opacity-20 group-hover:opacity-100"><Settings size={10}/></button>}
+              {isReferee && playerName && (
+                <button 
+                  onClick={() => onEditName(slot, playerName)} 
+                  className={cn(
+                    "p-1 rounded transition-opacity",
+                    isWinner ? "text-white/50 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100"
+                  )}
+                >
+                  <Settings size={12}/>
+                </button>
+              )}
             </div>
           );
         })}
       </div>
-      {match.nextMatchId && (
-        <>
-          <div className="hidden md:block absolute right-[-4rem] top-1/2 w-16 h-0.5 bg-slate-200 group-hover:bg-brand-200 -z-10"></div>
-          <div className={cn("hidden md:block absolute right-[-4rem] w-0.5 bg-slate-200 group-hover:bg-brand-200 -z-10", match.nextMatchSlot === 1 ? "top-1/2 h-[calc(100%+2rem)]" : "bottom-1/2 h-[calc(100%+2rem)]")}></div>
-        </>
-      )}
     </div>
   );
 }
