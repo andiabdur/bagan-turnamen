@@ -19,7 +19,8 @@ import {
   Play,
   Pause,
   Square,
-  Clock
+  Clock,
+  Flag
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -352,6 +353,10 @@ export default function App() {
       match.playState = 'playing';
       match.startTime = now;
       if (match.accumulatedTime === undefined) match.accumulatedTime = 0;
+    } else if (action === 'prep') {
+      match.playState = 'prep';
+      match.startTime = null;
+      match.accumulatedTime = 0;
     } else if (action === 'pause') {
       if (match.playState === 'playing') {
         match.accumulatedTime = (match.accumulatedTime || 0) + (now - (match.startTime || now));
@@ -1082,12 +1087,14 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
   };
 
   const isPlaying = match.playState === 'playing';
+  const isPrep = match.playState === 'prep';
 
   return (
     <div className="relative group w-full" ref={matchRef}>
       <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20 flex items-center gap-2">
          <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m','')}</p>
          {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
+         {isPrep && <span className="flex h-2 w-2 relative"><span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span></span>}
       </div>
       
       {isPlaying && (
@@ -1095,11 +1102,17 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
           SEDANG BERTANDING
         </div>
       )}
+      {isPrep && (
+        <div className="absolute -top-4 right-4 bg-yellow-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
+          SEDANG PERSIAPAN
+        </div>
+      )}
 
       <div className={cn(
         "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300 relative z-10 flex flex-col",
         highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' : 
-        isPlaying ? 'border-red-500 shadow-lg shadow-red-200 ring-4 ring-red-500/20' : 'border-slate-100'
+        isPlaying ? 'border-red-500 shadow-lg shadow-red-200 ring-4 ring-red-500/20' : 
+        isPrep ? 'border-yellow-500 shadow-lg shadow-yellow-200 ring-4 ring-yellow-500/20' : 'border-slate-100'
       )}>
         <div className="flex-1 flex flex-col">
           {[1, 2].map(slot => {
@@ -1141,6 +1154,7 @@ function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlighted
             </div>
             {isReferee && (
               <div className="flex gap-1">
+                <button onClick={() => onSetMatchState(match.id, 'prep')} className={cn("p-1.5 rounded transition-colors", isPrep ? "bg-yellow-500 text-white" : "text-slate-400 hover:bg-yellow-100 hover:text-yellow-600")}><Flag size={14}/></button>
                 {isPlaying ? (
                   <button onClick={() => onSetMatchState(match.id, 'pause')} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded transition-colors"><Pause size={14}/></button>
                 ) : (
