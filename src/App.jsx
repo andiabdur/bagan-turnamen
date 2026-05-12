@@ -11,7 +11,9 @@ import {
   UserPlus, 
   Settings,
   X,
-  ChevronRight
+  ChevronRight,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -82,9 +84,18 @@ export default function App() {
   const [bulkInput, setBulkInput] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
+  const [bracketZoom, setBracketZoom] = useState(1);
 
-  const poolsList = ['A', 'B', 'C', 'D'];
+  const poolsList = ['A', 'B', 'C', 'Final'];
   const activeBracket = tournamentData.pools?.[activePool];
+
+  // Auto-derive final participants from pool winners
+  const finalParticipants = [
+    { pool: 'A', name: tournamentData.pools?.A?.matches?.find(m => m.round === tournamentData.pools?.A?.totalRounds)?.winner || null },
+    { pool: 'B', name: tournamentData.pools?.B?.matches?.find(m => m.round === tournamentData.pools?.B?.totalRounds)?.winner || null },
+    { pool: 'C', name: tournamentData.pools?.C?.matches?.find(m => m.round === tournamentData.pools?.C?.totalRounds)?.winner || null },
+  ];
+  const allFinalistsReady = finalParticipants.every(p => p.name);
 
   // 2. EFFECTS
   useEffect(() => {
@@ -290,6 +301,59 @@ export default function App() {
     }
   };
 
+  // Build/sync round-robin final bracket from pool winners A, B, C
+  const syncFinalBracket = async () => {
+    const [pA, pB, pC] = finalParticipants.map(p => p.name);
+    if (!pA || !pB || !pC) return showError('Semua juara Pool A, B, C harus sudah ada!');
+    const matches = [
+      { id: 'f1', label: 'Pool A vs Pool B', player1: pA, player2: pB, winner: null },
+      { id: 'f2', label: 'Pool A vs Pool C', player1: pA, player2: pC, winner: null },
+      { id: 'f3', label: 'Pool B vs Pool C', player1: pB, player2: pC, winner: null },
+    ];
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    if (!newData.pools) newData.pools = {};
+    newData.pools['Final'] = { type: 'roundrobin', matches };
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError('Gagal membuat Bagan Final.');
+    }
+  };
+
+  const setFinalWinner = async (matchId, winnerName) => {
+    if (role !== 'referee' || !winnerName) return;
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const finalData = newData.pools['Final'];
+    if (!finalData) return;
+    const match = finalData.matches.find(m => m.id === matchId);
+    if (!match) return;
+    match.winner = match.winner === winnerName ? null : winnerName;
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError('Gagal update pemenang final.');
+    }
+  };
+
+  // Compute round-robin standings
+  const computeStandings = (finalBracket) => {
+    if (!finalBracket || finalBracket.type !== 'roundrobin') return [];
+    const points = {};
+    finalBracket.matches.forEach(m => {
+      if (!points[m.player1]) points[m.player1] = { name: m.player1, w: 0, l: 0, pts: 0 };
+      if (!points[m.player2]) points[m.player2] = { name: m.player2, w: 0, l: 0, pts: 0 };
+      if (m.winner) {
+        const loser = m.winner === m.player1 ? m.player2 : m.player1;
+        points[m.winner].w += 1;
+        points[m.winner].pts += 1;
+        points[loser].l += 1;
+      }
+    });
+    return Object.values(points).sort((a, b) => b.pts - a.pts || b.w - a.w);
+  };
+
   // 4. CONDITIONAL RENDERING
   if (!hasConfig) {
     return (
@@ -399,9 +463,9 @@ export default function App() {
       {/* Pool Tabs */}
       <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto sticky top-[77px] z-30 no-scrollbar shadow-sm">
         {poolsList.map(pool => (
-          <button key={pool} onClick={() => setActivePool(pool)} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? "text-brand-600" : "text-slate-400 hover:text-slate-600")}>
-            BAGAN {pool}
-            {activePool === pool && <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-600 rounded-t-full shadow-[0_-2px_10px_rgba(16,137,226,0.3)]"></div>}
+          <button key={pool} onClick={() => setActivePool(pool)} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
+            {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
+            {activePool === pool && <div className={cn("absolute bottom-0 left-0 right-0 h-1 rounded-t-full", pool === 'Final' ? 'bg-yellow-500 shadow-[0_-2px_10px_rgba(234,179,8,0.4)]' : 'bg-brand-600 shadow-[0_-2px_10px_rgba(16,137,226,0.3)]')}></div>}
           </button>
         ))}
       </div>
@@ -421,68 +485,172 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Bracket */}
+      {/* Main Content */}
       <main className="flex-1 overflow-auto bg-slate-50">
-        {!activeBracket ? (
-          role === 'referee' ? (
-            <div className="max-w-xl mx-auto p-8 animate-slide-up"><div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100"><div className="flex items-center gap-4 mb-8"><div className="bg-brand-50 p-4 rounded-2xl text-brand-600"><UserPlus size={32}/></div><div><h2 className="text-2xl font-black text-slate-800 leading-none">Input Peserta</h2><p className="text-xs text-slate-500 font-bold mt-1">MASUKKAN 32 NAMA UNTUK BAGAN {activePool}</p></div></div><textarea value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Tulis nama per baris..." rows={10} className="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 outline-none resize-none transition-all" /><button onClick={generateBracket} className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3"><LayoutGrid size={20}/> GENERATE BAGAN SEKARANG</button></div></div>
-          ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
-        ) : (
-          <div className="p-8 md:p-16 min-w-max pb-32">
-            <div className="flex items-start gap-0">
-              {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
-                const roundNum = idx + 1;
-                const matches = activeBracket.matches.filter(m => m.round === roundNum);
-                const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
-                
-                // Increase vertical padding to prevent labels from overlapping
-                // Round 1: 140px (was 110px), Round 2: 280px...
-                const matchHeight = 140 * Math.pow(2, idx);
-                
-                return (
-                  <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
-                    <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
-                       <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx]}</span>
+        {/* ===== BAGAN FINAL (ROUND-ROBIN) ===== */}
+        {activePool === 'Final' ? (
+          <div className="max-w-3xl mx-auto p-6 md:p-12 animate-slide-up">
+            {/* Header Final */}
+            <div className="relative mb-8">
+              <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-xl opacity-20"></div>
+              <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 flex items-center gap-6 shadow-xl">
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36}/></div>
+                <div>
+                  <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Grand Final</p>
+                  <h2 className="text-2xl font-black text-slate-800">Piala Bergilir Majalengka</h2>
+                  <p className="text-xs text-slate-500 font-bold mt-1">Sistem Round-Robin — 3 Finalis Saling Bertemu</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Finalists Status */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              {finalParticipants.map((p) => (
+                <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
+                  <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
+                  <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-300 italic')}>{ p.name || 'Belum Ada'}</p>
+                  {p.name && <div className="mt-2 w-2 h-2 bg-emerald-500 rounded-full mx-auto"></div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Setup / Reset Button */}
+            {role === 'referee' && (
+              <div className="mb-8 flex gap-3">
+                <button onClick={syncFinalBracket} className={cn("flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", allFinalistsReady ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed')} disabled={!allFinalistsReady}>
+                  <LayoutGrid size={18}/> {activeBracket?.type === 'roundrobin' ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
+                </button>
+                {activeBracket?.type === 'roundrobin' && (
+                  <button onClick={resetPool} className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-100 hover:bg-red-50 transition-all">
+                    Reset
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Round-Robin Matches */}
+            {activeBracket?.type === 'roundrobin' && (
+              <div className="space-y-4">
+                <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Pertandingan Final</h3>
+                {activeBracket.matches.map((match, idx) => (
+                  <div key={match.id} className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pertandingan {idx + 1}</span>
+                      <span className="text-[9px] font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full">{match.label}</span>
                     </div>
-                    <div className="flex flex-col">
-                      {matches.map(match => (
-                        <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
-                          <MatchCard match={match} role={role} onSetWinner={setWinner} onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}/>
-                          {match.nextMatchId && (
-                            <>
-                              <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors"></div>
-                              <div className="absolute -right-4 w-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
-                              {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors"></div>}
-                            </>
-                          )}
-                        </div>
+                    <div className="flex flex-col gap-2">
+                      {[{name: match.player1, slot: 1}, {name: match.player2, slot: 2}].map(p => (
+                        <button key={p.slot} onClick={() => setFinalWinner(match.id, p.name)} disabled={role !== 'referee' || !p.name} className={cn(
+                          'w-full flex items-center gap-4 p-4 rounded-xl border-2 font-black text-sm transition-all text-left',
+                          match.winner === p.name ? 'bg-brand-600 border-brand-600 text-white' : 'bg-slate-50 border-transparent hover:border-brand-200'
+                        )}>
+                          <div className={cn('w-3 h-3 rounded-full shrink-0', match.winner === p.name ? 'bg-white' : 'bg-slate-300')}/>
+                          {p.name || 'TBA'}
+                          {match.winner === p.name && <Check size={14} className="ml-auto"/>}
+                        </button>
                       ))}
                     </div>
                   </div>
-                );
-              })}
-              <div className="flex flex-col ml-12">
-                 <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
-                    <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
-                 </div>
-                 <div className="flex items-center" style={{ height: '140px' }}>
-                    <div className="relative group ml-4">
-                      <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
-                      <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
-                        <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100">
-                          <Trophy size={32} className="drop-shadow-md"/>
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
-                          <p className="text-xl font-black text-slate-800 tracking-tight">
-                            {activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}
-                          </p>
-                        </div>
-                      </div>
+                ))}
+
+                {/* Standings Table */}
+                <div className="mt-8">
+                  <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Klasemen Sementara</h3>
+                  <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="grid grid-cols-4 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3">
+                      <div>Nama</div><div className="text-center">M</div><div className="text-center">K</div><div className="text-center">Poin</div>
                     </div>
-                 </div>
+                    {computeStandings(activeBracket).map((s, i) => (
+                      <div key={s.name} className={cn('grid grid-cols-4 px-6 py-4 border-b last:border-0 items-center', i === 0 && 'bg-yellow-50')}>
+                        <div className="flex items-center gap-3">
+                          {i === 0 && <Trophy size={14} className="text-yellow-500 shrink-0"/>}
+                          <span className="font-black text-sm text-slate-800 truncate">{s.name}</span>
+                        </div>
+                        <div className="text-center font-black text-emerald-600">{s.w}</div>
+                        <div className="text-center font-black text-red-500">{s.l}</div>
+                        <div className="text-center font-black text-brand-600 text-lg">{s.pts}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* Empty state */}
+            {!activeBracket && role !== 'referee' && (
+              <div className="text-center py-20"><Trophy size={60} className="text-slate-200 mx-auto mb-4"/><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
+            )}
+          </div>
+        ) : (
+          /* ===== BAGAN POOL REGULER ===== */
+          <div>
+            {!activeBracket ? (
+              role === 'referee' ? (
+                <div className="max-w-xl mx-auto p-8 animate-slide-up"><div className="bg-white rounded-3xl p-10 shadow-xl border border-slate-100"><div className="flex items-center gap-4 mb-8"><div className="bg-brand-50 p-4 rounded-2xl text-brand-600"><UserPlus size={32}/></div><div><h2 className="text-2xl font-black text-slate-800 leading-none">Input Peserta</h2><p className="text-xs text-slate-500 font-bold mt-1">MASUKKAN 32 NAMA UNTUK BAGAN {activePool}</p></div></div><textarea value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Tulis nama per baris..." rows={10} className="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 outline-none resize-none transition-all" /><button onClick={generateBracket} className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3"><LayoutGrid size={20}/> GENERATE BAGAN SEKARANG</button></div></div>
+              ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
+            ) : (
+              <div>
+                {/* Zoom Controls */}
+                <div className="sticky top-[117px] z-20 flex justify-end px-6 py-2 bg-slate-50/80 backdrop-blur-sm border-b border-slate-100">
+                  <div className="flex items-center gap-2 bg-white border-2 border-slate-100 rounded-xl p-1 shadow-sm">
+                    <button onClick={() => setBracketZoom(z => Math.max(0.5, parseFloat((z - 0.1).toFixed(1))))} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ZoomOut size={16} className="text-slate-600"/></button>
+                    <span className="text-xs font-black text-slate-500 w-12 text-center">{Math.round(bracketZoom * 100)}%</span>
+                    <button onClick={() => setBracketZoom(z => Math.min(2, parseFloat((z + 0.1).toFixed(1))))} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ZoomIn size={16} className="text-slate-600"/></button>
+                    <div className="w-px h-5 bg-slate-200"></div>
+                    <button onClick={() => setBracketZoom(1)} className="px-3 py-1 text-[10px] font-black text-slate-500 hover:bg-slate-100 rounded-lg transition-colors">RESET</button>
+                  </div>
+                </div>
+
+                <div className="p-8 md:p-16 min-w-max pb-32" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.2s ease' }}>
+                  <div className="flex items-start gap-0">
+                    {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
+                      const roundNum = idx + 1;
+                      const matches = activeBracket.matches.filter(m => m.round === roundNum);
+                      const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+                      const matchHeight = 140 * Math.pow(2, idx);
+                      return (
+                        <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
+                          <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
+                             <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx]}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            {matches.map(match => (
+                              <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
+                                <MatchCard match={match} role={role} onSetWinner={setWinner} onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}/>
+                                {match.nextMatchId && (
+                                  <>
+                                    <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
+                                    <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                                    {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div className="flex flex-col ml-12">
+                       <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
+                          <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
+                       </div>
+                       <div className="flex items-center" style={{ height: '140px' }}>
+                          <div className="relative group ml-4">
+                            <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
+                            <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
+                              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
+                              <div>
+                                <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
+                                <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
+                              </div>
+                            </div>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
