@@ -210,17 +210,35 @@ export default function App() {
           });
         }
 
-        // Hitung skor prioritas tiap opsi
+        // Hitung skor prioritas tiap opsi (semakin kecil skor, semakin prioritas)
         validOptions.forEach(opt => {
+          // Hitung Quarter (1 kuarter = 2 sub-blok). Kuarter 0: blok 0-1, dst.
+          const qIdx = Math.floor(opt.bIdx / 2);
+          const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
+          const quarterMembers = quarterBlocks.flat().filter(name => teamGroups[team].includes(name));
+
+          // Hitung Half / Setengah Bagan (1 Half = 4 sub-blok). Half 0: blok 0-3, Half 1: blok 4-7.
+          const hIdx = Math.floor(opt.bIdx / 4);
+          const halfBlocks = [
+            poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1], 
+            poolsMap[opt.poolId][hIdx * 4 + 2], poolsMap[opt.poolId][hIdx * 4 + 3]
+          ];
+          const halfMembers = halfBlocks.flat().filter(name => teamGroups[team].includes(name));
+
           opt.poolCount = getPoolMembers(opt.poolId, team).length; // Jauhkan antar pool
-          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length; // Jauhkan dalam pool
-          opt.totalPoolLength = poolsMap[opt.poolId].flat().length; // Rata jumlah
-          opt.totalBlockLength = opt.block.length;
+          opt.halfCount = halfMembers.length; // Jauhkan antar separuh bagan (mencegah ketemu sebelum Final Pool)
+          opt.quarterCount = quarterMembers.length; // Jauhkan antar kuarter (mencegah ketemu di 8 besar)
+          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length; // Jauhkan dalam sub-blok (mencegah ketemu di 16 besar)
+          
+          opt.totalPoolLength = poolsMap[opt.poolId].flat().length; // Rata jumlah isi pool
+          opt.totalBlockLength = opt.block.length; // Rata jumlah isi blok
         });
 
-        // Urutkan prioritas: antar pool -> antar blok -> seimbang
+        // Urutkan prioritas: antar pool -> antar half -> antar kuarter -> antar blok -> seimbang
         validOptions.sort((a, b) => {
           if (a.poolCount !== b.poolCount) return a.poolCount - b.poolCount;
+          if (a.halfCount !== b.halfCount) return a.halfCount - b.halfCount;
+          if (a.quarterCount !== b.quarterCount) return a.quarterCount - b.quarterCount;
           if (a.blockCount !== b.blockCount) return a.blockCount - b.blockCount;
           if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
           if (a.totalBlockLength !== b.totalBlockLength) return a.totalBlockLength - b.totalBlockLength;
@@ -230,6 +248,8 @@ export default function App() {
         const bestScore = validOptions[0];
         const bests = validOptions.filter(o => 
           o.poolCount === bestScore.poolCount &&
+          o.halfCount === bestScore.halfCount &&
+          o.quarterCount === bestScore.quarterCount &&
           o.blockCount === bestScore.blockCount &&
           o.totalPoolLength === bestScore.totalPoolLength &&
           o.totalBlockLength === bestScore.totalBlockLength
