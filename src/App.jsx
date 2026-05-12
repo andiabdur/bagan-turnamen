@@ -85,6 +85,8 @@ export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
   const [bracketZoom, setBracketZoom] = useState(1);
+  // Ref to persist pinch state across synthetic event calls
+  const pinchRef = useRef({ active: false, startDist: 0, startZoom: 1 });
 
   const poolsList = ['A', 'B', 'C', 'Final'];
   const activeBracket = tournamentData.pools?.[activePool];
@@ -596,23 +598,29 @@ export default function App() {
                   style={{ touchAction: 'pan-x pan-y' }}
                   onTouchStart={(e) => {
                     if (e.touches.length === 2) {
-                      e._startDist = Math.hypot(
-                        e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
-                      );
-                      e._startZoom = bracketZoom;
+                      const dx = e.touches[0].clientX - e.touches[1].clientX;
+                      const dy = e.touches[0].clientY - e.touches[1].clientY;
+                      pinchRef.current = {
+                        active: true,
+                        startDist: Math.hypot(dx, dy),
+                        startZoom: bracketZoom,
+                      };
                     }
                   }}
                   onTouchMove={(e) => {
-                    if (e.touches.length === 2 && e._startDist) {
-                      const dist = Math.hypot(
-                        e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
-                      );
-                      const next = Math.min(2, Math.max(0.4, parseFloat((e._startZoom * (dist / e._startDist)).toFixed(2))));
+                    if (e.touches.length === 2 && pinchRef.current.active) {
+                      const dx = e.touches[0].clientX - e.touches[1].clientX;
+                      const dy = e.touches[0].clientY - e.touches[1].clientY;
+                      const dist = Math.hypot(dx, dy);
+                      const { startDist, startZoom } = pinchRef.current;
+                      if (startDist === 0) return;
+                      const next = Math.min(2, Math.max(0.4,
+                        parseFloat((startZoom * (dist / startDist)).toFixed(2))
+                      ));
                       setBracketZoom(next);
                     }
                   }}
+                  onTouchEnd={() => { pinchRef.current.active = false; }}
                 >
                   <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
                   <div className="flex items-start gap-0">
