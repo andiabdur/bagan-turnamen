@@ -631,31 +631,70 @@ export default function App() {
                 </div>
                 
                 {/* Rules & Narrative */}
-                <div className="p-8 bg-slate-50 border-b border-slate-100">
-                  <div className="flex items-start gap-4">
+                <div className="p-4 md:p-8 bg-slate-50 border-b border-slate-100">
+                  <div className="flex items-start gap-4 mb-6">
                     <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
                       <Shield className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="font-black text-sm text-slate-800 mb-1.5">Algoritma Keadilan: 3 Bagan x 32 Slot</h3>
+                      <h3 className="font-black text-sm text-slate-800 mb-1.5 uppercase tracking-wide">Sistem Seeding Keadilan Mutlak</h3>
                       <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        Sistem menggunakan <strong>Smart Distribution Global</strong>. Peserta dari tim yang sama (maks 9 orang) akan dibagi rata ke Bagan A, Bagan B, dan Bagan C. Di dalam masing-masing bagan, mereka juga akan dipisah ke blok berbeda agar <strong>TIDAK BERTEMU</strong> di babak awal. Semua sisa slot diisi otomatis & diacak murni!
+                        Ditenagai oleh algoritma <strong className="text-brand-600">Smart Global Distribution</strong> kelas turnamen E-Sports. Sistem membaca identitas tim peserta dan mendistribusikannya seadil mungkin secara matematis. Wasit tidak perlu lagi pusing mengatur letak slot secara manual!
                       </p>
                     </div>
                   </div>
-                  <div className="mt-5 bg-white border border-brand-200 shadow-sm p-5 rounded-2xl">
-                    <h4 className="font-black text-[11px] text-brand-800 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <Check size={14}/> Format Penulisan (Wajib):
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 text-brand-600">
+                        <LayoutGrid size={16} />
+                        <h4 className="font-black text-[10px] uppercase tracking-widest">Distribusi Lintas Pool</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                        Jika sebuah tim mendaftar 9 peserta, sistem otomatis membaginya rata: 3 di Bagan A, 3 di Bagan B, dan 3 di Bagan C.
+                      </p>
+                    </div>
+                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 text-emerald-600">
+                        <Shield size={16} />
+                        <h4 className="font-black text-[10px] uppercase tracking-widest">Anti Perang Saudara</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                        Di dalam satu bagan, anggota tim dipisah paksa ke Kuarter dan Half yang berbeda. <strong>Mustahil bentrok</strong> di babak 32, 16, hingga 8 Besar!
+                      </p>
+                    </div>
+                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+                      <div className="flex items-center gap-2 mb-2 text-yellow-500">
+                        <Shuffle size={16} />
+                        <h4 className="font-black text-[10px] uppercase tracking-widest">Undian Acak Sempurna</h4>
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                        Setelah pemain tim diamankan tempatnya, peserta solo dan sisa slot kosong akan diundi murni dan di-shuffle oleh sistem.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800 text-white shadow-lg p-5 rounded-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-5"><Check size={80}/></div>
+                    <h4 className="font-black text-[11px] text-brand-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+                      <AlertCircle size={14}/> Aturan Format Input Wasit (Wajib):
                     </h4>
-                    <code className="block bg-slate-50 p-4 rounded-xl text-sm font-bold text-slate-700 border border-slate-200 mb-3 leading-relaxed">
-                      [Senyap] Andi<br/>
-                      [Senyap] Budi<br/>
-                      Joko
-                    </code>
-                    <p className="text-[11px] font-bold text-slate-500 flex items-start gap-2">
-                      <AlertCircle size={14} className="shrink-0 text-brand-500 mt-0.5"/>
-                      Masukkan seluruh peserta (maks 96). Gunakan awalan <strong>[Nama Tim]</strong> agar sistem bisa menjauhkan mereka satu sama lain.
-                    </p>
+                    <div className="flex flex-col md:flex-row gap-4 relative z-10">
+                      <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
+                        <span className="text-emerald-400">[Senyap]</span> Rian<br/>
+                        <span className="text-emerald-400">[Senyap]</span> Budi<br/>
+                        <span className="text-yellow-400">[BL Tempur]</span> Joko<br/>
+                        <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
+                      </code>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <p className="text-[11px] font-bold text-slate-400 mb-2 leading-relaxed">
+                          Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal.
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
+                          Pastikan penulisan nama tim <strong className="text-white">SAMA PERSIS</strong> (ejaan dan spasinya) agar sistem mengenali mereka sebagai satu kesatuan.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
