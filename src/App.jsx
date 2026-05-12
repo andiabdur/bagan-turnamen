@@ -399,13 +399,48 @@ export default function App() {
     );
   }
 
+  const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
+
   const activeBracket = tournamentData.pools?.[activePool];
   const inputtedCount = bulkInput.split('\n').map(n => n.trim()).filter(n => n).length;
 
+  const handleUpdatePlayerName = async (newName) => {
+    if (!editingPlayer || !newName.trim()) return;
+    
+    const { matchId, playerSlot } = editingPlayer;
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const poolData = newData.pools[activePool];
+    
+    const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
+    if (matchIndex === -1) return;
+    
+    const match = poolData.matches[matchIndex];
+    const oldName = playerSlot === 1 ? match.player1 : match.player2;
+    
+    if (playerSlot === 1) match.player1 = newName;
+    else match.player2 = newName;
+
+    // If this player was already the winner, update the winner name too
+    if (match.winner === oldName) {
+      match.winner = newName;
+      if (match.nextMatchId) {
+        updateNextMatch(poolData.matches, match.nextMatchId, match.nextMatchSlot, newName);
+      }
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setEditingPlayer(null);
+    } catch (err) {
+      showError("Gagal mengubah nama peserta.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans overflow-hidden">
       {/* Premium Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="bg-brand-600 p-2 rounded-lg shadow-lg shadow-brand-200">
             <Trophy className="w-5 h-5 text-white"/>
@@ -463,7 +498,7 @@ export default function App() {
       </header>
 
       {/* Pool Navigation */}
-      <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto sticky top-[61px] z-20 no-scrollbar shadow-sm">
+      <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto sticky top-[61px] z-30 no-scrollbar shadow-sm">
         {poolsList.map(pool => (
           <button 
             key={pool} 
@@ -491,6 +526,42 @@ export default function App() {
             <button onClick={() => setErrorMessage('')} className="ml-auto p-1 hover:bg-white/10 rounded-lg">
               <X size={16}/>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Player Modal */}
+      {editingPlayer && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
+          <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 animate-scale-in">
+            <h3 className="text-xl font-black text-slate-800 mb-2">Edit Nama Peserta</h3>
+            <p className="text-sm text-slate-500 mb-6 font-medium">Ubah nama untuk slot ini.</p>
+            <input 
+              autoFocus
+              type="text" 
+              defaultValue={editingPlayer.currentName}
+              className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-4 focus:ring-brand-500/10 focus:border-brand-500 outline-none font-bold text-slate-800 mb-6"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleUpdatePlayerName(e.target.value);
+                if (e.key === 'Escape') setEditingPlayer(null);
+              }}
+              id="edit-name-input"
+            />
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setEditingPlayer(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 py-4 rounded-2xl font-bold transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)}
+                className="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-brand-200"
+              >
+                Simpan
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -534,8 +605,6 @@ export default function App() {
                     <LayoutGrid size={20}/>
                     Generate Bagan {activePool}
                   </button>
-                  
-                  <p className="text-center text-[10px] text-slate-400 font-bold uppercase">Tips: Jika kurang dari 32, sistem akan mengisi otomatis dengan 'Peserta Kosong'</p>
                 </div>
               </div>
             </div>
@@ -545,37 +614,35 @@ export default function App() {
                 <Trophy className="w-20 h-20 text-slate-300"/>
               </div>
               <h2 className="text-2xl font-black text-slate-400 uppercase tracking-tighter">Bagan {activePool} Belum Siap</h2>
-              <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2 italic">Menunggu panitia mengunggah daftar peserta untuk pool ini.</p>
             </div>
           )
         ) : (
           <div className="p-4 md:p-12 min-h-full overflow-x-auto bracket-scroll">
-            <div className="flex gap-12 md:gap-24 min-w-max pb-16 items-start">
+            <div className="flex gap-16 md:gap-32 min-w-max pb-16 items-start">
               {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
                 const roundNum = idx + 1;
                 const matchesInRound = activeBracket.matches.filter(m => m.round === roundNum);
-                
-                // Labels for rounds
-                const roundLabels = ["Babak 32 Besar", "16 Besar", "Perempat Final", "Semifinal", "Final Pool"];
+                const roundLabels = ["32 Besar", "16 Besar", "Perempat Final", "Semifinal", "Final Pool"];
                 
                 return (
-                  <div key={roundNum} className="flex flex-col gap-8 w-64 md:w-72">
-                    <div className="sticky top-0 bg-slate-50/90 backdrop-blur-sm py-2 z-10 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black text-slate-500">
+                  <div key={roundNum} className="flex flex-col w-64 md:w-72">
+                    <div className="sticky top-0 bg-slate-50/90 backdrop-blur-sm py-4 z-10 flex items-center gap-3 border-b border-slate-200 mb-8">
+                      <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-[10px] font-black text-white shadow-lg shadow-brand-100">
                         {roundNum}
                       </div>
-                      <h3 className="font-black text-slate-400 text-xs uppercase tracking-[0.2em]">
+                      <h3 className="font-black text-slate-800 text-xs uppercase tracking-widest">
                         {roundLabels[idx] || `Putaran ${roundNum}`}
                       </h3>
                     </div>
 
-                    <div className="flex flex-col justify-around h-full gap-8">
+                    <div className="flex flex-col justify-around flex-grow relative" style={{ minHeight: '800px' }}>
                       {matchesInRound.map((match) => (
                         <MatchCard 
                           key={match.id} 
                           match={match} 
                           role={role} 
                           onSetWinner={setWinner} 
+                          onEditName={(slot, name) => setEditingPlayer({ matchId: match.id, playerSlot: slot, currentName: name })}
                         />
                       ))}
                     </div>
@@ -583,29 +650,23 @@ export default function App() {
                 );
               })}
               
-              {/* Grand Winner of Pool Section */}
-              <div className="flex flex-col gap-8 w-64 md:w-80 pt-12 items-center">
-                 <div className="relative group w-full">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                    <div className="relative bg-white border border-yellow-100 rounded-3xl p-8 text-center flex flex-col items-center justify-center min-h-[16rem] shadow-2xl">
-                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-5 rounded-2xl shadow-xl shadow-yellow-200 mb-6">
-                        <Trophy className="w-12 h-12 text-white drop-shadow-lg"/>
+              {/* Grand Winner Section */}
+              <div className="flex flex-col w-64 md:w-80 pt-16 items-center">
+                 <div className="relative group w-full sticky top-48">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-20 group-hover:opacity-40 transition duration-1000 animate-pulse"></div>
+                    <div className="relative bg-white border border-yellow-100 rounded-3xl p-10 text-center flex flex-col items-center justify-center min-h-[20rem] shadow-2xl">
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-6 rounded-2xl shadow-xl shadow-yellow-100 mb-8">
+                        <Trophy className="w-16 h-16 text-white drop-shadow-lg"/>
                       </div>
-                      <p className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.3em] mb-2">Pemenang Pool {activePool}</p>
+                      <p className="text-[10px] font-black text-yellow-600 uppercase tracking-[0.4em] mb-3">Juara Pool {activePool}</p>
                       <span className={cn(
-                        "text-xl md:text-2xl font-black tracking-tighter leading-tight break-words px-2",
+                        "text-2xl md:text-3xl font-black tracking-tighter leading-tight break-words px-2",
                         activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner 
-                          ? "text-slate-800" 
-                          : "text-slate-300 italic"
+                          ? "text-slate-900 bg-clip-text" 
+                          : "text-slate-200 italic"
                       )}>
-                        {activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM DITENTUKAN'}
+                        {activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'MENUNGGU'}
                       </span>
-                      
-                      {activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner && (
-                        <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
-                          <Check size={10}/> LOLOS KE BABAK UTAMA
-                        </div>
-                      )}
                     </div>
                  </div>
               </div>
@@ -613,100 +674,109 @@ export default function App() {
           </div>
         )}
       </main>
-      
-      {/* Mobile Floating Actions for Admin */}
-      {role === 'referee' && !activeBracket && (
-        <div className="fixed bottom-6 right-6 md:hidden">
-          <button 
-            onClick={() => setIsMenuOpen(true)}
-            className="bg-slate-900 text-white p-4 rounded-full shadow-2xl"
-          >
-            <Settings size={24}/>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
 
-function MatchCard({ match, role, onSetWinner }) {
+function MatchCard({ match, role, onSetWinner, onEditName }) {
   const isReferee = role === 'referee';
   
   return (
-    <div className="group relative">
+    <div className="group relative py-4 w-full">
       {/* Match Label */}
-      <div className="absolute -top-3 left-3 px-2 py-0.5 bg-white border border-slate-100 rounded-md shadow-sm z-10">
-        <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Pertandingan {match.id.replace('m', '')}</p>
+      <div className="absolute -top-1 left-4 px-2 py-0.5 bg-slate-900 rounded-md shadow-lg z-20">
+        <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m', '')}</p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col w-full">
+      <div className="bg-white border-2 border-slate-100 rounded-2xl shadow-sm hover:border-brand-200 hover:shadow-xl hover:shadow-brand-50 transition-all duration-300 overflow-hidden flex flex-col w-full relative z-10">
         {/* Player 1 */}
-        <button 
-          onClick={() => onSetWinner(match.id, match.player1)} 
-          disabled={!isReferee || !match.player1} 
-          className={cn(
-            "p-4 text-left flex items-center justify-between border-b border-slate-50 transition-all",
+        <div className={cn(
+            "p-4 flex items-center justify-between border-b-2 border-slate-50 transition-all",
             match.winner === match.player1 
-              ? "bg-emerald-50 text-emerald-900" 
-              : isReferee && match.player1 ? "hover:bg-slate-50" : "",
-            !match.player1 ? "bg-slate-50/50" : "bg-white"
-          )}
-        >
-          <div className="flex items-center gap-3 min-w-0">
+              ? "bg-brand-50 text-brand-900" 
+              : "bg-white",
+            !match.player1 && "bg-slate-50/50"
+          )}>
+          <button 
+            onClick={() => onSetWinner(match.id, match.player1)} 
+            disabled={!isReferee || !match.player1} 
+            className="flex-1 text-left flex items-center gap-3 min-w-0"
+          >
             <div className={cn(
-              "w-2 h-2 rounded-full",
-              match.winner === match.player1 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-200"
+              "w-2.5 h-2.5 rounded-full shrink-0",
+              match.winner === match.player1 ? "bg-brand-500 shadow-[0_0_10px_rgba(16,137,226,0.6)]" : "bg-slate-200"
             )} />
             <span className={cn(
-              "text-xs md:text-sm font-bold truncate pr-2",
-              !match.player1 ? "text-slate-300" : "text-slate-700",
-              match.winner === match.player1 && "text-emerald-800"
+              "text-xs md:text-sm font-black truncate",
+              !match.player1 ? "text-slate-300 italic" : "text-slate-800",
+              match.winner === match.player1 && "text-brand-700"
             )}>
-              {match.player1 || 'MENUNGGU HASIL'}
+              {match.player1 || 'TBA'}
             </span>
-          </div>
-          {match.winner === match.player1 && (
-            <div className="bg-emerald-500 p-1 rounded-full">
-              <Check className="w-2 h-2 text-white"/>
-            </div>
+            {match.winner === match.player1 && <Check className="w-3 h-3 text-brand-600 shrink-0"/>}
+          </button>
+          
+          {isReferee && match.player1 && (
+            <button 
+              onClick={() => onEditName(1, match.player1)}
+              className="p-1.5 hover:bg-white rounded-lg text-slate-300 hover:text-brand-500 transition-colors ml-2"
+            >
+              <Settings size={12} className="opacity-50 group-hover:opacity-100"/>
+            </button>
           )}
-        </button>
+        </div>
 
         {/* Player 2 */}
-        <button 
-          onClick={() => onSetWinner(match.id, match.player2)} 
-          disabled={!isReferee || !match.player2} 
-          className={cn(
-            "p-4 text-left flex items-center justify-between transition-all",
+        <div className={cn(
+            "p-4 flex items-center justify-between transition-all",
             match.winner === match.player2 
-              ? "bg-emerald-50 text-emerald-900" 
-              : isReferee && match.player2 ? "hover:bg-slate-50" : "",
-            !match.player2 ? "bg-slate-50/50" : "bg-white"
-          )}
-        >
-          <div className="flex items-center gap-3 min-w-0">
+              ? "bg-brand-50 text-brand-900" 
+              : "bg-white",
+            !match.player2 && "bg-slate-50/50"
+          )}>
+          <button 
+            onClick={() => onSetWinner(match.id, match.player2)} 
+            disabled={!isReferee || !match.player2} 
+            className="flex-1 text-left flex items-center gap-3 min-w-0"
+          >
             <div className={cn(
-              "w-2 h-2 rounded-full",
-              match.winner === match.player2 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-slate-200"
+              "w-2.5 h-2.5 rounded-full shrink-0",
+              match.winner === match.player2 ? "bg-brand-500 shadow-[0_0_10px_rgba(16,137,226,0.6)]" : "bg-slate-200"
             )} />
             <span className={cn(
-              "text-xs md:text-sm font-bold truncate pr-2",
-              !match.player2 ? "text-slate-300" : "text-slate-700",
-              match.winner === match.player2 && "text-emerald-800"
+              "text-xs md:text-sm font-black truncate",
+              !match.player2 ? "text-slate-300 italic" : "text-slate-800",
+              match.winner === match.player2 && "text-brand-700"
             )}>
-              {match.player2 || 'MENUNGGU HASIL'}
+              {match.player2 || 'TBA'}
             </span>
-          </div>
-          {match.winner === match.player2 && (
-            <div className="bg-emerald-500 p-1 rounded-full">
-              <Check className="w-2 h-2 text-white"/>
-            </div>
+            {match.winner === match.player2 && <Check className="w-3 h-3 text-brand-600 shrink-0"/>}
+          </button>
+
+          {isReferee && match.player2 && (
+            <button 
+              onClick={() => onEditName(2, match.player2)}
+              className="p-1.5 hover:bg-white rounded-lg text-slate-300 hover:text-brand-500 transition-colors ml-2"
+            >
+              <Settings size={12} className="opacity-50 group-hover:opacity-100"/>
+            </button>
           )}
-        </button>
+        </div>
       </div>
       
-      {/* Connector lines visual (Desktop only) */}
-      <div className="hidden md:block absolute -right-12 top-1/2 w-12 h-[2px] bg-slate-200 -z-10 group-hover:bg-brand-200 transition-colors"></div>
+      {/* Connector Lines Logic (Desktop) */}
+      {match.nextMatchId && (
+        <>
+          {/* Right horizontal line from current match */}
+          <div className="hidden md:block absolute right-[-4rem] top-1/2 w-16 h-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors -z-10"></div>
+          
+          {/* Vertical line connecting to the middle point of the pair */}
+          <div className={cn(
+            "hidden md:block absolute right-[-4rem] w-0.5 bg-slate-200 group-hover:bg-brand-300 transition-colors -z-10",
+            match.nextMatchSlot === 1 ? "top-1/2 h-[calc(100%+2rem)]" : "bottom-1/2 h-[calc(100%+2rem)]"
+          )}></div>
+        </>
+      )}
     </div>
   );
 }
