@@ -595,7 +595,7 @@ export default function App() {
               Turnamen Layangan Piala Bergilir Majalengka
             </h1>
             <p className="text-[9px] md:text-[11px] text-brand-600 font-black uppercase tracking-[0.1em]">
-              Kota Angin x Senyap x BL Tempur
+              Kota Angin x Senyap
             </p>
           </div>
         </div>
@@ -736,7 +736,7 @@ export default function App() {
                       <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
                         <span className="text-emerald-400">[Senyap]</span> Rian<br/>
                         <span className="text-emerald-400">[Senyap]</span> Budi<br/>
-                        <span className="text-yellow-400">[BL Tempur]</span> Joko<br/>
+                        <span className="text-yellow-400">[Keparat]</span> Joko<br/>
                         <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
                       </code>
                       <div className="flex-1 flex flex-col justify-center">
@@ -1061,8 +1061,6 @@ export default function App() {
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kota Angin</p>
            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senyap</p>
-           <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">BL Tempur</p>
         </div>
         <p className="text-[11px] font-bold text-slate-400">
           © Copyright by <span className="text-brand-600">Senyap</span>
