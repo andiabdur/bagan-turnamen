@@ -89,6 +89,7 @@ export default function App() {
   const [loadingData, setLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [activePool, setActivePool] = useState('A');
+  const [bracketSize, setBracketSize] = useState('32'); // '16', '32', '64', 'auto'
   const [bulkInput, setBulkInput] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
@@ -103,15 +104,22 @@ export default function App() {
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
 
-  const poolsList = ['A', 'B', 'C', 'Final'];
+  const poolsList = [
+    ...Object.keys(tournamentData.pools || {})
+      .filter(p => p !== 'Final')
+      .sort((a, b) => a.localeCompare(b)), 
+    'Final'
+  ];
   const activeBracket = tournamentData.pools?.[activePool];
 
   // Auto-derive final participants from pool winners
-  const finalParticipants = [
-    { pool: 'A', name: tournamentData.pools?.A?.matches?.find(m => m.round === tournamentData.pools?.A?.totalRounds)?.winner || null },
-    { pool: 'B', name: tournamentData.pools?.B?.matches?.find(m => m.round === tournamentData.pools?.B?.totalRounds)?.winner || null },
-    { pool: 'C', name: tournamentData.pools?.C?.matches?.find(m => m.round === tournamentData.pools?.C?.totalRounds)?.winner || null },
-  ];
+  const finalParticipants = Object.keys(tournamentData.pools || {})
+    .filter(p => p !== 'Final')
+    .sort()
+    .map(poolId => ({
+      pool: poolId,
+      name: tournamentData.pools[poolId].matches?.find(m => m.round === tournamentData.pools[poolId].totalRounds)?.winner || null
+    }));
   const allFinalistsReady = finalParticipants.every(p => p.name);
 
   // 2. EFFECTS
@@ -175,55 +183,66 @@ export default function App() {
     let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
     if (rawNames.length === 0) return showError("Daftar nama tidak boleh kosong.");
     
-    let counter = 1;
-    // We need exactly 96 players for 3 pools
-    while (rawNames.length < 96) rawNames.push(`Peserta ${counter++}`);
-    if (rawNames.length > 96) rawNames = rawNames.slice(0, 96);
+    // 1. Determine Capacity & Pool Count
+    let capacity = parseInt(bracketSize);
+    if (bracketSize === 'auto') {
+      if (rawNames.length <= 16) capacity = 16;
+      else if (rawNames.length <= 32) capacity = 32;
+      else if (rawNames.length <= 64) capacity = 64;
+      else capacity = 32; // Default back to split 32 for large tournaments
+    }
 
-    // 1. Identifikasi Tim via Format "[Nama Tim] Peserta"
-    const players = rawNames.map((raw, idx) => {
+    const numPools = Math.max(1, Math.ceil(rawNames.length / capacity));
+    const totalSlots = numPools * capacity;
+    const poolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + i)); // A, B, C...
+
+    // Fill with BYEs if needed
+    let counter = 1;
+    const fullNames = [...rawNames];
+    while (fullNames.length < totalSlots) fullNames.push(`BYE_${counter++}`);
+
+    // 2. Identifikasi Tim via Format "[Nama Tim] Peserta"
+    const players = fullNames.map((raw, idx) => {
+      if (raw.startsWith('BYE_')) return { team: 'BYE', name: raw, isBye: true };
       const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
-      if (match) return { team: match[1].trim().toLowerCase(), name: raw };
-      return { team: `NONE_${idx}`, name: raw }; // Solo player
+      if (match) return { team: match[1].trim().toLowerCase(), name: raw, isBye: false };
+      return { team: `SOLO_${idx}`, name: raw, isBye: false }; 
     });
 
-    // 2. Kelompokkan berdasarkan tim
+    // 3. Kelompokkan berdasarkan tim
     const teamGroups = {};
     players.forEach(p => {
       if (!teamGroups[p.team]) teamGroups[p.team] = [];
       teamGroups[p.team].push(p.name);
     });
 
-    // 3. Urutkan dari tim dengan anggota terbanyak
-    const sortedTeams = Object.keys(teamGroups).sort((a, b) => teamGroups[b].length - teamGroups[a].length);
+    const sortedTeams = Object.keys(teamGroups)
+      .filter(t => t !== 'BYE')
+      .sort((a, b) => teamGroups[b].length - teamGroups[a].length);
 
-    // 4. Siapkan 3 Pool (A, B, C), masing-masing 8 Sub-Blok (4 slot/blok)
-    const poolsMap = {
-      'A': Array.from({ length: 8 }, () => []),
-      'B': Array.from({ length: 8 }, () => []),
-      'C': Array.from({ length: 8 }, () => []),
-    };
+    // 4. Siapkan Pools (Masing-masing dibagi 8 Sub-Blok untuk persebaran)
+    const poolsMap = {};
+    poolIds.forEach(id => {
+      poolsMap[id] = Array.from({ length: 8 }, () => []);
+    });
 
     const getPoolMembers = (poolId, teamId) => poolsMap[poolId].flat().filter(name => teamGroups[teamId].includes(name));
 
-    // 5. Distribusi Cerdas Global
+    // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter
     for (const team of sortedTeams) {
       for (const member of teamGroups[team]) {
         let validOptions = [];
-        for (const poolId of ['A', 'B', 'C']) {
+        poolIds.forEach(poolId => {
           poolsMap[poolId].forEach((block, bIdx) => {
-            if (block.length < 4) validOptions.push({ poolId, bIdx, block });
+            if (block.length < (capacity / 8)) validOptions.push({ poolId, bIdx, block });
           });
-        }
+        });
 
-        // Hitung skor prioritas tiap opsi (semakin kecil skor, semakin prioritas)
         validOptions.forEach(opt => {
-          // Hitung Quarter (1 kuarter = 2 sub-blok). Kuarter 0: blok 0-1, dst.
           const qIdx = Math.floor(opt.bIdx / 2);
           const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
           const quarterMembers = quarterBlocks.flat().filter(name => teamGroups[team].includes(name));
 
-          // Hitung Half / Setengah Bagan (1 Half = 4 sub-blok). Half 0: blok 0-3, Half 1: blok 4-7.
           const hIdx = Math.floor(opt.bIdx / 4);
           const halfBlocks = [
             poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1], 
@@ -231,45 +250,44 @@ export default function App() {
           ];
           const halfMembers = halfBlocks.flat().filter(name => teamGroups[team].includes(name));
 
-          opt.poolCount = getPoolMembers(opt.poolId, team).length; // Jauhkan antar pool
-          opt.halfCount = halfMembers.length; // Jauhkan antar separuh bagan (mencegah ketemu sebelum Final Pool)
-          opt.quarterCount = quarterMembers.length; // Jauhkan antar kuarter (mencegah ketemu di 8 besar)
-          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length; // Jauhkan dalam sub-blok (mencegah ketemu di 16 besar)
+          opt.poolCount = getPoolMembers(opt.poolId, team).length;
+          opt.halfCount = halfMembers.length;
+          opt.quarterCount = quarterMembers.length;
+          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length;
           
-          opt.totalPoolLength = poolsMap[opt.poolId].flat().length; // Rata jumlah isi pool
-          opt.totalBlockLength = opt.block.length; // Rata jumlah isi blok
+          opt.totalPoolLength = poolsMap[opt.poolId].flat().length;
+          opt.totalBlockLength = opt.block.length;
         });
 
-        // Urutkan prioritas: antar pool -> antar half -> antar kuarter -> antar blok -> seimbang
         validOptions.sort((a, b) => {
           if (a.poolCount !== b.poolCount) return a.poolCount - b.poolCount;
           if (a.halfCount !== b.halfCount) return a.halfCount - b.halfCount;
           if (a.quarterCount !== b.quarterCount) return a.quarterCount - b.quarterCount;
           if (a.blockCount !== b.blockCount) return a.blockCount - b.blockCount;
           if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
-          if (a.totalBlockLength !== b.totalBlockLength) return a.totalBlockLength - b.totalBlockLength;
-          return 0;
+          return a.totalBlockLength - b.totalBlockLength;
         });
 
-        const bestScore = validOptions[0];
-        const bests = validOptions.filter(o => 
-          o.poolCount === bestScore.poolCount &&
-          o.halfCount === bestScore.halfCount &&
-          o.quarterCount === bestScore.quarterCount &&
-          o.blockCount === bestScore.blockCount &&
-          o.totalPoolLength === bestScore.totalPoolLength &&
-          o.totalBlockLength === bestScore.totalBlockLength
-        );
-        const chosen = bests[Math.floor(Math.random() * bests.length)];
+        const chosen = validOptions[0];
         poolsMap[chosen.poolId][chosen.bIdx].push(member);
       }
     }
 
-    const newData = JSON.parse(JSON.stringify(tournamentData));
-    if (!newData.pools) newData.pools = {};
+    // Fill BYEs into remaining spots
+    const byePlayers = teamGroups['BYE'] || [];
+    let byeIdx = 0;
+    poolIds.forEach(pId => {
+      poolsMap[pId].forEach(block => {
+        while (block.length < (capacity / 8) && byeIdx < byePlayers.length) {
+          block.push(byePlayers[byeIdx++]);
+        }
+      });
+    });
 
-    // 6. Bangun Bracket untuk A, B, C
-    ['A', 'B', 'C'].forEach(poolId => {
+    const newData = { pools: {} };
+
+    // 6. Bangun Bracket Dinamis
+    poolIds.forEach(poolId => {
       poolsMap[poolId].forEach(b => b.sort(() => Math.random() - 0.5));
       const poolNames = poolsMap[poolId].flat();
 
@@ -277,8 +295,22 @@ export default function App() {
       let matchIdCounter = 1;
       let currentRoundMatches = [];
 
-      for (let i = 0; i < 32; i += 2) {
-        const match = { id: `m${matchIdCounter++}`, round: 1, player1: poolNames[i], player2: poolNames[i + 1], winner: null, nextMatchId: null, nextMatchSlot: null };
+      for (let i = 0; i < capacity; i += 2) {
+        const p1 = poolNames[i];
+        const p2 = poolNames[i + 1];
+        const match = { 
+          id: `m${matchIdCounter++}`, 
+          round: 1, 
+          player1: p1.startsWith('BYE_') ? null : p1, 
+          player2: p2.startsWith('BYE_') ? null : p2, 
+          winner: null, 
+          nextMatchId: null, 
+          nextMatchSlot: null 
+        };
+        // Auto-winner for BYE
+        if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+        if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+        
         matches.push(match);
         currentRoundMatches.push(match);
       }
@@ -289,6 +321,11 @@ export default function App() {
         currentRoundMatches = [];
         for (let i = 0; i < prevMatches.length; i += 2) {
           const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+          
+          // Carry over winners from Round 1 BYEs
+          if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+          if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+
           matches.push(match);
           currentRoundMatches.push(match);
           prevMatches[i].nextMatchId = match.id;
@@ -301,8 +338,6 @@ export default function App() {
       }
       newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
     });
-
-    if (newData.pools['Final']) delete newData.pools['Final'];
 
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
@@ -444,13 +479,34 @@ export default function App() {
 
   // Build/sync round-robin final bracket from pool winners A, B, C
   const syncFinalBracket = async () => {
-    const [pA, pB, pC] = finalParticipants.map(p => p.name);
-    if (!pA || !pB || !pC) return showError('Semua juara Pool A, B, C harus sudah ada!');
-    const matches = [
-      { id: 'f1', label: 'Pool A vs Pool B', player1: pA, player2: pB, winner: null },
-      { id: 'f2', label: 'Pool A vs Pool C', player1: pA, player2: pC, winner: null },
-      { id: 'f3', label: 'Pool B vs Pool C', player1: pB, player2: pC, winner: null },
-    ];
+    const winners = finalParticipants.map(p => p.name);
+    if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
+    if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
+    
+    let matches = [];
+    if (winners.length === 3) {
+      // Round Robin for 3 finalists
+      matches = [
+        { id: 'f1', label: `Final: ${winners[0]} vs ${winners[1]}`, player1: winners[0], player2: winners[1], winner: null },
+        { id: 'f2', label: `Final: ${winners[0]} vs ${winners[2]}`, player1: winners[0], player2: winners[2], winner: null },
+        { id: 'f3', label: `Final: ${winners[1]} vs ${winners[2]}`, player1: winners[1], player2: winners[2], winner: null },
+      ];
+    } else {
+      // Direct Elimination or Round Robin for others
+      // For simplicity, if not 3, we create a list of matches where everyone meets if small, or a bracket
+      // Let's stick to a Round Robin for small number of finalists (<= 4)
+      for (let i = 0; i < winners.length; i++) {
+        for (let j = i + 1; j < winners.length; j++) {
+          matches.push({
+            id: `f${matches.length + 1}`,
+            label: `Final: ${winners[i]} vs ${winners[j]}`,
+            player1: winners[i],
+            player2: winners[j],
+            winner: null
+          });
+        }
+      }
+    }
     const newData = JSON.parse(JSON.stringify(tournamentData));
     if (!newData.pools) newData.pools = {};
     newData.pools['Final'] = { type: 'roundrobin', matches };
@@ -673,8 +729,8 @@ export default function App() {
                 <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
                   <div className="absolute top-0 right-0 p-4 opacity-10"><Shuffle size={120}/></div>
                   <div className="relative z-10">
-                    <h2 className="text-2xl font-black leading-none mb-2">Pengoclokan Global 96 Slot</h2>
-                    <p className="text-slate-300 text-sm font-bold">Membangun Bagan A, B, & C Secara Serentak</p>
+                    <h2 className="text-2xl font-black leading-none mb-2">Smart Global Setup</h2>
+                    <p className="text-slate-300 text-sm font-bold uppercase tracking-widest">Inisialisasi Turnamen Multi-Bagan</p>
                   </div>
                   {showGlobalSetup && (
                     <button onClick={() => setShowGlobalSetup(false)} className="relative z-10 bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
@@ -753,18 +809,40 @@ export default function App() {
 
                 {/* Input Area */}
                 <div className="p-8">
-                  <textarea 
-                    value={bulkInput} 
-                    onChange={(e) => setBulkInput(e.target.value)} 
-                    placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
-                    rows={12} 
-                    className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
-                  />
+                  <div className="mb-6">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Pilih Kapasitas Per Bagan</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {['auto', '16', '32', '64'].map(size => (
+                        <button 
+                          key={size} 
+                          onClick={() => setBracketSize(size)}
+                          className={cn(
+                            "py-3 rounded-xl font-black text-xs transition-all border-2",
+                            bracketSize === size ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
+                        >
+                          {size === 'auto' ? 'AUTO' : `${size} SLOT`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Daftar Peserta ({bulkInput.split('\n').filter(n => n.trim()).length} Orang)</label>
+                    <textarea 
+                      value={bulkInput} 
+                      onChange={(e) => setBulkInput(e.target.value)} 
+                      placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
+                      rows={10} 
+                      className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
+                    />
+                  </div>
+
                   <button 
                     onClick={generateGlobalBracket} 
                     className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
                   >
-                    <Shuffle size={20}/> OCLOK 96 SLOT SEKARANG
+                    <Shuffle size={20}/> GENERATE SEMUA BAGAN
                   </button>
                 </div>
               </div>
