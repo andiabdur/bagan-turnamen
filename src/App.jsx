@@ -810,7 +810,7 @@ export default function App() {
                 {/* Input Area */}
                 <div className="p-8">
                   <div className="mb-6">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Pilih Kapasitas Per Bagan</p>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Pilih Kapasitas Per Bagan</label>
                     <div className="grid grid-cols-4 gap-2">
                       {['auto', '16', '32', '64'].map(size => (
                         <button 
