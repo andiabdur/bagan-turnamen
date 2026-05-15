@@ -90,6 +90,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState('');
   const [activePool, setActivePool] = useState('A');
   const [bracketSize, setBracketSize] = useState('32'); // '16', '32', '64', 'auto'
+  const [finalFormat, setFinalFormat] = useState('roundrobin'); // 'roundrobin', 'bracket'
   const [bulkInput, setBulkInput] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
@@ -155,6 +156,112 @@ export default function App() {
     );
     return () => unsub();
   }, [user]);
+
+  // 2.5 REUSABLE BRACKET RENDERER
+  const renderBracket = () => {
+    if (!activeBracket || !activeBracket.matches) return null;
+    
+    return (
+      <div
+        className="overflow-auto no-scrollbar"
+        style={{ touchAction: 'pan-x pan-y' }}
+        onTouchStart={(e) => {
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchRef.current = {
+              active: true,
+              startDist: Math.hypot(dx, dy),
+              startZoom: bracketZoom,
+            };
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2 && pinchRef.current.active) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const { startDist, startZoom } = pinchRef.current;
+            if (startDist === 0) return;
+            const next = Math.min(2, Math.max(0.4,
+              parseFloat((startZoom * (dist / startDist)).toFixed(2))
+            ));
+            setBracketZoom(next);
+          }
+        }}
+        onTouchEnd={() => { pinchRef.current.active = false; }}
+      >
+        <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
+        <div className="flex items-start gap-0">
+          {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
+            const roundNum = idx + 1;
+            const matches = activeBracket.matches.filter(m => m.round === roundNum);
+            
+            // Dynamic Labels
+            let roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+            if (activePool === 'Final') {
+              if (activeBracket.totalRounds === 2) roundLabels = ["Semifinal", "Grand Final"];
+              else if (activeBracket.totalRounds === 3) roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
+              else roundLabels = Array.from({length: activeBracket.totalRounds}, (_, i) => `Round ${i+1}`);
+            } else if (activeBracket.matches.some(m => m.round === 1 && activeBracket.matches.length > 16)) {
+              roundLabels = ["64 Besar", "32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+            }
+
+            const matchHeight = 180 * Math.pow(2, idx);
+            return (
+              <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
+                <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
+                   <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
+                </div>
+                <div className="flex flex-col">
+                  {matches.map(match => (
+                    <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
+                      <MatchCard
+                        match={match}
+                        role={role}
+                        onSetWinner={activePool === 'Final' ? setFinalWinner : setWinner}
+                        onSetMatchState={setMatchState}
+                        onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
+                        matchRef={el => { matchRefs.current[match.id] = el; }}
+                        highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
+                      />
+                      {match.nextMatchId && (
+                        <>
+                          <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
+                          <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                          {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {activePool !== 'Final' && (
+            <div className="flex flex-col ml-12">
+               <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
+                  <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
+               </div>
+               <div className="flex items-center" style={{ height: '180px' }}>
+                  <div className="relative group ml-4">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
+                    <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
+                      <div>
+                        <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
+                        <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
+                      </div>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          )}
+        </div>
+      </div>
+      </div>
+    );
+  };
 
   // 3. HANDLERS
   const showError = (msg) => {
@@ -479,22 +586,17 @@ export default function App() {
 
   // Build/sync round-robin final bracket from pool winners A, B, C
   const syncFinalBracket = async () => {
+  // Build/sync final bracket from pool winners
+  const syncFinalBracket = async () => {
     const winners = finalParticipants.map(p => p.name);
     if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
     if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
     
-    let matches = [];
-    if (winners.length === 3) {
-      // Round Robin for 3 finalists
-      matches = [
-        { id: 'f1', label: `Final: ${winners[0]} vs ${winners[1]}`, player1: winners[0], player2: winners[1], winner: null },
-        { id: 'f2', label: `Final: ${winners[0]} vs ${winners[2]}`, player1: winners[0], player2: winners[2], winner: null },
-        { id: 'f3', label: `Final: ${winners[1]} vs ${winners[2]}`, player1: winners[1], player2: winners[2], winner: null },
-      ];
-    } else {
-      // Direct Elimination or Round Robin for others
-      // For simplicity, if not 3, we create a list of matches where everyone meets if small, or a bracket
-      // Let's stick to a Round Robin for small number of finalists (<= 4)
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    if (!newData.pools) newData.pools = {};
+
+    if (finalFormat === 'roundrobin') {
+      let matches = [];
       for (let i = 0; i < winners.length; i++) {
         for (let j = i + 1; j < winners.length; j++) {
           matches.push({
@@ -506,16 +608,66 @@ export default function App() {
           });
         }
       }
+      newData.pools['Final'] = { type: 'roundrobin', matches };
+    } else {
+      // Direct Elimination Bracket for Finalists
+      // Find nearest power of 2
+      const capacity = Math.pow(2, Math.ceil(Math.log2(winners.length)));
+      const poolNames = [...winners];
+      let counter = 1;
+      while (poolNames.length < capacity) poolNames.push(`BYE_FINAL_${counter++}`);
+
+      let matches = [];
+      let matchIdCounter = 1;
+      let currentRoundMatches = [];
+
+      for (let i = 0; i < capacity; i += 2) {
+        const p1 = poolNames[i];
+        const p2 = poolNames[i + 1];
+        const match = { 
+          id: `fm${matchIdCounter++}`, 
+          round: 1, 
+          player1: p1.startsWith('BYE_') ? null : p1, 
+          player2: p2.startsWith('BYE_') ? null : p2, 
+          winner: null, 
+          nextMatchId: null, 
+          nextMatchSlot: null 
+        };
+        if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+        if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+        
+        matches.push(match);
+        currentRoundMatches.push(match);
+      }
+
+      let roundNum = 2;
+      let prevMatches = currentRoundMatches;
+      while (prevMatches.length > 1) {
+        currentRoundMatches = [];
+        for (let i = 0; i < prevMatches.length; i += 2) {
+          const match = { id: `fm${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+          if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+          if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+          matches.push(match);
+          currentRoundMatches.push(match);
+          prevMatches[i].nextMatchId = match.id;
+          prevMatches[i].nextMatchSlot = 1;
+          prevMatches[i + 1].nextMatchId = match.id;
+          prevMatches[i + 1].nextMatchSlot = 2;
+        }
+        prevMatches = currentRoundMatches;
+        roundNum++;
+      }
+      newData.pools['Final'] = { type: 'bracket', matches, totalRounds: roundNum - 1 };
     }
-    const newData = JSON.parse(JSON.stringify(tournamentData));
-    if (!newData.pools) newData.pools = {};
-    newData.pools['Final'] = { type: 'roundrobin', matches };
+
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
     } catch (err) {
       showError('Gagal membuat Bagan Final.');
     }
+  };
   };
 
   const setFinalWinner = async (matchId, winnerName) => {
@@ -809,21 +961,46 @@ export default function App() {
 
                 {/* Input Area */}
                 <div className="p-8">
-                  <div className="mb-6">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Pilih Kapasitas Per Bagan</label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {['auto', '16', '32', '64'].map(size => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kapasitas Per Bagan</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {['auto', '16', '32', '64'].map(size => (
+                          <button 
+                            key={size} 
+                            onClick={() => setBracketSize(size)}
+                            className={cn(
+                              "py-3 rounded-xl font-black text-xs transition-all border-2",
+                              bracketSize === size ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                            )}
+                          >
+                            {size === 'auto' ? 'AUTO' : size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Format Bagan Final</label>
+                      <div className="grid grid-cols-2 gap-2">
                         <button 
-                          key={size} 
-                          onClick={() => setBracketSize(size)}
+                          onClick={() => setFinalFormat('roundrobin')}
                           className={cn(
-                            "py-3 rounded-xl font-black text-xs transition-all border-2",
-                            bracketSize === size ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                            "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                            finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                           )}
                         >
-                          {size === 'auto' ? 'AUTO' : `${size} SLOT`}
+                          LIGA (ROUND ROBIN)
                         </button>
-                      ))}
+                        <button 
+                          onClick={() => setFinalFormat('bracket')}
+                          className={cn(
+                            "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                            finalFormat === 'bracket' ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                          )}
+                        >
+                          BAGAN (GUGUR)
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -957,92 +1134,8 @@ export default function App() {
               ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
             ) : (
               <div className="relative">
-                {/* Pinch-to-zoom bracket container */}
-                <div
-                  className="overflow-auto"
-                  style={{ touchAction: 'pan-x pan-y' }}
-                  onTouchStart={(e) => {
-                    if (e.touches.length === 2) {
-                      const dx = e.touches[0].clientX - e.touches[1].clientX;
-                      const dy = e.touches[0].clientY - e.touches[1].clientY;
-                      pinchRef.current = {
-                        active: true,
-                        startDist: Math.hypot(dx, dy),
-                        startZoom: bracketZoom,
-                      };
-                    }
-                  }}
-                  onTouchMove={(e) => {
-                    if (e.touches.length === 2 && pinchRef.current.active) {
-                      const dx = e.touches[0].clientX - e.touches[1].clientX;
-                      const dy = e.touches[0].clientY - e.touches[1].clientY;
-                      const dist = Math.hypot(dx, dy);
-                      const { startDist, startZoom } = pinchRef.current;
-                      if (startDist === 0) return;
-                      const next = Math.min(2, Math.max(0.4,
-                        parseFloat((startZoom * (dist / startDist)).toFixed(2))
-                      ));
-                      setBracketZoom(next);
-                    }
-                  }}
-                  onTouchEnd={() => { pinchRef.current.active = false; }}
-                >
-                  <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
-                  <div className="flex items-start gap-0">
-                    {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
-                      const roundNum = idx + 1;
-                      const matches = activeBracket.matches.filter(m => m.round === roundNum);
-                      const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
-                      const matchHeight = 180 * Math.pow(2, idx);
-                      return (
-                        <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
-                          <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
-                             <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx]}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            {matches.map(match => (
-                              <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
-                                <MatchCard
-                                  match={match}
-                                  role={role}
-                                  onSetWinner={setWinner}
-                                  onSetMatchState={setMatchState}
-                                  onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
-                                  matchRef={el => { matchRefs.current[match.id] = el; }}
-                                  highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
-                                />
-                                {match.nextMatchId && (
-                                  <>
-                                    <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                                    <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
-                                    {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
-                                  </>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    <div className="flex flex-col ml-12">
-                       <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
-                          <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
-                       </div>
-                       <div className="flex items-center" style={{ height: '180px' }}>
-                          <div className="relative group ml-4">
-                            <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
-                            <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
-                              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
-                              <div>
-                                <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
-                                <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
-                              </div>
-                            </div>
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Reusable Bracket Renderer */}
+                {renderBracket()}
                 </div>
 
                 {/* Floating Controls — Zoom + Search */}
