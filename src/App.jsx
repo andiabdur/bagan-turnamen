@@ -311,12 +311,12 @@ export default function App() {
 
   const handleLoginReferee = (e) => {
     e.preventDefault();
-    if (e.target.pin.value === '1234') {
+    if (e.target.pin.value === 'majalengkawani2026') {
       setRole('referee');
       localStorage.setItem('tournament_role', 'referee');
       setIsMenuOpen(false);
     } else {
-      showError('PIN Wasit salah!');
+      showError('Password Wasit salah!');
     }
   };
 
@@ -1155,7 +1155,7 @@ export default function App() {
             </button>
             <form onSubmit={handleLoginReferee} className="space-y-4">
               <div className="relative">
-                <input type="password" name="pin" placeholder="Login Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
+                <input type="password" name="pin" placeholder="Password Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
               </div>
               <button type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-xl active:scale-95">Login</button>
             </form>
