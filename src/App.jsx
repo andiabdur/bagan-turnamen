@@ -676,6 +676,20 @@ export default function App() {
     }
   };
 
+  const resetAllPools = async () => {
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    if (!window.confirm("Apakah Anda yakin ingin menghapus SEMUA bagan secara permanen? Semua data pertandingan aktif akan hilang!")) return;
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    newData.pools = {};
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setIsMenuOpen(false);
+    } catch (err) {
+      showError("Gagal mereset semua bagan.");
+    }
+  };
+
   // Build/sync final bracket from pool winners
   const syncFinalBracket = async () => {
     const winners = finalParticipants.map(p => p.name);
@@ -943,8 +957,11 @@ export default function App() {
             </div>
             {role === 'referee' && (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50 disabled:opacity-50"><Shuffle size={14}/> Pengoclokan Otomatis</button>
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50 disabled:opacity-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
                 {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50 disabled:opacity-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                {Object.keys(tournamentData.pools || {}).length > 0 && (
+                  <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-red-700 text-sm font-bold flex items-center gap-3 hover:bg-red-100/50 disabled:opacity-50"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                )}
                 <button onClick={toggleArchive} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50 mt-1 pt-2">
                   <Archive size={14}/> {tournamentData.isArchived ? "Buka Arsip" : "Arsipkan Turnamen"}
                 </button>
@@ -1146,9 +1163,9 @@ export default function App() {
                 <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
                   <Shuffle size={80} className="text-slate-200 mb-6"/>
                   <h2 className="text-2xl font-black text-slate-800 uppercase tracking-widest">Bagan {activePool} Kosong</h2>
-                  <p className="text-slate-500 font-bold mt-2 mb-8">Anda harus menggunakan fitur Pengoclokan Global untuk mengisi ulang bagan.</p>
+                  <p className="text-slate-500 font-bold mt-2 mb-8">Anda harus menggunakan fitur Buat Bagan Otomatis untuk mengisi ulang bagan.</p>
                   <button onClick={() => setShowGlobalSetup(true)} className="bg-brand-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                    <Shuffle size={20}/> BUKA PENGOCLOKAN GLOBAL (96 SLOT)
+                    <Shuffle size={20}/> BUAT BAGAN OTOMATIS (96 SLOT)
                   </button>
                 </div>
               ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
