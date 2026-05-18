@@ -108,6 +108,7 @@ export default function App() {
   const [tournamentTitle, setTournamentTitle] = useState('Turnamen Layangan Piala Bergilir Majalengka');
   const [tournamentOrganizer, setTournamentOrganizer] = useState('Kota Angin x Senyap');
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
+  const [doubleLife, setDoubleLife] = useState(false);
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
 
@@ -407,10 +408,13 @@ export default function App() {
       pools: {},
       title: tournamentTitle,
       organizer: tournamentOrganizer,
+      doubleLife: doubleLife,
       isArchived: false
     };
 
-    // 6. Bangun Bracket Dinamis
+    const firstRoundOpponents = {};
+
+    // 6. Bangun Bracket Dinamis (Bagan Pertama / Utama)
     poolIds.forEach(poolId => {
       poolsMap[poolId].forEach(b => b.sort(() => Math.random() - 0.5));
       const poolNames = poolsMap[poolId].flat();
@@ -431,6 +435,13 @@ export default function App() {
           nextMatchId: null, 
           nextMatchSlot: null 
         };
+
+        // Catat lawan babak 1 untuk penegakan "beda lawan" di bagan selanjutnya jika doubleLife aktif
+        if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+          firstRoundOpponents[p1] = p2;
+          firstRoundOpponents[p2] = p1;
+        }
+
         // Auto-winner for BYE
         if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
         if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
@@ -462,6 +473,101 @@ export default function App() {
       }
       newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
     });
+
+    // 7. Jika doubleLife Aktif, Bangun Bagan Kedua (Bagan CD, dst) dengan "Beda Lawan" babak 1
+    if (doubleLife) {
+      // Ambil daftar pemain yang sama dengan set1 (termasuk BYE)
+      const allPlayersList = [];
+      poolIds.forEach(pId => {
+        allPlayersList.push(...poolsMap[pId].flat());
+      });
+
+      let set2Players = [...allPlayersList];
+      let attempts = 0;
+      let valid = false;
+
+      // Fisher-Yates shuffle yang memvalidasi bahwa lawan babak 1 tidak boleh sama dengan set1
+      while (!valid && attempts < 250) {
+        attempts++;
+        for (let i = set2Players.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [set2Players[i], set2Players[j]] = [set2Players[j], set2Players[i]];
+        }
+
+        valid = true;
+        for (let pIdx = 0; pIdx < numPools; pIdx++) {
+          const poolStart = pIdx * capacity;
+          for (let mIdx = 0; mIdx < capacity; mIdx += 2) {
+            const idx1 = poolStart + mIdx;
+            const idx2 = poolStart + mIdx + 1;
+            const p1 = set2Players[idx1];
+            const p2 = set2Players[idx2];
+            if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+              if (firstRoundOpponents[p1] === p2) {
+                valid = false;
+                break;
+              }
+            }
+          }
+          if (!valid) break;
+        }
+      }
+
+      // Generate bagan kedua (setelah index poolIds pertama selesai, misal C, D...)
+      const set2PoolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + numPools + i));
+      set2PoolIds.forEach((poolId, pIdx) => {
+        const poolStart = pIdx * capacity;
+        const poolNames = set2Players.slice(poolStart, poolStart + capacity);
+
+        let matches = [];
+        let matchIdCounter = 1;
+        let currentRoundMatches = [];
+
+        for (let i = 0; i < capacity; i += 2) {
+          const p1 = poolNames[i];
+          const p2 = poolNames[i + 1];
+          const match = { 
+            id: `m${matchIdCounter++}`, 
+            round: 1, 
+            player1: p1.startsWith('BYE_') ? null : p1, 
+            player2: p2.startsWith('BYE_') ? null : p2, 
+            winner: null, 
+            nextMatchId: null, 
+            nextMatchSlot: null 
+          };
+
+          // Auto-winner for BYE
+          if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+          if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+          
+          matches.push(match);
+          currentRoundMatches.push(match);
+        }
+
+        let roundNum = 2;
+        let prevMatches = currentRoundMatches;
+        while (prevMatches.length > 1) {
+          currentRoundMatches = [];
+          for (let i = 0; i < prevMatches.length; i += 2) {
+            const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+            
+            // Carry over winners from Round 1 BYEs
+            if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+            if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+
+            matches.push(match);
+            currentRoundMatches.push(match);
+            prevMatches[i].nextMatchId = match.id;
+            prevMatches[i].nextMatchSlot = 1;
+            prevMatches[i + 1].nextMatchId = match.id;
+            prevMatches[i + 1].nextMatchSlot = 2;
+          }
+          prevMatches = currentRoundMatches;
+          roundNum++;
+        }
+        newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
+      });
+    }
 
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
@@ -1053,6 +1159,8 @@ export default function App() {
             setBracketSize={setBracketSize}
             finalFormat={finalFormat}
             setFinalFormat={setFinalFormat}
+            doubleLife={doubleLife}
+            setDoubleLife={setDoubleLife}
             bulkInput={bulkInput}
             setBulkInput={setBulkInput}
             generateGlobalBracket={generateGlobalBracket}

@@ -22,6 +22,8 @@ export default function SetupWizard({
   setBracketSize,
   finalFormat,
   setFinalFormat,
+  doubleLife,
+  setDoubleLife,
   bulkInput,
   setBulkInput,
   generateGlobalBracket,
@@ -42,7 +44,7 @@ export default function SetupWizard({
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slide-up">
+    <div className="max-w-3xl mx-auto p-4 md:p-8 animate-slide-up">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
         {/* Hero Header */}
         <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
@@ -151,7 +153,7 @@ export default function SetupWizard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kapasitas Per Bagan</label>
               <div className="grid grid-cols-4 gap-2">
@@ -170,6 +172,29 @@ export default function SetupWizard({
               </div>
             </div>
             <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Aturan Nyawa</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setDoubleLife(false)}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    !doubleLife ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  1 NYAWA
+                </button>
+                <button 
+                  onClick={() => setDoubleLife(true)}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    doubleLife ? "bg-gradient-to-r from-red-500 to-rose-600 border-transparent text-white shadow-lg shadow-red-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  2 NYAWA (BEDA)
+                </button>
+              </div>
+            </div>
+            <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Format Bagan Final</label>
               <div className="grid grid-cols-2 gap-2">
                 <button 
@@ -179,7 +204,7 @@ export default function SetupWizard({
                     finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                   )}
                 >
-                  LIGA (ROUND ROBIN)
+                  LIGA (ROBIN)
                 </button>
                 <button 
                   onClick={() => setFinalFormat('bracket')}
