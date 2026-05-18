@@ -35,7 +35,8 @@ import {
   getFirestore, 
   doc, 
   onSnapshot, 
-  setDoc 
+  setDoc,
+  collection
 } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -110,24 +111,28 @@ export default function App() {
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
   const [doubleLife, setDoubleLife] = useState(false);
   const [logoBase64, setLogoBase64] = useState('');
+  const [archivesList, setArchivesList] = useState([]);
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
+  const [viewingArchive, setViewingArchive] = useState(null);
+
+  const currentTournament = viewingArchive || tournamentData;
 
   const poolsList = [
-    ...Object.keys(tournamentData.pools || {})
+    ...Object.keys(currentTournament.pools || {})
       .filter(p => p !== 'Final')
       .sort((a, b) => a.localeCompare(b)), 
     'Final'
   ];
-  const activeBracket = tournamentData.pools?.[activePool];
+  const activeBracket = currentTournament.pools?.[activePool];
 
   // Auto-derive final participants from pool winners
-  const finalParticipants = Object.keys(tournamentData.pools || {})
+  const finalParticipants = Object.keys(currentTournament.pools || {})
     .filter(p => p !== 'Final')
     .sort()
     .map(poolId => ({
       pool: poolId,
-      name: tournamentData.pools[poolId].matches?.find(m => m.round === tournamentData.pools[poolId].totalRounds)?.winner || null
+      name: currentTournament.pools[poolId].matches?.find(m => m.round === currentTournament.pools[poolId].totalRounds)?.winner || null
     }));
   const allFinalistsReady = finalParticipants.every(p => p.name);
 
@@ -168,7 +173,23 @@ export default function App() {
         setLoadingData(false);
       }
     );
-    return () => unsub();
+
+    const archivesCol = collection(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archives');
+    const unsubArchives = onSnapshot(archivesCol, (snapshot) => {
+      const list = [];
+      snapshot.forEach(doc => {
+        list.push(doc.data());
+      });
+      list.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
+      setArchivesList(list);
+    }, (err) => {
+      console.error("Gagal memuat riwayat arsip:", err);
+    });
+
+    return () => {
+      unsub();
+      unsubArchives();
+    };
   }, [user]);
 
   // 2.5 REUSABLE BRACKET RENDERER
@@ -607,6 +628,7 @@ export default function App() {
   };
 
   const setWinner = async (matchId, winnerName) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (role !== 'referee' || !winnerName) return;
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const poolData = tournamentData.pools[activePool];
@@ -622,6 +644,7 @@ export default function App() {
   };
 
   const setMatchState = async (matchId, action) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (role !== 'referee') return;
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const newData = JSON.parse(JSON.stringify(tournamentData));
@@ -683,6 +706,7 @@ export default function App() {
   };
 
   const handleUpdatePlayerName = async (newName) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (!editingPlayer || !newName.trim()) return;
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const { matchId, playerSlot } = editingPlayer;
@@ -713,6 +737,7 @@ export default function App() {
   };
 
   const handleDisqualifyPlayer = async (matchId, playerSlot) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (role !== 'referee') return;
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const newData = JSON.parse(JSON.stringify(tournamentData));
@@ -757,20 +782,46 @@ export default function App() {
     }
   };
 
-  const toggleArchive = async () => {
+  const archiveTournament = async () => {
     if (role !== 'referee') return;
-    const newData = JSON.parse(JSON.stringify(tournamentData));
-    newData.isArchived = !newData.isArchived;
+    if (!tournamentData.pools || Object.keys(tournamentData.pools).length === 0) {
+      return showError("Tidak ada bagan aktif untuk diarsipkan.");
+    }
+    
+    if (!window.confirm("Apakah Anda yakin ingin mengarsipkan turnamen ini? Turnamen yang diarsipkan akan disimpan ke riwayat publik dan bagan aktif saat ini akan dikosongkan agar Anda dapat membuat turnamen baru.")) {
+      return;
+    }
+    
+    const archiveId = 'archive_' + Date.now();
+    const archiveData = {
+      id: archiveId,
+      title: tournamentData.title || tournamentTitle,
+      organizer: tournamentData.organizer || tournamentOrganizer,
+      logo: tournamentData.logo || null,
+      doubleLife: tournamentData.doubleLife || false,
+      pools: tournamentData.pools || {},
+      archivedAt: new Date().toISOString()
+    };
+    
     try {
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
-      await setDoc(docRef, newData);
+      // 1. Post to archives collection
+      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archives', archiveId);
+      await setDoc(archiveRef, archiveData);
+      
+      // 2. Clear the active tournament document
+      const activeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(activeRef, { pools: {} });
+      
       setIsMenuOpen(false);
+      alert("Turnamen berhasil diarsipkan! Bagan aktif telah dikosongkan untuk turnamen baru.");
     } catch (err) {
-      showError("Gagal mengubah status arsip turnamen.");
+      console.error(err);
+      showError("Gagal mengarsipkan turnamen.");
     }
   };
 
   const resetPool = async () => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     if (!window.confirm(`Hapus semua data di Bagan ${activePool}?`)) return;
     const newData = JSON.parse(JSON.stringify(tournamentData));
@@ -786,6 +837,7 @@ export default function App() {
   };
 
   const resetAllPools = async () => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     if (!window.confirm("Apakah Anda yakin ingin menghapus SEMUA bagan secara permanen? Semua data pertandingan aktif akan hilang!")) return;
     const newData = JSON.parse(JSON.stringify(tournamentData));
@@ -973,7 +1025,7 @@ export default function App() {
     );
   }
 
-  if (!role) {
+  if (!role && !viewingArchive) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
@@ -1011,6 +1063,52 @@ export default function App() {
               <button type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-xl active:scale-95">Login</button>
             </form>
           </div>
+
+          {/* Section Riwayat Turnamen */}
+          {archivesList.length > 0 && (
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <Archive size={14} className="text-brand-500" /> RIWAYAT TURNAMEN ARSIP
+              </h3>
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                {archivesList.map((archive) => {
+                  const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                  return (
+                    <div 
+                      key={archive.id}
+                      onClick={() => setViewingArchive(archive)}
+                      className="w-full flex items-center justify-between bg-white border border-slate-100 hover:border-brand-300 p-4 rounded-2xl transition-all shadow-sm cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {archive.logo ? (
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-slate-50" />
+                        ) : (
+                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
+                            <Trophy size={16} />
+                          </div>
+                        )}
+                        <div className="text-left">
+                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none group-hover:text-brand-600 transition-colors">
+                            {archive.title}
+                          </h4>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                            {archive.organizer} • {dateStr}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 group-hover:bg-brand-50 text-slate-400 group-hover:text-brand-600 p-1.5 rounded-xl transition-all">
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         {/* Footer for Landing Page */}
         <div className="absolute bottom-8 left-0 right-0 text-center px-4 flex flex-col items-center gap-1">
@@ -1027,6 +1125,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans overflow-hidden">
+      {/* Sticky Archive Indicator Banner */}
+      {viewingArchive && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3.5 px-4 flex items-center justify-between shadow-md z-[45] animate-slide-down shrink-0">
+          <span className="flex items-center gap-2">
+            <Archive size={14} className="animate-pulse text-amber-100" />
+            ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} (READ-ONLY)
+          </span>
+          <button 
+            onClick={() => setViewingArchive(null)} 
+            className="bg-white/20 hover:bg-white/30 text-white font-black text-[9px] md:text-[10px] py-1 px-3 rounded-lg transition-colors border border-white/20 active:scale-95 shrink-0"
+          >
+            KEMBALI KE BERANDA
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
@@ -1079,14 +1193,16 @@ export default function App() {
             </div>
             {role === 'referee' && (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50 disabled:opacity-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
-                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50 disabled:opacity-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
                 {Object.keys(tournamentData.pools || {}).length > 0 && (
-                  <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} disabled={tournamentData.isArchived} className="w-full text-left px-4 py-3 text-red-700 text-sm font-bold flex items-center gap-3 hover:bg-red-100/50 disabled:opacity-50"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                  <>
+                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-700 text-sm font-bold flex items-center gap-3 hover:bg-red-100/50"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                    <button onClick={archiveTournament} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50 mt-1 pt-2">
+                      <Archive size={14}/> Arsipkan Turnamen
+                    </button>
+                  </>
                 )}
-                <button onClick={toggleArchive} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50 mt-1 pt-2">
-                  <Archive size={14}/> {tournamentData.isArchived ? "Buka Arsip" : "Arsipkan Turnamen"}
-                </button>
               </>
             )}
             <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50"><LogOut size={14}/> Keluar Sistem</button>
