@@ -1080,7 +1080,13 @@ export default function App() {
                   return (
                     <div 
                       key={archive.id}
-                      onClick={() => setViewingArchive(archive)}
+                      onClick={() => {
+                        setViewingArchive(archive);
+                        if (archive.pools && Object.keys(archive.pools).length > 0) {
+                          const sortedPools = Object.keys(archive.pools).sort();
+                          setActivePool(sortedPools[0]);
+                        }
+                      }}
                       className="w-full flex items-center justify-between bg-white border border-slate-100 hover:border-brand-300 p-4 rounded-2xl transition-all shadow-sm cursor-pointer group"
                     >
                       <div className="flex items-center gap-3">
@@ -1144,8 +1150,8 @@ export default function App() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
-          {tournamentData.logo ? (
-            <img src={tournamentData.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shrink-0 shadow-sm" />
+          {currentTournament.logo ? (
+            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shrink-0 shadow-sm" />
           ) : (
             <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block shrink-0">
               <Trophy className="w-6 h-6 text-white"/>
@@ -1153,15 +1159,15 @@ export default function App() {
           )}
           <div>
             <h1 className="font-black text-slate-800 text-sm md:text-xl tracking-tighter leading-none mb-1 flex items-center flex-wrap">
-              {tournamentData.title || tournamentTitle}
-              {tournamentData.isArchived && (
+              {currentTournament.title || tournamentTitle}
+              {(currentTournament.isArchived || viewingArchive) && (
                 <span className="inline-flex items-center gap-1 text-[8px] font-black bg-red-500 text-white px-2.5 py-0.5 rounded-full uppercase ml-2 animate-pulse shrink-0">
                   <Archive size={8}/> Terarsip
                 </span>
               )}
             </h1>
             <p className="text-[9px] md:text-[11px] text-brand-600 font-black uppercase tracking-[0.1em]">
-              {tournamentData.organizer || tournamentOrganizer}
+              {currentTournament.organizer || tournamentOrganizer}
             </p>
           </div>
         </div>
@@ -1276,14 +1282,14 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-slate-50">
-        {tournamentData.isArchived && (
+        {currentTournament.isArchived && (
           <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30 animate-pulse">
             <Archive size={16}/> Turnamen ini telah diarsipkan dan bersifat final (Read-Only)
           </div>
         )}
 
         {/* ===== GLOBAL SEEDING SETUP ===== */}
-        {(showGlobalSetup || (!tournamentData.pools?.A && !tournamentData.pools?.B && !tournamentData.pools?.C)) ? (
+        {(showGlobalSetup || (!currentTournament.pools?.A && !currentTournament.pools?.B && !currentTournament.pools?.C)) ? (
           <SetupWizard
             showGlobalSetup={showGlobalSetup}
             setShowGlobalSetup={setShowGlobalSetup}
@@ -1313,7 +1319,7 @@ export default function App() {
                 <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36}/></div>
                 <div>
                   <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Grand Final</p>
-                  <h2 className="text-2xl font-black text-slate-800">{tournamentData.title || tournamentTitle}</h2>
+                  <h2 className="text-2xl font-black text-slate-800">{currentTournament.title || tournamentTitle}</h2>
                   <p className="text-xs text-slate-500 font-bold mt-1">Sistem Round-Robin — 3 Finalis Saling Bertemu</p>
                 </div>
               </div>
