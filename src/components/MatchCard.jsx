@@ -7,7 +7,8 @@ import {
   Play, 
   Square, 
   Settings, 
-  Check 
+  Check,
+  Minus
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -23,7 +24,8 @@ export default function MatchCard({
   onEditName, 
   matchRef, 
   highlightedSlot, 
-  onSetMatchState 
+  onSetMatchState,
+  prelimPointsSystem
 }) {
   const isReferee = role === 'referee';
   const [elapsed, setElapsed] = useState(0);
@@ -116,9 +118,42 @@ export default function MatchCard({
                   </span>
                   {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
                 </button>
-                {isReferee && playerName && (
-                  <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors ml-2", (isHighlighted || isDisqualified || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
-                )}
+                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                   {prelimPointsSystem && match.round === 1 && playerName && (
+                     <>
+                       <span className={cn(
+                         "text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm border select-none shrink-0",
+                         isWinner 
+                           ? "bg-white/20 text-white border-white/30" 
+                           : isHighlighted || isDisqualified 
+                             ? "bg-white/20 text-white border-white/30" 
+                             : "bg-emerald-50 text-emerald-700 border-emerald-100"
+                       )}>
+                         {slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)} PTS
+                       </span>
+                       {isReferee && !isWinner && (slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)) > 0 && (
+                         <button 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             onSetWinner(match.id, playerName, true);
+                           }} 
+                           className={cn(
+                             "p-1 rounded transition-all border shrink-0 active:scale-90",
+                             isHighlighted || isDisqualified 
+                               ? "text-white hover:bg-white/20 border-white/20" 
+                               : "text-red-500 hover:bg-red-50 border-slate-100 hover:border-red-100"
+                           )}
+                           title="Kurangi 1 Poin"
+                         >
+                           <Minus size={10} className="stroke-[3]"/>
+                         </button>
+                       )}
+                     </>
+                   )}
+                   {isReferee && playerName && (
+                     <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors", (isHighlighted || isDisqualified || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
+                   )}
+                 </div>
               </div>
             );
           })}

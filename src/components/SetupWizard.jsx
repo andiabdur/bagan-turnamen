@@ -24,6 +24,8 @@ export default function SetupWizard({
   setFinalFormat,
   doubleLife,
   setDoubleLife,
+  prelimPointsSystem,
+  setPrelimPointsSystem,
   logoBase64,
   setLogoBase64,
   bulkInput,
@@ -224,7 +226,7 @@ export default function SetupWizard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kapasitas Per Bagan</label>
               <div className="grid grid-cols-4 gap-2">
@@ -285,6 +287,29 @@ export default function SetupWizard({
                   )}
                 >
                   BAGAN (GUGUR)
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Poin Penyisihan (R1)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setPrelimPointsSystem(false)}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    !prelimPointsSystem ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  NORMAL (1 NYAWA)
+                </button>
+                <button 
+                  onClick={() => setPrelimPointsSystem(true)}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    prelimPointsSystem ? "bg-gradient-to-r from-emerald-500 to-teal-600 border-transparent text-white shadow-lg shadow-emerald-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  DULUAN 2 POIN
                 </button>
               </div>
             </div>

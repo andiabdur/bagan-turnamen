@@ -112,6 +112,7 @@ export default function App() {
   const [tournamentOrganizer, setTournamentOrganizer] = useState('Majalengka');
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
   const [doubleLife, setDoubleLife] = useState(false);
+  const [prelimPointsSystem, setPrelimPointsSystem] = useState(false);
   const [logoBase64, setLogoBase64] = useState('');
   const [archivesList, setArchivesList] = useState([]);
   const matchRefs = useRef({});
@@ -262,6 +263,7 @@ export default function App() {
                         onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
                         matchRef={el => { matchRefs.current[match.id] = el; }}
                         highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
+                        prelimPointsSystem={tournamentData.prelimPointsSystem}
                       />
                       {match.nextMatchId && (
                         <>
@@ -435,6 +437,7 @@ export default function App() {
       organizer: tournamentOrganizer,
       logo: logoBase64,
       doubleLife: doubleLife,
+      prelimPointsSystem: prelimPointsSystem,
       isArchived: false
     };
 
@@ -459,7 +462,9 @@ export default function App() {
           player2: p2.startsWith('BYE_') ? null : p2, 
           winner: null, 
           nextMatchId: null, 
-          nextMatchSlot: null 
+          nextMatchSlot: null,
+          player1Points: 0,
+          player2Points: 0
         };
 
         // Catat lawan babak 1 untuk penegakan "beda lawan" di bagan selanjutnya jika doubleLife aktif
@@ -559,7 +564,9 @@ export default function App() {
             player2: p2.startsWith('BYE_') ? null : p2, 
             winner: null, 
             nextMatchId: null, 
-            nextMatchSlot: null 
+            nextMatchSlot: null,
+            player1Points: 0,
+            player2Points: 0
           };
 
           // Auto-winner for BYE
@@ -630,7 +637,7 @@ export default function App() {
     }
   };
 
-  const setWinner = async (matchId, winnerName) => {
+  const setWinner = async (matchId, winnerName, isDecrement = false) => {
     if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (role !== 'referee' || !winnerName) return;
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
@@ -639,10 +646,82 @@ export default function App() {
     const match = poolData.matches.find(m => m.id === matchId);
     if (!match) return;
 
-    if (match.winner === winnerName) {
-      await executeSetWinner(matchId, winnerName);
+    // Check if prelimPointsSystem is active and this is Round 1
+    const isPrelimPoints = tournamentData.prelimPointsSystem && match.round === 1;
+
+    if (isPrelimPoints) {
+      const isPlayer1 = match.player1 === winnerName;
+      const currentPoints = isPlayer1 ? (match.player1Points || 0) : (match.player2Points || 0);
+
+      if (isDecrement) {
+        // Decrement points
+        const newPoints = Math.max(0, currentPoints - 1);
+        await executeSetPoints(matchId, winnerName, newPoints, null);
+      } else {
+        // Increment points
+        if (currentPoints === 0) {
+          await executeSetPoints(matchId, winnerName, 1, null);
+        } else if (currentPoints === 1) {
+          // Confirm reaching score 2 and winning
+          if (window.confirm(`Apakah Anda yakin ${winnerName} mendapatkan poin ke-2, memenangkan pertandingan, dan lolos ke babak berikutnya?`)) {
+            await executeSetPoints(matchId, winnerName, 2, winnerName);
+          }
+        } else if (currentPoints >= 2) {
+          // Already has 2 points and won. If clicked again, allow resetting the match.
+          if (window.confirm(`Batalkan kemenangan ${winnerName} dan reset skor pertandingan ini?`)) {
+            await executeSetPoints(matchId, winnerName, 0, null, true); // reset both
+          }
+        }
+      }
     } else {
-      setWinnerConfirm({ matchId, winnerName, isFinal: false });
+      // Normal 1 life winner logic
+      if (match.winner === winnerName) {
+        await executeSetWinner(matchId, winnerName);
+      } else {
+        setWinnerConfirm({ matchId, winnerName, isFinal: false });
+      }
+    }
+  };
+
+  const executeSetPoints = async (matchId, playerName, points, winnerName, isReset = false) => {
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const poolData = newData.pools[activePool];
+    if (!poolData) return;
+
+    const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
+    const match = poolData.matches[matchIndex];
+    if (!match) return;
+
+    const isPlayer1 = match.player1 === playerName;
+
+    if (isReset) {
+      match.player1Points = 0;
+      match.player2Points = 0;
+      match.winner = null;
+    } else {
+      if (isPlayer1) {
+        match.player1Points = points;
+      } else {
+        match.player2Points = points;
+      }
+      
+      if (winnerName) {
+        match.winner = winnerName;
+      } else {
+        match.winner = null;
+      }
+    }
+
+    // Update next round slot
+    if (match.nextMatchId) {
+      updateNextMatch(poolData.matches, match.nextMatchId, match.nextMatchSlot, match.winner);
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal mengupdate poin penyisihan.");
     }
   };
 
@@ -1381,6 +1460,8 @@ export default function App() {
             setFinalFormat={setFinalFormat}
             doubleLife={doubleLife}
             setDoubleLife={setDoubleLife}
+            prelimPointsSystem={prelimPointsSystem}
+            setPrelimPointsSystem={setPrelimPointsSystem}
             logoBase64={logoBase64}
             setLogoBase64={setLogoBase64}
             bulkInput={bulkInput}
