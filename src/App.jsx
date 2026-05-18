@@ -174,7 +174,7 @@ export default function App() {
       }
     );
 
-    const archivesCol = collection(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archives');
+    const archivesCol = collection(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items');
     const unsubArchives = onSnapshot(archivesCol, (snapshot) => {
       const list = [];
       snapshot.forEach(doc => {
@@ -805,7 +805,7 @@ export default function App() {
     
     try {
       // 1. Post to archives collection
-      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archives', archiveId);
+      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items', archiveId);
       await setDoc(archiveRef, archiveData);
       
       // 2. Clear the active tournament document
