@@ -1027,8 +1027,8 @@ export default function App() {
 
   if (!role && !viewingArchive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-12 px-4 font-sans overflow-y-auto">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in shrink-0">
           <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white flex flex-col items-center">
             {tournamentData.logo ? (
               <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-2xl shadow-xl bg-white/10 backdrop-blur-md p-2 mb-4 border border-white/20 animate-scale-in" />
@@ -1116,12 +1116,13 @@ export default function App() {
             </div>
           )}
         </div>
+        
         {/* Footer for Landing Page */}
-        <div className="absolute bottom-8 left-0 right-0 text-center px-4 flex flex-col items-center gap-1">
+        <div className="text-center px-4 flex flex-col items-center gap-1 mt-8 pb-4 shrink-0">
            <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
              Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
            </p>
-           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
              © Copyright by Senyap
            </p>
         </div>
