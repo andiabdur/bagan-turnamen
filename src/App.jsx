@@ -1013,9 +1013,12 @@ export default function App() {
           </div>
         </div>
         {/* Footer for Landing Page */}
-        <div className="absolute bottom-8 left-0 right-0 text-center px-4">
-           <p className="text-[9px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
-             © Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+        <div className="absolute bottom-8 left-0 right-0 text-center px-4 flex flex-col items-center gap-1">
+           <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+             Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+           </p>
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+             © Copyright by Senyap
            </p>
         </div>
       </div>
@@ -1391,7 +1394,7 @@ export default function App() {
           Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
         </p>
         <p className="text-[11px] font-bold text-slate-400">
-          © Copyright 2026
+          © Copyright by <span className="text-brand-600">Senyap</span>
         </p>
       </footer>
 
