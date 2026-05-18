@@ -271,7 +271,7 @@ export default function App() {
 
   const handleLoginReferee = (e) => {
     e.preventDefault();
-    if (e.target.pin.value === '1234') {
+    if (e.target.pin.value === 'Indo1234!') {
       setRole('referee');
       localStorage.setItem('tournament_role', 'referee');
       setIsMenuOpen(false);
@@ -1136,7 +1136,6 @@ export default function App() {
               <div className="relative">
                 {/* Reusable Bracket Renderer */}
                 {renderBracket()}
-                </div>
 
                 {/* Floating Controls — Zoom + Search */}
                 <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1 select-none">
