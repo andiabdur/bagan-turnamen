@@ -1,0 +1,218 @@
+import React from 'react';
+import { 
+  Shuffle, 
+  X, 
+  Shield, 
+  LayoutGrid, 
+  Check, 
+  AlertCircle, 
+  Trophy 
+} from 'lucide-react';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+function cn(...inputs) {
+  return twMerge(clsx(inputs));
+}
+
+export default function SetupWizard({
+  showGlobalSetup,
+  setShowGlobalSetup,
+  bracketSize,
+  setBracketSize,
+  finalFormat,
+  setFinalFormat,
+  bulkInput,
+  setBulkInput,
+  generateGlobalBracket,
+  role,
+  tournamentTitle,
+  setTournamentTitle,
+  tournamentOrganizer,
+  setTournamentOrganizer
+}) {
+  if (role !== 'referee') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
+        <Trophy size={80} className="text-slate-200 mb-6"/>
+        <h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan Belum Siap</h2>
+        <p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slide-up">
+      <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+        {/* Hero Header */}
+        <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
+          <div className="absolute top-0 right-0 p-4 opacity-10"><Shuffle size={120}/></div>
+          <div className="relative z-10">
+            <h2 className="text-2xl font-black leading-none mb-2">Smart Global Setup</h2>
+            <p className="text-slate-300 text-sm font-bold uppercase tracking-widest">Inisialisasi Turnamen Multi-Bagan</p>
+          </div>
+          {showGlobalSetup && (
+            <button onClick={() => setShowGlobalSetup(false)} className="relative z-10 bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
+              <X size={20}/>
+            </button>
+          )}
+        </div>
+        
+        {/* Rules & Narrative */}
+        <div className="p-4 md:p-8 bg-slate-50 border-b border-slate-100">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-slate-800 mb-1.5 uppercase tracking-wide">Sistem Seeding Keadilan Mutlak</h3>
+              <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                Ditenagai oleh algoritma <strong className="text-brand-600">Smart Global Distribution</strong> kelas turnamen E-Sports. Sistem membaca identitas tim peserta dan mendistribusikannya seadil mungkin secara matematis. Wasit tidak perlu lagi pusing mengatur letak slot secara manual!
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-2 text-brand-600">
+                <LayoutGrid size={16} />
+                <h4 className="font-black text-[10px] uppercase tracking-widest">Distribusi Lintas Pool</h4>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                Jika sebuah tim mendaftar 9 peserta, sistem otomatis membaginya rata: 3 di Bagan A, 3 di Bagan B, dan 3 di Bagan C.
+              </p>
+            </div>
+            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-2 text-emerald-600">
+                <Shield size={16} />
+                <h4 className="font-black text-[10px] uppercase tracking-widest">Anti Perang Saudara</h4>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                Di dalam satu bagan, anggota tim dipisah paksa ke Kuarter dan Half yang berbeda. <strong>Mustahil bentrok</strong> di babak 32, 16, hingga 8 Besar!
+              </p>
+            </div>
+            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-2 text-yellow-500">
+                <Shuffle size={16} />
+                <h4 className="font-black text-[10px] uppercase tracking-widest">Undian Acak Sempurna</h4>
+              </div>
+              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
+                Setelah pemain tim diamankan tempatnya, peserta solo dan sisa slot kosong akan diundi murni dan di-shuffle oleh sistem.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-slate-800 text-white shadow-lg p-5 rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-2 opacity-5"><Check size={80}/></div>
+            <h4 className="font-black text-[11px] text-brand-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+              <AlertCircle size={14}/> Aturan Format Input Wasit (Wajib):
+            </h4>
+            <div className="flex flex-col md:flex-row gap-4 relative z-10">
+              <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
+                <span className="text-emerald-400">[Senyap]</span> Rian<br/>
+                <span className="text-emerald-400">[Senyap]</span> Budi<br/>
+                <span className="text-yellow-400">[Keparat]</span> Joko<br/>
+                <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
+              </code>
+              <div className="flex-1 flex flex-col justify-center">
+                <p className="text-[11px] font-bold text-slate-400 mb-2 leading-relaxed">
+                  Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal.
+                </p>
+                <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
+                  Pastikan penulisan nama tim <strong className="text-white">SAMA PERSIS</strong> (ejaan dan spasinya) agar sistem mengenali mereka sebagai satu kesatuan.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Input Area */}
+        <div className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Judul Acara Turnamen</label>
+              <input 
+                type="text" 
+                value={tournamentTitle} 
+                onChange={(e) => setTournamentTitle(e.target.value)} 
+                placeholder="Contoh: Piala Bergilir Majalengka" 
+                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all mb-4"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Panitia Penyelenggara</label>
+              <input 
+                type="text" 
+                value={tournamentOrganizer} 
+                onChange={(e) => setTournamentOrganizer(e.target.value)} 
+                placeholder="Contoh: Kota Angin x Senyap" 
+                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all mb-4"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kapasitas Per Bagan</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['auto', '16', '32', '64'].map(size => (
+                  <button 
+                    key={size} 
+                    onClick={() => setBracketSize(size)}
+                    className={cn(
+                      "py-3 rounded-xl font-black text-xs transition-all border-2",
+                      bracketSize === size ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                    )}
+                  >
+                    {size === 'auto' ? 'AUTO' : size}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Format Bagan Final</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  onClick={() => setFinalFormat('roundrobin')}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  LIGA (ROUND ROBIN)
+                </button>
+                <button 
+                  onClick={() => setFinalFormat('bracket')}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    finalFormat === 'bracket' ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  BAGAN (GUGUR)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Daftar Peserta ({bulkInput.split('\n').filter(n => n.trim()).length} Orang)</label>
+            <textarea 
+              value={bulkInput} 
+              onChange={(e) => setBulkInput(e.target.value)} 
+              placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
+              rows={10} 
+              className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
+            />
+          </div>
+
+          <button 
+            onClick={generateGlobalBracket} 
+            className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+          >
+            <Shuffle size={20}/> GENERATE SEMUA BAGAN
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
