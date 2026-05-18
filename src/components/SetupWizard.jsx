@@ -157,9 +157,9 @@ export default function SetupWizard({
             </h4>
             <div className="flex flex-col md:flex-row gap-4 relative z-10">
               <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
-                <span className="text-emerald-400">[Senyap]</span> Rian<br/>
-                <span className="text-emerald-400">[Senyap]</span> Budi<br/>
-                <span className="text-yellow-400">[Keparat]</span> Joko<br/>
+                <span className="text-emerald-400">[Senyap]</span> Daim<br/>
+                <span className="text-emerald-400">[Senyap]</span> Andi<br/>
+                <span className="text-yellow-400">[Majalengka]</span> Joko<br/>
                 <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
               </code>
               <div className="flex-1 flex flex-col justify-center">
