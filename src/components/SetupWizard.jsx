@@ -24,6 +24,8 @@ export default function SetupWizard({
   setFinalFormat,
   doubleLife,
   setDoubleLife,
+  logoBase64,
+  setLogoBase64,
   bulkInput,
   setBulkInput,
   generateGlobalBracket,
@@ -33,6 +35,50 @@ export default function SetupWizard({
   tournamentOrganizer,
   setTournamentOrganizer
 }) {
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith('image/')) {
+      alert('File harus berupa gambar!');
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 120;
+        const MAX_HEIGHT = 120;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const compressedBase64 = canvas.toDataURL('image/png');
+        setLogoBase64(compressedBase64);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (role !== 'referee') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
@@ -130,7 +176,7 @@ export default function SetupWizard({
 
         {/* Input Area */}
         <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-center">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Judul Acara Turnamen</label>
               <input 
@@ -138,7 +184,7 @@ export default function SetupWizard({
                 value={tournamentTitle} 
                 onChange={(e) => setTournamentTitle(e.target.value)} 
                 placeholder="Contoh: Piala Bergilir Majalengka" 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all mb-4"
+                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
               />
             </div>
             <div>
@@ -147,9 +193,34 @@ export default function SetupWizard({
                 type="text" 
                 value={tournamentOrganizer} 
                 onChange={(e) => setTournamentOrganizer(e.target.value)} 
-                placeholder="Contoh: Kota Angin x Senyap" 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all mb-4"
+                placeholder="Contoh: Perkumulan Pelayang..." 
+                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
               />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Logo Turnamen</label>
+              <div className="flex items-center gap-3">
+                {logoBase64 ? (
+                  <div className="relative group shrink-0">
+                    <img src={logoBase64} alt="Preview Logo" className="w-[52px] h-[52px] object-contain rounded-xl border border-slate-200 bg-slate-50 p-1" />
+                    <button 
+                      type="button" 
+                      onClick={() => setLogoBase64('')}
+                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full shadow-md transition-colors"
+                    >
+                      <X size={10}/>
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-[52px] h-[52px] border-2 border-dashed border-slate-200 hover:border-brand-400 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-brand-500 cursor-pointer transition-colors bg-slate-50 shrink-0">
+                    <span className="text-[9px] font-black uppercase">Upload</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                  </label>
+                )}
+                <span className="text-[9px] font-bold text-slate-400 leading-tight">
+                  Upload logo PNG/JPG. Ukuran otomatis dikompres ringan.
+                </span>
+              </div>
             </div>
           </div>
 

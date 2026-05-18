@@ -109,6 +109,7 @@ export default function App() {
   const [tournamentOrganizer, setTournamentOrganizer] = useState('Kota Angin x Senyap');
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
   const [doubleLife, setDoubleLife] = useState(false);
+  const [logoBase64, setLogoBase64] = useState('');
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
 
@@ -408,6 +409,7 @@ export default function App() {
       pools: {},
       title: tournamentTitle,
       organizer: tournamentOrganizer,
+      logo: logoBase64,
       doubleLife: doubleLife,
       isArchived: false
     };
@@ -573,6 +575,7 @@ export default function App() {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
       setBulkInput('');
+      setLogoBase64('');
       setShowGlobalSetup(false);
       setActivePool('A');
     } catch (err) {
@@ -974,9 +977,13 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
-          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white">
-            <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg"/>
-            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">{tournamentTitle.toUpperCase()}</h1>
+          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white flex flex-col items-center">
+            {tournamentData.logo ? (
+              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-2xl shadow-xl bg-white/10 backdrop-blur-md p-2 mb-4 border border-white/20 animate-scale-in" />
+            ) : (
+              <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg"/>
+            )}
+            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none mt-2">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
           </div>
           <div className="p-8 space-y-6">
             <button 
@@ -1006,8 +1013,10 @@ export default function App() {
           </div>
         </div>
         {/* Footer for Landing Page */}
-        <div className="absolute bottom-8 left-0 right-0 text-center">
-           <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">© Copyright by Senyap</p>
+        <div className="absolute bottom-8 left-0 right-0 text-center px-4">
+           <p className="text-[9px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+             © Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+           </p>
         </div>
       </div>
     );
@@ -1018,9 +1027,13 @@ export default function App() {
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block">
-            <Trophy className="w-6 h-6 text-white"/>
-          </div>
+          {tournamentData.logo ? (
+            <img src={tournamentData.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shrink-0 shadow-sm" />
+          ) : (
+            <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block shrink-0">
+              <Trophy className="w-6 h-6 text-white"/>
+            </div>
+          )}
           <div>
             <h1 className="font-black text-slate-800 text-sm md:text-xl tracking-tighter leading-none mb-1 flex items-center flex-wrap">
               {tournamentData.title || tournamentTitle}
@@ -1161,6 +1174,8 @@ export default function App() {
             setFinalFormat={setFinalFormat}
             doubleLife={doubleLife}
             setDoubleLife={setDoubleLife}
+            logoBase64={logoBase64}
+            setLogoBase64={setLogoBase64}
             bulkInput={bulkInput}
             setBulkInput={setBulkInput}
             generateGlobalBracket={generateGlobalBracket}
@@ -1371,14 +1386,12 @@ export default function App() {
       )}
 
       {/* Footer Branding */}
-      <footer className="bg-white border-t border-slate-200 p-6 flex flex-col items-center justify-center gap-2 z-40">
-        <div className="flex items-center gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kota Angin</p>
-           <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senyap</p>
-        </div>
+      <footer className="bg-white border-t border-slate-200 p-6 flex flex-col items-center justify-center gap-2 z-40 text-center">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+          Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+        </p>
         <p className="text-[11px] font-bold text-slate-400">
-          © Copyright by <span className="text-brand-600">Senyap</span>
+          © Copyright 2026
         </p>
       </footer>
 
