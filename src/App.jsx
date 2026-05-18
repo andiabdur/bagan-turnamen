@@ -22,7 +22,8 @@ import {
   Clock,
   Flag,
   Megaphone,
-  Archive
+  Archive,
+  Trash2
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -36,7 +37,8 @@ import {
   doc, 
   onSnapshot, 
   setDoc,
-  collection
+  collection,
+  deleteDoc
 } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -106,8 +108,8 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchResult, setSearchResult] = useState(null); // { matchId, slot }
   const [showGlobalSetup, setShowGlobalSetup] = useState(false);
-  const [tournamentTitle, setTournamentTitle] = useState('Turnamen Layangan Piala Bergilir Majalengka');
-  const [tournamentOrganizer, setTournamentOrganizer] = useState('Kota Angin x Senyap');
+  const [tournamentTitle, setTournamentTitle] = useState('Turnamen Layangan Kabupaten Majalengka');
+  const [tournamentOrganizer, setTournamentOrganizer] = useState('Majalengka');
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
   const [doubleLife, setDoubleLife] = useState(false);
   const [logoBase64, setLogoBase64] = useState('');
@@ -115,6 +117,7 @@ export default function App() {
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
   const [viewingArchive, setViewingArchive] = useState(null);
+  const [showArchiveManagement, setShowArchiveManagement] = useState(false);
 
   const currentTournament = viewingArchive || tournamentData;
 
@@ -820,6 +823,21 @@ export default function App() {
     }
   };
 
+  const handleDeleteArchive = async (archiveId, title) => {
+    if (role !== 'referee') return;
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus arsip "${title}" secara permanen?`)) return;
+    if (!window.confirm(`PERINGATAN KEDUA: Seluruh bagan dan data pemenang dari turnamen "${title}" akan hilang selamanya. Lanjutkan?`)) return;
+    
+    try {
+      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items', archiveId);
+      await deleteDoc(archiveRef);
+      alert("Arsip berhasil dihapus secara permanen.");
+    } catch (err) {
+      console.error(err);
+      showError("Gagal menghapus arsip.");
+    }
+  };
+
   const resetPool = async () => {
     if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
@@ -1201,6 +1219,7 @@ export default function App() {
             {role === 'referee' && (
               <>
                 <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-slate-700 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-b border-slate-100"><Trash2 size={14} className="text-red-500"/> Kelola Arsip</button>
                 {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
                 {Object.keys(tournamentData.pools || {}).length > 0 && (
                   <>
@@ -1276,6 +1295,68 @@ export default function App() {
             <div className="flex gap-3 mt-8 pt-6 border-t border-slate-100">
               <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">Tutup</button>
               <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-brand-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all">Simpan Nama</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Management Modal */}
+      {showArchiveManagement && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
+          <div className="relative bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 flex flex-col max-h-[85vh]">
+            <h3 className="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
+              <Archive className="text-brand-500" size={24}/> Kelola Arsip Turnamen
+            </h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            
+            <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin flex-1">
+              {archivesList.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 font-bold">Belum ada turnamen yang diarsipkan.</div>
+              ) : (
+                archivesList.map((archive) => {
+                  const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                  return (
+                    <div key={archive.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 p-4 rounded-2xl shadow-sm">
+                      <div className="flex items-center gap-3">
+                        {archive.logo ? (
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-white" />
+                        ) : (
+                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
+                            <Trophy size={16} />
+                          </div>
+                        )}
+                        <div className="text-left">
+                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none">
+                            {archive.title}
+                          </h4>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                            {archive.organizer} • {dateStr}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleDeleteArchive(archive.id, archive.title)}
+                        className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all border border-red-100 hover:border-red-200 active:scale-95 shrink-0"
+                        title="Hapus Arsip"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowArchiveManagement(false)} className="bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm">
+                Selesai & Tutup
+              </button>
             </div>
           </div>
         </div>
