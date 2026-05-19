@@ -376,7 +376,10 @@ export default function SetupWizard({
             <textarea 
               value={bulkInput} 
               onChange={(e) => setBulkInput(e.target.value)} 
-              placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo" 
+              placeholder={isOpenTournament 
+                ? "[Majalengka-Senyap] Daim\n[Majalengka-Senyap] Andi\n[Cirebon-Kincir] Joko\nPeserta Solo Tanpa Tim"
+                : "[Senyap] Daim\n[Senyap] Andi\n[Majalengka] Joko\nPeserta Solo Tanpa Tim"
+              }
               rows={10} 
               className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
             />
