@@ -241,13 +241,28 @@ export default function App() {
             const matches = activeBracket.matches.filter(m => m.round === roundNum);
             
             // Dynamic Labels
-            let roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+            let roundLabels = [];
             if (activePool === 'Final') {
-              if (activeBracket.totalRounds === 2) roundLabels = ["Semifinal", "Grand Final"];
-              else if (activeBracket.totalRounds === 3) roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
-              else roundLabels = Array.from({length: activeBracket.totalRounds}, (_, i) => `Round ${i+1}`);
-            } else if (activeBracket.matches.some(m => m.round === 1 && activeBracket.matches.length > 16)) {
-              roundLabels = ["64 Besar", "32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
+              if (activeBracket.totalRounds === 2) {
+                roundLabels = ["Semifinal", "Grand Final"];
+              } else if (activeBracket.totalRounds === 3) {
+                roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
+              } else {
+                roundLabels = Array.from({length: activeBracket.totalRounds || 2}, (_, i) => `Round ${i+1}`);
+              }
+            } else {
+              const totalR = activeBracket.totalRounds || 5;
+              roundLabels = Array.from({ length: totalR }, (_, i) => {
+                const roundsFromEnd = totalR - 1 - i;
+                if (roundsFromEnd === 0) return "Final Pool";
+                if (roundsFromEnd === 1) return "Semifinal";
+                if (roundsFromEnd === 2) return "8 Besar";
+                if (roundsFromEnd === 3) return "16 Besar";
+                if (roundsFromEnd === 4) return "32 Besar";
+                if (roundsFromEnd === 5) return "64 Besar";
+                if (roundsFromEnd === 6) return "128 Besar";
+                return `Babak ${i + 1}`;
+              });
             }
 
             const matchHeight = 180 * Math.pow(2, idx);
