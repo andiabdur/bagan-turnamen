@@ -1218,7 +1218,7 @@ export default function App() {
           {/* Juara 3 (Bronze) & Juara 4 */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {champs.j3 && (
-              <div className="relative overflow-hidden bg-gradient-to-r from-orange-650 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-500/30 h-20">
+              <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-500/30 h-20">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/10 text-orange-200">
                     <Medal size={20} />
@@ -1238,7 +1238,7 @@ export default function App() {
               <div className={cn(
                 "relative overflow-hidden p-4 rounded-2xl flex items-center justify-between border h-20",
                 isBracket
-                  ? "bg-gradient-to-r from-orange-655 via-amber-700 to-amber-800 text-white border-orange-500/30"
+                  ? "bg-gradient-to-r from-orange-600 via-amber-700 to-amber-800 text-white border-orange-500/30"
                   : "bg-white text-slate-800 border-slate-200 shadow-sm"
               )}>
                 <div className="flex items-center gap-4">
