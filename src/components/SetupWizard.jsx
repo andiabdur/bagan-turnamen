@@ -325,26 +325,40 @@ export default function SetupWizard({
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Format Bagan Final</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => setFinalFormat('roundrobin')}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
-                    finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  LIGA (ROBIN)
-                </button>
+              <div className="grid grid-cols-3 gap-2 mb-2">
                 <button 
                   onClick={() => setFinalFormat('bracket')}
                   className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
+                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
                     finalFormat === 'bracket' ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                   )}
                 >
-                  BAGAN (GUGUR)
+                  GUGUR TUNGGAL
+                </button>
+                <button 
+                  onClick={() => setFinalFormat('double')}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
+                    finalFormat === 'double' ? "bg-emerald-600 border-emerald-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  GUGUR GANDA
+                </button>
+                <button 
+                  onClick={() => setFinalFormat('roundrobin')}
+                  className={cn(
+                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
+                    finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  ROUND ROBIN
                 </button>
               </div>
+              <p className="text-[9px] font-bold text-slate-400 leading-normal">
+                {finalFormat === 'bracket' && "💡 Gugur Tunggal: Cocok untuk mencari Juara 1 & 2 secara cepat."}
+                {finalFormat === 'double' && "💡 Gugur Ganda: Semifinal + Grand Final + Perebutan Juara 3 (cocok untuk 4 pool)."}
+                {finalFormat === 'roundrobin' && "💡 Round Robin: Liga saling bertemu (sangat cocok untuk 3 pool)."}
+              </p>
             </div>
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Poin Penyisihan (R1)</label>

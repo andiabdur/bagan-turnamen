@@ -172,6 +172,7 @@ export default function App() {
           if (data.doubleLife !== undefined) setDoubleLife(data.doubleLife);
           if (data.prelimPointsSystem !== undefined) setPrelimPointsSystem(data.prelimPointsSystem);
           if (data.isOpenTournament !== undefined) setIsOpenTournament(data.isOpenTournament);
+          if (data.finalFormat !== undefined) setFinalFormat(data.finalFormat);
         } else {
           setTournamentData({ pools: {} });
         }
@@ -243,7 +244,9 @@ export default function App() {
             // Dynamic Labels
             let roundLabels = [];
             if (activePool === 'Final') {
-              if (activeBracket.totalRounds === 2) {
+              if (activeBracket.type === 'double') {
+                roundLabels = ["Semifinal", "Final & Juara 3"];
+              } else if (activeBracket.totalRounds === 2) {
                 roundLabels = ["Semifinal", "Grand Final"];
               } else if (activeBracket.totalRounds === 3) {
                 roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
@@ -529,6 +532,7 @@ export default function App() {
       doubleLife: doubleLife,
       prelimPointsSystem: prelimPointsSystem,
       isOpenTournament: isOpenTournament,
+      finalFormat: finalFormat,
       isArchived: false
     };
 
@@ -932,6 +936,9 @@ export default function App() {
     if (nextMatch.nextMatchId) {
       updateNextMatch(matches, nextMatch.nextMatchId, nextMatch.nextMatchSlot, null);
     }
+    if (nextMatch.loserNextMatchId) {
+      updateNextMatch(matches, nextMatch.loserNextMatchId, nextMatch.loserNextMatchSlot, null);
+    }
   };
 
   const handleUpdatePlayerName = async (newName) => {
@@ -1118,6 +1125,76 @@ export default function App() {
         }
       }
       newData.pools['Final'] = { type: 'roundrobin', matches };
+    } else if (finalFormat === 'double') {
+      // Model B: Semifinal + Grand Final + Perebutan Juara 3
+      const capacity = 4;
+      const poolNames = [...winners];
+      while (poolNames.length < 4) poolNames.push(`BYE_FINAL_${poolNames.length + 1}`);
+
+      // Semifinals (Round 1)
+      const match1 = {
+        id: 'fm1',
+        round: 1,
+        player1: poolNames[0].startsWith('BYE_') ? null : poolNames[0],
+        player2: poolNames[1].startsWith('BYE_') ? null : poolNames[1],
+        winner: null,
+        nextMatchId: 'fm4', // Winner to Grand Final Slot 1
+        nextMatchSlot: 1,
+        loserNextMatchId: 'fm3', // Loser to Juara 3 Match Slot 1
+        loserNextMatchSlot: 1
+      };
+      const match2 = {
+        id: 'fm2',
+        round: 1,
+        player1: poolNames[2].startsWith('BYE_') ? null : poolNames[2],
+        player2: poolNames[3].startsWith('BYE_') ? null : poolNames[3],
+        winner: null,
+        nextMatchId: 'fm4', // Winner to Grand Final Slot 2
+        nextMatchSlot: 2,
+        loserNextMatchId: 'fm3', // Loser to Juara 3 Match Slot 2
+        loserNextMatchSlot: 2
+      };
+
+      // Auto-winners for BYEs
+      if (poolNames[0].startsWith('BYE_') && !poolNames[1].startsWith('BYE_')) match1.winner = poolNames[1];
+      if (poolNames[1].startsWith('BYE_') && !poolNames[0].startsWith('BYE_')) match1.winner = poolNames[0];
+      if (poolNames[2].startsWith('BYE_') && !poolNames[3].startsWith('BYE_')) match2.winner = poolNames[3];
+      if (poolNames[3].startsWith('BYE_') && !poolNames[2].startsWith('BYE_')) match2.winner = poolNames[0];
+
+      // Round 2 Matches
+      const match3 = {
+        id: 'fm3',
+        round: 2,
+        player1: null,
+        player2: null,
+        winner: null,
+        nextMatchId: null,
+        nextMatchSlot: null,
+        label: 'Perebutan Juara 3'
+      };
+      if (match1.winner) {
+        match3.player1 = match1.winner === match1.player1 ? match1.player2 : match1.player1;
+      }
+      if (match2.winner) {
+        match3.player2 = match2.winner === match2.player1 ? match2.player2 : match2.player1;
+      }
+
+      const match4 = {
+        id: 'fm4',
+        round: 2,
+        player1: match1.winner || null,
+        player2: match2.winner || null,
+        winner: null,
+        nextMatchId: null,
+        nextMatchSlot: null,
+        label: 'Grand Final'
+      };
+
+      newData.pools['Final'] = {
+        type: 'double',
+        matches: [match1, match2, match3, match4],
+        totalRounds: 2
+      };
     } else {
       // Direct Elimination Bracket for Finalists
       // Find nearest power of 2
@@ -1182,9 +1259,27 @@ export default function App() {
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const finalData = newData.pools['Final'];
     if (!finalData) return;
-    const match = finalData.matches.find(m => m.id === matchId);
-    if (!match) return;
-    match.winner = match.winner === winnerName ? null : winnerName;
+    const matchIndex = finalData.matches.findIndex(m => m.id === matchId);
+    if (matchIndex === -1) return;
+    const match = finalData.matches[matchIndex];
+
+    if (match.winner === winnerName) match.winner = null;
+    else match.winner = winnerName;
+
+    // Propagate winner
+    if (match.nextMatchId) {
+      updateNextMatch(finalData.matches, match.nextMatchId, match.nextMatchSlot, match.winner);
+    }
+
+    // Propagate loser (for Double / Bronze match format)
+    if (match.loserNextMatchId) {
+      let loser = null;
+      if (match.winner) {
+        loser = match.winner === match.player1 ? match.player2 : match.player1;
+      }
+      updateNextMatch(finalData.matches, match.loserNextMatchId, match.loserNextMatchSlot, loser);
+    }
+
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);

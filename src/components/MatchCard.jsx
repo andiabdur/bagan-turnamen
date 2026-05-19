@@ -61,7 +61,9 @@ export default function MatchCard({
   return (
     <div className="relative group w-full" ref={matchRef}>
       <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20 flex items-center gap-2">
-         <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m','')}</p>
+          <p className="text-[7px] font-black text-white uppercase tracking-widest">
+            {match.label ? match.label : `Match ${match.id.replace('fm', 'F').replace('m','')}`}
+          </p>
          {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
          {isPrep && <span className="flex h-2 w-2 relative"><span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span></span>}
          {isCall && <span className={cn("flex h-2 w-2 relative", isTimeOut ? "animate-bounce" : "animate-pulse")}><span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", isTimeOut ? "bg-red-400" : "bg-blue-400")}></span><span className={cn("relative inline-flex rounded-full h-2 w-2", isTimeOut ? "bg-red-500" : "bg-blue-500")}></span></span>}
