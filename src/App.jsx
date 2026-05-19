@@ -1164,12 +1164,10 @@ export default function App() {
     const champs = getChampions();
     if (!champs || (!champs.j1 && !champs.j2 && !champs.j3 && !champs.j4)) return null;
 
-    const isDouble = activeBracket?.type === 'double';
-    const isRoundRobin = activeBracket?.type === 'roundrobin';
     const isBracket = activeBracket?.type === 'bracket';
 
     return (
-      <div className="mb-10 max-w-3xl mx-auto p-8 bg-white border-2 border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
+      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border-2 border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
         {/* Decorative background gradients */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-100/40 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-100/30 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
@@ -1183,46 +1181,46 @@ export default function App() {
         </div>
 
         {/* Podium Layout */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {/* Juara 1 */}
           {champs.j1 && (
-            <div className="relative group overflow-hidden bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-white p-5 rounded-2xl shadow-lg shadow-yellow-100 flex items-center justify-between border-2 border-yellow-300">
+            <div className="relative group overflow-hidden bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-white p-4 rounded-2xl shadow-lg shadow-yellow-100 flex items-center justify-between border-2 border-yellow-300 min-h-[88px]">
               <div className="absolute -inset-y-0 -left-12 w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:left-[110%] transition-all duration-1000 ease-out"></div>
               <div className="flex items-center gap-4">
-                <div className="bg-white/20 p-3.5 rounded-xl text-yellow-100 shadow-inner flex items-center justify-center shrink-0">
-                  <Crown size={28} className="animate-bounce" style={{ animationDuration: '3s' }} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/20 text-yellow-100">
+                  <Crown size={26} className="animate-bounce" style={{ animationDuration: '3s' }} />
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-amber-100 uppercase tracking-widest">Juara 1 (Gold)</p>
                   <p className="text-base font-black tracking-tight">{champs.j1}</p>
                 </div>
               </div>
-              <Trophy size={36} className="text-white/30 shrink-0" />
+              <Trophy size={32} className="text-white/25 shrink-0 mr-1" />
             </div>
           )}
 
           {/* Juara 2 */}
           {champs.j2 && (
-            <div className="relative bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 text-white p-4.5 rounded-2xl shadow-md flex items-center justify-between border border-slate-300/40">
+            <div className="relative overflow-hidden bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 text-white p-4 rounded-2xl shadow-md flex items-center justify-between border border-slate-350 h-20">
               <div className="flex items-center gap-4">
-                <div className="bg-white/10 p-3 rounded-xl text-slate-100 shadow-inner flex items-center justify-center shrink-0">
-                  <Medal size={24} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/10 text-slate-100">
+                  <Medal size={22} />
                 </div>
                 <div>
                   <p className="text-[10px] font-black text-slate-200 uppercase tracking-widest">Juara 2 (Silver)</p>
                   <p className="text-sm font-black tracking-tight">{champs.j2}</p>
                 </div>
               </div>
-              <Medal size={28} className="text-white/20 shrink-0" />
+              <Medal size={26} className="text-white/20 shrink-0 mr-1" />
             </div>
           )}
 
           {/* Juara 3 (Bronze) & Juara 4 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {champs.j3 && (
-              <div className="bg-gradient-to-r from-orange-500 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-400/20">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/10 p-2.5 rounded-lg text-orange-200 shadow-inner flex items-center justify-center shrink-0">
+              <div className="relative overflow-hidden bg-gradient-to-r from-orange-650 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-500/30 h-20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/10 text-orange-200">
                     <Medal size={20} />
                   </div>
                   <div>
@@ -1232,20 +1230,20 @@ export default function App() {
                     <p className="text-xs font-black tracking-tight">{champs.j3}</p>
                   </div>
                 </div>
-                <Medal size={22} className="text-white/25 shrink-0" />
+                <Medal size={22} className="text-white/20 shrink-0 mr-1" />
               </div>
             )}
 
             {champs.j4 && (
               <div className={cn(
-                "p-4 rounded-2xl flex items-center justify-between border",
+                "relative overflow-hidden p-4 rounded-2xl flex items-center justify-between border h-20",
                 isBracket
-                  ? "bg-gradient-to-r from-orange-500 via-amber-700 to-amber-800 text-white border-orange-400/20"
+                  ? "bg-gradient-to-r from-orange-655 via-amber-700 to-amber-800 text-white border-orange-500/30"
                   : "bg-white text-slate-800 border-slate-200 shadow-sm"
               )}>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className={cn(
-                    "p-2.5 rounded-lg shadow-inner flex items-center justify-center shrink-0",
+                    "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner",
                     isBracket ? "bg-white/10 text-orange-200" : "bg-slate-100 text-slate-500"
                   )}>
                     {isBracket ? <Medal size={20} /> : <Award size={20} />}
@@ -1261,9 +1259,9 @@ export default function App() {
                   </div>
                 </div>
                 {isBracket ? (
-                  <Medal size={22} className="text-white/25 shrink-0" />
+                  <Medal size={22} className="text-white/20 shrink-0 mr-1" />
                 ) : (
-                  <Award size={22} className="text-slate-300 shrink-0" />
+                  <Award size={22} className="text-slate-300 shrink-0 mr-1" />
                 )}
               </div>
             )}
