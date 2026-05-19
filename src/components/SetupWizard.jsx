@@ -26,6 +26,8 @@ export default function SetupWizard({
   setDoubleLife,
   prelimPointsSystem,
   setPrelimPointsSystem,
+  isOpenTournament,
+  setIsOpenTournament,
   logoBase64,
   setLogoBase64,
   bulkInput,
@@ -158,18 +160,31 @@ export default function SetupWizard({
               <AlertCircle size={14}/> Aturan Format Input Wasit (Wajib):
             </h4>
             <div className="flex flex-col md:flex-row gap-4 relative z-10">
-              <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
-                <span className="text-emerald-400">[Senyap]</span> Daim<br/>
-                <span className="text-emerald-400">[Senyap]</span> Andi<br/>
-                <span className="text-yellow-400">[Majalengka]</span> Joko<br/>
-                <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
-              </code>
+              {isOpenTournament ? (
+                <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
+                  <span className="text-emerald-400">[Majalengka-Senyap]</span> Daim<br/>
+                  <span className="text-emerald-400">[Majalengka-Senyap]</span> Andi<br/>
+                  <span className="text-yellow-400">[Cirebon-Kincir]</span> Joko<br/>
+                  <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
+                </code>
+              ) : (
+                <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
+                  <span className="text-emerald-400">[Senyap]</span> Daim<br/>
+                  <span className="text-emerald-400">[Senyap]</span> Andi<br/>
+                  <span className="text-yellow-400">[Majalengka]</span> Joko<br/>
+                  <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
+                </code>
+              )}
               <div className="flex-1 flex flex-col justify-center">
                 <p className="text-[11px] font-bold text-slate-400 mb-2 leading-relaxed">
-                  Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal.
+                  {isOpenTournament ? (
+                    <span>Gunakan format <strong className="text-white">[Daerah-Tim]</strong> (contoh: <strong className="text-white">[Majalengka-Senyap]</strong>) untuk menandai daerah dan tim peserta sekaligus.</span>
+                  ) : (
+                    <span>Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal (contoh: <strong className="text-white">[Senyap]</strong>).</span>
+                  )}
                 </p>
                 <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                  Pastikan penulisan nama tim <strong className="text-white">SAMA PERSIS</strong> (ejaan dan spasinya) agar sistem mengenali mereka sebagai satu kesatuan.
+                  Pastikan penulisan ejaan daerah dan tim <strong className="text-white">SAMA PERSIS</strong> agar sistem dapat menyebarkan mereka secara optimal untuk menghindari bentrok awal.
                 </p>
               </div>
             </div>
@@ -223,6 +238,47 @@ export default function SetupWizard({
                   Upload logo PNG/JPG. Ukuran otomatis dikompres ringan.
                 </span>
               </div>
+            </div>
+          </div>
+
+          <div className="mb-6 bg-slate-50/50 p-4 border-2 border-slate-100 rounded-2xl">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Tipe Cakupan Turnamen (Seeding Mode)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button 
+                type="button"
+                onClick={() => setIsOpenTournament(false)}
+                className={cn(
+                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3",
+                  !isOpenTournament ? "bg-white border-brand-600 shadow-md" : "bg-white border-slate-100 hover:border-slate-200"
+                )}
+              >
+                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", !isOpenTournament ? "border-brand-600" : "border-slate-300")}>
+                  {!isOpenTournament && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                </div>
+                <div>
+                  <h4 className={cn("text-xs font-black", !isOpenTournament ? "text-brand-700" : "text-slate-700")}>LOKAL / CLUB MATCH (DEFAULT)</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Format Input: <code>[Tim] Nama</code></p>
+                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold leading-normal normal-case">Hanya memisahkan antar-anggota tim yang sama agar tidak langsung bertanding di Match 1 (e.g. <code>[Senyap] Daim</code>).</p>
+                </div>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => setIsOpenTournament(true)}
+                className={cn(
+                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3",
+                  isOpenTournament ? "bg-white border-emerald-600 shadow-md" : "bg-white border-slate-100 hover:border-slate-200"
+                )}
+              >
+                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", isOpenTournament ? "border-emerald-600" : "border-slate-300")}>
+                  {isOpenTournament && <div className="w-2 h-2 rounded-full bg-emerald-600" />}
+                </div>
+                <div>
+                  <h4 className={cn("text-xs font-black", isOpenTournament ? "text-emerald-700" : "text-slate-700")}>OPEN CUP (LINTAS DAERAH)</h4>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1">Format Input: <code>[Daerah-Tim] Nama</code></p>
+                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold leading-normal normal-case">Mendeteksi Daerah dan Tim secara bersamaan untuk mencegah bentrok satu daerah & satu tim sekaligus (e.g. <code>[Majalengka-Senyap] Andi</code>).</p>
+                </div>
+              </button>
             </div>
           </div>
 

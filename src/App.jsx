@@ -113,6 +113,7 @@ export default function App() {
   const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
   const [doubleLife, setDoubleLife] = useState(false);
   const [prelimPointsSystem, setPrelimPointsSystem] = useState(false);
+  const [isOpenTournament, setIsOpenTournament] = useState(false);
   const [logoBase64, setLogoBase64] = useState('');
   const [archivesList, setArchivesList] = useState([]);
   const matchRefs = useRef({});
@@ -168,6 +169,9 @@ export default function App() {
           setTournamentData(data);
           if (data.title) setTournamentTitle(data.title);
           if (data.organizer) setTournamentOrganizer(data.organizer);
+          if (data.doubleLife !== undefined) setDoubleLife(data.doubleLife);
+          if (data.prelimPointsSystem !== undefined) setPrelimPointsSystem(data.prelimPointsSystem);
+          if (data.isOpenTournament !== undefined) setIsOpenTournament(data.isOpenTournament);
         } else {
           setTournamentData({ pools: {} });
         }
@@ -348,15 +352,58 @@ export default function App() {
     const fullNames = [...rawNames];
     while (fullNames.length < totalSlots) fullNames.push(`BYE_${counter++}`);
 
-    // 2. Identifikasi Tim via Format "[Nama Tim] Peserta"
+    // 2. Identifikasi Tim & Daerah berdasarkan Mode Turnamen
     const players = fullNames.map((raw, idx) => {
-      if (raw.startsWith('BYE_')) return { team: 'BYE', name: raw, isBye: true };
-      const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
-      if (match) return { team: match[1].trim().toLowerCase(), name: raw, isBye: false };
-      return { team: `SOLO_${idx}`, name: raw, isBye: false }; 
+      if (raw.startsWith('BYE_')) {
+        return { team: 'BYE', region: 'BYE', name: raw, isBye: true };
+      }
+      
+      if (isOpenTournament) {
+        // Open tournament mode: parse [Daerah-Tim] Nama Peserta
+        const match = raw.match(/^\[(.*?)-(.*?)\]\s*(.*)$/);
+        if (match) {
+          return { 
+            region: match[1].trim().toLowerCase(), 
+            team: match[2].trim().toLowerCase(), 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        
+        // Fallback if missing dash: e.g. [Majalengka] Andi
+        const fallbackMatch = raw.match(/^\[(.*?)\]\s*(.*)$/);
+        if (fallbackMatch) {
+          return { 
+            region: fallbackMatch[1].trim().toLowerCase(), 
+            team: `SOLO_${idx}`, 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        
+        // Fully solo
+        return { region: `SOLO_REG_${idx}`, team: `SOLO_${idx}`, name: raw, isBye: false };
+      } else {
+        // Normal tournament mode: parse [Tim] Nama Peserta
+        const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
+        if (match) {
+          return { 
+            region: 'NONE', 
+            team: match[1].trim().toLowerCase(), 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        return { region: 'NONE', team: `SOLO_${idx}`, name: raw, isBye: false };
+      }
     });
 
-    // 3. Kelompokkan berdasarkan tim
+    const playerInfoMap = {};
+    players.forEach(p => {
+      playerInfoMap[p.name] = p;
+    });
+
+    // 3. Kelompokkan berdasarkan tim untuk menentukan urutan distribusi
     const teamGroups = {};
     players.forEach(p => {
       if (!teamGroups[p.team]) teamGroups[p.team] = [];
@@ -373,11 +420,19 @@ export default function App() {
       poolsMap[id] = Array.from({ length: 8 }, () => []);
     });
 
-    const getPoolMembers = (poolId, teamId) => poolsMap[poolId].flat().filter(name => teamGroups[teamId].includes(name));
+    const getTeamPoolMembers = (poolId, teamId) => 
+      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.team === teamId);
+    
+    const getRegionPoolMembers = (poolId, regionId) => 
+      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.region === regionId);
 
-    // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter
+    // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter (Menghindari Bentrok Tim & Daerah)
     for (const team of sortedTeams) {
       for (const member of teamGroups[team]) {
+        const pInfo = playerInfoMap[member];
+        const teamId = pInfo.team;
+        const regionId = pInfo.region;
+
         let validOptions = [];
         poolIds.forEach(poolId => {
           poolsMap[poolId].forEach((block, bIdx) => {
@@ -388,29 +443,49 @@ export default function App() {
         validOptions.forEach(opt => {
           const qIdx = Math.floor(opt.bIdx / 2);
           const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
-          const quarterMembers = quarterBlocks.flat().filter(name => teamGroups[team].includes(name));
+          const quarterMembersTeam = quarterBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
+          const quarterMembersRegion = quarterBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
 
           const hIdx = Math.floor(opt.bIdx / 4);
           const halfBlocks = [
             poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1], 
             poolsMap[opt.poolId][hIdx * 4 + 2], poolsMap[opt.poolId][hIdx * 4 + 3]
           ];
-          const halfMembers = halfBlocks.flat().filter(name => teamGroups[team].includes(name));
+          const halfMembersTeam = halfBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
+          const halfMembersRegion = halfBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
 
-          opt.poolCount = getPoolMembers(opt.poolId, team).length;
-          opt.halfCount = halfMembers.length;
-          opt.quarterCount = quarterMembers.length;
-          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length;
+          // Team conflicts
+          opt.teamPoolCount = getTeamPoolMembers(opt.poolId, teamId).length;
+          opt.teamHalfCount = halfMembersTeam.length;
+          opt.teamQuarterCount = quarterMembersTeam.length;
+          opt.teamBlockCount = opt.block.filter(name => playerInfoMap[name]?.team === teamId).length;
+
+          // Region conflicts (Only if isOpenTournament is active)
+          opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(opt.poolId, regionId).length : 0;
+          opt.regionHalfCount = regionId !== 'NONE' ? halfMembersRegion.length : 0;
+          opt.regionQuarterCount = regionId !== 'NONE' ? quarterMembersRegion.length : 0;
+          opt.regionBlockCount = regionId !== 'NONE' ? opt.block.filter(name => playerInfoMap[name]?.region === regionId).length : 0;
           
           opt.totalPoolLength = poolsMap[opt.poolId].flat().length;
           opt.totalBlockLength = opt.block.length;
         });
 
         validOptions.sort((a, b) => {
-          if (a.poolCount !== b.poolCount) return a.poolCount - b.poolCount;
-          if (a.halfCount !== b.halfCount) return a.halfCount - b.halfCount;
-          if (a.quarterCount !== b.quarterCount) return a.quarterCount - b.quarterCount;
-          if (a.blockCount !== b.blockCount) return a.blockCount - b.blockCount;
+          // Priority 1: Team conflicts
+          if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
+          if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
+          if (a.teamQuarterCount !== b.teamQuarterCount) return a.teamQuarterCount - b.teamQuarterCount;
+          if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
+
+          // Priority 2: Region conflicts (if Open Tournament is active)
+          if (isOpenTournament) {
+            if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
+            if (a.regionHalfCount !== b.regionHalfCount) return a.regionHalfCount - b.regionHalfCount;
+            if (a.regionQuarterCount !== b.regionQuarterCount) return a.regionQuarterCount - b.regionQuarterCount;
+            if (a.regionBlockCount !== b.regionBlockCount) return a.regionBlockCount - b.regionBlockCount;
+          }
+
+          // Priority 3: Size Balance
           if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
           return a.totalBlockLength - b.totalBlockLength;
         });
@@ -438,6 +513,7 @@ export default function App() {
       logo: logoBase64,
       doubleLife: doubleLife,
       prelimPointsSystem: prelimPointsSystem,
+      isOpenTournament: isOpenTournament,
       isArchived: false
     };
 
@@ -1462,6 +1538,8 @@ export default function App() {
             setDoubleLife={setDoubleLife}
             prelimPointsSystem={prelimPointsSystem}
             setPrelimPointsSystem={setPrelimPointsSystem}
+            isOpenTournament={isOpenTournament}
+            setIsOpenTournament={setIsOpenTournament}
             logoBase64={logoBase64}
             setLogoBase64={setLogoBase64}
             bulkInput={bulkInput}

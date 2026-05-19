@@ -18,11 +18,12 @@ Fitur ini digunakan saat memulai turnamen baru. Klik menu **"Buat Bagan Otomatis
 | Fitur / Pengaturan | Penjelasan & Panduan Praktis |
 | :--- | :--- |
 | **Identitas Turnamen** | Masukkan **Judul Turnamen** dan **Nama Panitia**. Anda juga dapat mengunggah **Logo Turnamen** yang akan langsung tampil gagah di bagian atas tajuk halaman. |
+| **Tipe Cakupan Turnamen** | <ul><li>**Lokal / Club Match:** (Default) Memisahkan peserta dari tim yang sama. Format input nama: `[Nama Tim] Nama Peserta`.</li><li>**Open Cup (Lintas Daerah):** Memisahkan peserta dari daerah yang sama DAN tim yang sama secara bersamaan. Format input nama: `[Nama Daerah-Nama Tim] Nama Peserta` (contoh: `[Majalengka-Senyap] Andi`).</li></ul> |
 | **Kapasitas Per Bagan** | Pilih ukuran bagan per pool (`16`, `32`, `64`, atau `AUTO`). Jika memilih `AUTO`, sistem akan otomatis membagi jumlah peserta secara seimbang ke dalam pool-pool yang diperlukan. |
 | **Aturan Nyawa** | <ul><li>**1 Nyawa:** Format sistem gugur tunggal tradisional.</li><li>**2 Nyawa (Beda):** Setiap peserta mendapatkan 2 kesempatan bertanding. Bagan akan dikalikan 2 (Bagan AB & CD). Lawan di babak pertama Bagan CD diacak ulang secara otomatis untuk memastikan **tidak bertemu dengan lawan yang sama seperti di bagan AB**.</li></ul> |
 | **Format Bagan Final** | <ul><li>**Liga (Round Robin):** 3 juara dari masing-masing pool akan dipertemukan dalam format liga segitiga untuk saling bertanding menentukan Juara 1, 2, dan 3 berdasarkan poin tertinggi.</li><li>**Bagan (Gugur):** Pertandingan final standar dengan sistem eliminasi langsung.</li></ul> |
 | **Poin Penyisihan (R1)** | <ul><li>**Normal (1 Nyawa):** Klik sekali langsung lolos ke babak berikutnya.</li><li>**Duluan 2 Poin:** Berlaku khusus babak penyisihan (Ronde 1). Setiap game mencatat poin. Peserta pertama yang meraih **2 Poin** adalah pemenang pertandingan.</li></ul> |
-| **Input Nama Peserta** | Masukkan nama peserta (satu nama per baris). <br>💡 **TIPS SEEDING TIM:** Gunakan format `[Nama Tim] Nama Peserta` (contoh: `[Senyap] Daim`). Sistem secara otomatis akan menyebarkan peserta dengan nama tim yang sama ke pool atau kuarter yang berbeda agar mereka **tidak saling berhadapan di babak-babak awal**. |
+| **Input Nama Peserta** | Masukkan nama peserta (satu nama per baris). Sesuaikan kurung siku `[...]` di depan nama dengan **Tipe Cakupan Turnamen** yang Anda pilih agar algoritma anti-bentrok berjalan dengan optimal. |
 
 ---
 
