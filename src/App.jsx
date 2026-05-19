@@ -536,7 +536,40 @@ export default function App() {
 
     // 6. Bangun Bracket Dinamis (Bagan Pertama / Utama)
     poolIds.forEach(poolId => {
-      poolsMap[poolId].forEach(b => b.sort(() => Math.random() - 0.5));
+      poolsMap[poolId].forEach(b => {
+        let bestBlock = [...b];
+        let bestConflictCount = Infinity;
+
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const shuffled = [...b].sort(() => Math.random() - 0.5);
+          let conflicts = 0;
+          for (let j = 0; j < shuffled.length; j += 2) {
+            if (j + 1 < shuffled.length) {
+              const p1 = shuffled[j];
+              const p2 = shuffled[j + 1];
+              if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
+              const info1 = playerInfoMap[p1];
+              const info2 = playerInfoMap[p2];
+              if (info1 && info2) {
+                if (info1.team === info2.team) conflicts += 10;
+                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) conflicts += 5;
+              }
+            }
+          }
+          if (conflicts === 0) {
+            bestBlock = shuffled;
+            break;
+          }
+          if (conflicts < bestConflictCount) {
+            bestBlock = shuffled;
+            bestConflictCount = conflicts;
+          }
+        }
+        
+        for (let i = 0; i < b.length; i++) {
+          b[i] = bestBlock[i];
+        }
+      });
       const poolNames = poolsMap[poolId].flat();
 
       let matches = [];
@@ -606,17 +639,20 @@ export default function App() {
 
       let set2Players = [...allPlayersList];
       let attempts = 0;
-      let valid = false;
+      let bestSet2Players = [...set2Players];
+      let bestScore = Infinity;
 
-      // Fisher-Yates shuffle yang memvalidasi bahwa lawan babak 1 tidak boleh sama dengan set1
-      while (!valid && attempts < 250) {
+      // Fisher-Yates shuffle yang memvalidasi lawan babak 1 beda dengan set1 & minimalkan bentrok tim/daerah
+      while (attempts < 500) {
         attempts++;
         for (let i = set2Players.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [set2Players[i], set2Players[j]] = [set2Players[j], set2Players[i]];
         }
 
-        valid = true;
+        let isOpponentValid = true;
+        let score = 0;
+
         for (let pIdx = 0; pIdx < numPools; pIdx++) {
           const poolStart = pIdx * capacity;
           for (let mIdx = 0; mIdx < capacity; mIdx += 2) {
@@ -625,15 +661,35 @@ export default function App() {
             const p1 = set2Players[idx1];
             const p2 = set2Players[idx2];
             if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+              // Harus beda lawan dengan ronde pertama bagan utama
               if (firstRoundOpponents[p1] === p2) {
-                valid = false;
+                isOpponentValid = false;
                 break;
+              }
+              const info1 = playerInfoMap[p1];
+              const info2 = playerInfoMap[p2];
+              if (info1 && info2) {
+                if (info1.team === info2.team) score += 10;
+                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) score += 5;
               }
             }
           }
-          if (!valid) break;
+          if (!isOpponentValid) break;
+        }
+
+        if (isOpponentValid) {
+          if (score === 0) {
+            bestSet2Players = [...set2Players];
+            bestScore = 0;
+            break;
+          }
+          if (score < bestScore) {
+            bestSet2Players = [...set2Players];
+            bestScore = score;
+          }
         }
       }
+      set2Players = bestSet2Players;
 
       // Generate bagan kedua (setelah index poolIds pertama selesai, misal C, D...)
       const set2PoolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + numPools + i));
