@@ -23,7 +23,10 @@ import {
   Flag,
   Megaphone,
   Archive,
-  Trash2
+  Trash2,
+  Crown,
+  Medal,
+  Award
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -1113,6 +1116,163 @@ export default function App() {
     return "Sistem Gugur Tunggal — Bagan Eliminasi Langsung";
   };
 
+  const getChampions = () => {
+    if (!activeBracket || !activeBracket.matches) return null;
+    let j1 = null, j2 = null, j3 = null, j4 = null;
+
+    if (activeBracket.type === 'roundrobin') {
+      const standings = computeStandings(activeBracket);
+      if (activeBracket.matches.some(m => m.winner)) {
+        j1 = standings[0]?.name || null;
+        j2 = standings[1]?.name || null;
+        j3 = standings[2]?.name || null;
+        j4 = standings[3]?.name || null;
+      }
+    } else if (activeBracket.type === 'double') {
+      const fm4 = activeBracket.matches.find(m => m.id === 'fm4');
+      const fm3 = activeBracket.matches.find(m => m.id === 'fm3');
+      j1 = fm4?.winner || null;
+      if (j1 && fm4) {
+        j2 = j1 === fm4.player1 ? fm4.player2 : fm4.player1;
+      }
+      j3 = fm3?.winner || null;
+      if (j3 && fm3) {
+        j4 = j3 === fm3.player1 ? fm3.player2 : fm3.player1;
+      }
+    } else {
+      const totalR = activeBracket.totalRounds || 1;
+      const finalMatch = activeBracket.matches.find(m => m.round === totalR);
+      j1 = finalMatch?.winner || null;
+      if (j1 && finalMatch) {
+        j2 = j1 === finalMatch.player1 ? finalMatch.player2 : finalMatch.player1;
+      }
+      if (totalR > 1) {
+        const sfMatches = activeBracket.matches.filter(m => m.round === totalR - 1);
+        if (sfMatches[0] && sfMatches[0].winner) {
+          j3 = sfMatches[0].winner === sfMatches[0].player1 ? sfMatches[0].player2 : sfMatches[0].player1;
+        }
+        if (sfMatches[1] && sfMatches[1].winner) {
+          j4 = sfMatches[1].winner === sfMatches[1].player1 ? sfMatches[1].player2 : sfMatches[1].player1;
+        }
+      }
+    }
+
+    return { j1, j2, j3, j4 };
+  };
+
+  const renderPodium = () => {
+    const champs = getChampions();
+    if (!champs || (!champs.j1 && !champs.j2 && !champs.j3 && !champs.j4)) return null;
+
+    const isDouble = activeBracket?.type === 'double';
+    const isRoundRobin = activeBracket?.type === 'roundrobin';
+    const isBracket = activeBracket?.type === 'bracket';
+
+    return (
+      <div className="mb-10 max-w-3xl mx-auto p-8 bg-white border-2 border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
+        {/* Decorative background gradients */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-100/40 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-100/30 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
+
+        <div className="relative text-center mb-6">
+          <span className="inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-200/50">
+            🥇 Podium Juara
+          </span>
+          <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Pemenang Turnamen</h3>
+          <p className="text-xs text-slate-500 font-bold mt-1">Daftar pemenang resmi turnamen saat ini</p>
+        </div>
+
+        {/* Podium Layout */}
+        <div className="flex flex-col gap-3">
+          {/* Juara 1 */}
+          {champs.j1 && (
+            <div className="relative group overflow-hidden bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-white p-5 rounded-2xl shadow-lg shadow-yellow-100 flex items-center justify-between border-2 border-yellow-300">
+              <div className="absolute -inset-y-0 -left-12 w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:left-[110%] transition-all duration-1000 ease-out"></div>
+              <div className="flex items-center gap-4">
+                <div className="bg-white/20 p-3.5 rounded-xl text-yellow-100 shadow-inner flex items-center justify-center shrink-0">
+                  <Crown size={28} className="animate-bounce" style={{ animationDuration: '3s' }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-amber-100 uppercase tracking-widest">Juara 1 (Gold)</p>
+                  <p className="text-base font-black tracking-tight">{champs.j1}</p>
+                </div>
+              </div>
+              <Trophy size={36} className="text-white/30 shrink-0" />
+            </div>
+          )}
+
+          {/* Juara 2 */}
+          {champs.j2 && (
+            <div className="relative bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 text-white p-4.5 rounded-2xl shadow-md flex items-center justify-between border border-slate-300/40">
+              <div className="flex items-center gap-4">
+                <div className="bg-white/10 p-3 rounded-xl text-slate-100 shadow-inner flex items-center justify-center shrink-0">
+                  <Medal size={24} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-200 uppercase tracking-widest">Juara 2 (Silver)</p>
+                  <p className="text-sm font-black tracking-tight">{champs.j2}</p>
+                </div>
+              </div>
+              <Medal size={28} className="text-white/20 shrink-0" />
+            </div>
+          )}
+
+          {/* Juara 3 (Bronze) & Juara 4 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {champs.j3 && (
+              <div className="bg-gradient-to-r from-orange-500 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-400/20">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/10 p-2.5 rounded-lg text-orange-200 shadow-inner flex items-center justify-center shrink-0">
+                    <Medal size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-orange-200 uppercase tracking-widest">
+                      {isBracket ? "Juara 3 Bersama" : "Juara 3 (Bronze)"}
+                    </p>
+                    <p className="text-xs font-black tracking-tight">{champs.j3}</p>
+                  </div>
+                </div>
+                <Medal size={22} className="text-white/25 shrink-0" />
+              </div>
+            )}
+
+            {champs.j4 && (
+              <div className={cn(
+                "p-4 rounded-2xl flex items-center justify-between border",
+                isBracket
+                  ? "bg-gradient-to-r from-orange-500 via-amber-700 to-amber-800 text-white border-orange-400/20"
+                  : "bg-white text-slate-800 border-slate-200 shadow-sm"
+              )}>
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "p-2.5 rounded-lg shadow-inner flex items-center justify-center shrink-0",
+                    isBracket ? "bg-white/10 text-orange-200" : "bg-slate-100 text-slate-500"
+                  )}>
+                    {isBracket ? <Medal size={20} /> : <Award size={20} />}
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "text-[9px] font-black uppercase tracking-widest",
+                      isBracket ? "text-orange-200" : "text-slate-400"
+                    )}>
+                      {isBracket ? "Juara 3 Bersama" : "Juara 4 (Harapan 1)"}
+                    </p>
+                    <p className="text-xs font-black tracking-tight">{champs.j4}</p>
+                  </div>
+                </div>
+                {isBracket ? (
+                  <Medal size={22} className="text-white/25 shrink-0" />
+                ) : (
+                  <Award size={22} className="text-slate-300 shrink-0" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const changeFinalFormat = async (newFormat) => {
     if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
@@ -1790,6 +1950,9 @@ export default function App() {
                 </div>
               ))}
             </div>
+
+            {/* Champions Podium */}
+            {renderPodium()}
 
             {/* Referee Quick Setup Panel */}
             {role === 'referee' && (
