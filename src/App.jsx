@@ -1113,6 +1113,22 @@ export default function App() {
     return "Sistem Gugur Tunggal — Bagan Eliminasi Langsung";
   };
 
+  const changeFinalFormat = async (newFormat) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    
+    setFinalFormat(newFormat);
+    
+    try {
+      const newData = JSON.parse(JSON.stringify(tournamentData));
+      newData.finalFormat = newFormat;
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal mengubah format final.");
+    }
+  };
+
   const resetAllPools = async () => {
     if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
@@ -1133,6 +1149,10 @@ export default function App() {
     const winners = finalParticipants.map(p => p.name);
     if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
     if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
+    
+    if (tournamentData.pools?.Final) {
+      if (!window.confirm("PERINGATAN: Menyusun ulang finalis akan menghapus bagan final saat ini beserta seluruh skor/pemenang yang sudah tercatat. Lanjutkan?")) return;
+    }
     
     const newData = JSON.parse(JSON.stringify(tournamentData));
     if (!newData.pools) newData.pools = {};
@@ -1771,17 +1791,62 @@ export default function App() {
               ))}
             </div>
 
-            {/* Setup / Reset Button */}
+            {/* Referee Quick Setup Panel */}
             {role === 'referee' && (
-              <div className="mb-8 flex gap-3 max-w-3xl mx-auto">
-                <button onClick={syncFinalBracket} className={cn("flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", allFinalistsReady ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed')} disabled={!allFinalistsReady}>
-                  <LayoutGrid size={18}/> {activeBracket ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
-                </button>
-                {activeBracket && (
-                  <button onClick={resetPool} className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-100 hover:bg-red-50 transition-all">
-                    Reset
-                  </button>
-                )}
+              <div className="bg-slate-100/80 border-2 border-slate-200/50 p-6 rounded-3xl mb-8 max-w-3xl mx-auto shadow-sm">
+                <div className="flex flex-col gap-6">
+                  {/* Format Selector */}
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
+                      {[
+                        { id: 'bracket', label: 'Gugur Tunggal' },
+                        { id: 'double', label: 'Gugur Ganda' },
+                        { id: 'roundrobin', label: 'Round Robin' }
+                      ].map(opt => {
+                        const isActive = activeBracket?.type === opt.id || (!activeBracket && finalFormat === opt.id);
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => changeFinalFormat(opt.id)}
+                            className={cn(
+                              "py-2.5 px-3 rounded-xl text-xs font-black transition-all",
+                              isActive
+                                ? "bg-white text-slate-800 shadow-md"
+                                : "text-slate-450 hover:text-slate-700"
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={syncFinalBracket} 
+                      className={cn(
+                        "flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", 
+                        allFinalistsReady 
+                          ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      )} 
+                      disabled={!allFinalistsReady}
+                    >
+                      <LayoutGrid size={18}/> {activeBracket ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
+                    </button>
+                    {activeBracket && (
+                      <button 
+                        onClick={resetPool} 
+                        className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-150 hover:bg-red-50 transition-all bg-white shadow-sm"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
