@@ -765,6 +765,25 @@ export default function App() {
     }
   };
 
+  const saveGlobalSettings = async () => {
+    try {
+      const newData = JSON.parse(JSON.stringify(tournamentData));
+      newData.title = tournamentTitle;
+      newData.organizer = tournamentOrganizer;
+      newData.logo = logoBase64;
+      newData.doubleLife = doubleLife;
+      newData.prelimPointsSystem = prelimPointsSystem;
+      newData.isOpenTournament = isOpenTournament;
+      newData.finalFormat = finalFormat;
+
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setShowGlobalSetup(false);
+    } catch (err) {
+      showError("Gagal menyimpan pengaturan.");
+    }
+  };
+
   const executeSetWinner = async (matchId, winnerName) => {
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const poolData = newData.pools[activePool];
@@ -1085,6 +1104,13 @@ export default function App() {
         showError("Gagal mereset bagan.");
       }
     }
+  };
+
+  const getFinalFormatText = () => {
+    const format = activeBracket?.type || finalFormat;
+    if (format === 'roundrobin') return "Sistem Round-Robin — Finalis Saling Bertemu (Liga)";
+    if (format === 'double') return "Sistem Gugur Ganda — Semifinal + Juara 3 + Grand Final";
+    return "Sistem Gugur Tunggal — Bagan Eliminasi Langsung";
   };
 
   const resetAllPools = async () => {
@@ -1716,24 +1742,26 @@ export default function App() {
             setTournamentTitle={setTournamentTitle}
             tournamentOrganizer={tournamentOrganizer}
             setTournamentOrganizer={setTournamentOrganizer}
+            hasExistingTournament={!!currentTournament.pools?.A}
+            saveGlobalSettings={saveGlobalSettings}
           />
         ) : activePool === 'Final' ? (
-          <div className="max-w-3xl mx-auto p-6 md:p-12 animate-slide-up">
+          <div className="max-w-7xl mx-auto p-6 md:p-12 animate-slide-up">
             {/* Header Final */}
-            <div className="relative mb-8">
+            <div className="relative mb-8 max-w-3xl mx-auto">
               <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-xl opacity-20"></div>
               <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 flex items-center gap-6 shadow-xl">
                 <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36}/></div>
                 <div>
                   <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Grand Final</p>
                   <h2 className="text-2xl font-black text-slate-800">{currentTournament.title || tournamentTitle}</h2>
-                  <p className="text-xs text-slate-500 font-bold mt-1">Sistem Round-Robin — 3 Finalis Saling Bertemu</p>
+                  <p className="text-xs text-slate-500 font-bold mt-1">{getFinalFormatText()}</p>
                 </div>
               </div>
             </div>
 
             {/* Finalists Status */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8 max-w-3xl mx-auto">
               {finalParticipants.map((p) => (
                 <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
                   <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
@@ -1745,11 +1773,11 @@ export default function App() {
 
             {/* Setup / Reset Button */}
             {role === 'referee' && (
-              <div className="mb-8 flex gap-3">
+              <div className="mb-8 flex gap-3 max-w-3xl mx-auto">
                 <button onClick={syncFinalBracket} className={cn("flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", allFinalistsReady ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed')} disabled={!allFinalistsReady}>
-                  <LayoutGrid size={18}/> {activeBracket?.type === 'roundrobin' ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
+                  <LayoutGrid size={18}/> {activeBracket ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
                 </button>
-                {activeBracket?.type === 'roundrobin' && (
+                {activeBracket && (
                   <button onClick={resetPool} className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-100 hover:bg-red-50 transition-all">
                     Reset
                   </button>
@@ -1759,7 +1787,7 @@ export default function App() {
 
             {/* Round-Robin Matches */}
             {activeBracket?.type === 'roundrobin' && (
-              <div className="space-y-4">
+              <div className="space-y-4 max-w-3xl mx-auto">
                 <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Pertandingan Final</h3>
                 {activeBracket.matches.map((match, idx) => (
                   <div key={match.id} className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
@@ -1805,9 +1833,19 @@ export default function App() {
               </div>
             )}
 
+            {/* Tree Bracket Matches (Gugur Tunggal / Gugur Ganda) */}
+            {activeBracket && activeBracket.type !== 'roundrobin' && (
+              <div className="relative mt-8 border-t border-slate-150 pt-8 overflow-visible">
+                <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-6 text-center">Bagan Pertandingan Final</h3>
+                <div className="border-2 border-slate-200/60 rounded-3xl bg-slate-100/30 overflow-hidden shadow-inner">
+                  {renderBracket()}
+                </div>
+              </div>
+            )}
+
             {/* Empty state */}
             {!activeBracket && role !== 'referee' && (
-              <div className="text-center py-20"><Trophy size={60} className="text-slate-200 mx-auto mb-4"/><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
+              <div className="text-center py-20 max-w-3xl mx-auto"><Trophy size={60} className="text-slate-200 mx-auto mb-4"/><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
             )}
           </div>
         ) : (

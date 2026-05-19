@@ -6,7 +6,8 @@ import {
   LayoutGrid, 
   Check, 
   AlertCircle, 
-  Trophy 
+  Trophy,
+  Save
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -37,7 +38,9 @@ export default function SetupWizard({
   tournamentTitle,
   setTournamentTitle,
   tournamentOrganizer,
-  setTournamentOrganizer
+  setTournamentOrganizer,
+  hasExistingTournament,
+  saveGlobalSettings
 }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -399,12 +402,33 @@ export default function SetupWizard({
             />
           </div>
 
-          <button 
-            onClick={generateGlobalBracket} 
-            className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
-          >
-            <Shuffle size={20}/> GENERATE SEMUA BAGAN
-          </button>
+          {hasExistingTournament ? (
+            <div className="flex flex-col md:flex-row gap-3">
+              <button 
+                onClick={saveGlobalSettings} 
+                className="flex-1 bg-emerald-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+              >
+                <Save size={20}/> SIMPAN PENGATURAN
+              </button>
+              <button 
+                onClick={() => {
+                  if (window.confirm("PERINGATAN: Membuat ulang bagan akan menghapus semua skor dan bagan saat ini secara permanen! Lanjutkan?")) {
+                    generateGlobalBracket();
+                  }
+                }} 
+                className="flex-1 bg-red-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-red-200 hover:bg-red-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+              >
+                <Shuffle size={20}/> BUAT ULANG BAGAN (RESET)
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={generateGlobalBracket} 
+              className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+            >
+              <Shuffle size={20}/> GENERATE SEMUA BAGAN
+            </button>
+          )}
         </div>
       </div>
     </div>
