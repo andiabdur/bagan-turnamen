@@ -448,6 +448,47 @@ export default function App() {
       poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.region === regionId);
 
     // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter (Menghindari Bentrok Tim & Daerah)
+    //
+    // Definisi "Final Half" berdasarkan skema silang bagan:
+    //   - 2 pool : A vs B (final langsung, tak ada masalah half)
+    //   - 3 pool : A+C satu half, B sendiri
+    //   - 4 pool : A+C = half-0, B+D = half-1 (semifinal: A vs C, B vs D)
+    //
+    // Aturan: Anggota tim yang sama HARUS di half yang berbeda
+    // sehingga mereka hanya bisa bertemu di Grand Final, bukan di Semifinal.
+    const getFinalHalf = (poolId) => {
+      const idx = poolIds.indexOf(poolId); // 0=A,1=B,2=C,3=D,...
+      if (poolIds.length <= 2) return idx;        // setiap pool adalah half sendiri
+      if (poolIds.length === 3) return idx === 1 ? 1 : 0; // B sendiri, A+C sama
+      // 4+ pools: gunakan pola silang — pool 0 & 2 (A,C) = half-0, pool 1 & 3 (B,D) = half-1, dst.
+      return idx % 2; // pool ke-0,2,4... = half-0; pool ke-1,3,5... = half-1
+    };
+
+    const getTeamSameHalfCount = (poolId, teamId) => {
+      let count = 0;
+      const candidateHalf = getFinalHalf(poolId);
+      poolIds.forEach(pid => {
+        if (pid === poolId) return; // pool sendiri sudah dihitung di teamPoolCount
+        if (getFinalHalf(pid) === candidateHalf) {
+          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.team === teamId).length;
+        }
+      });
+      return count;
+    };
+
+    const getRegionSameHalfCount = (poolId, regionId) => {
+      if (regionId === 'NONE') return 0;
+      let count = 0;
+      const candidateHalf = getFinalHalf(poolId);
+      poolIds.forEach(pid => {
+        if (pid === poolId) return;
+        if (getFinalHalf(pid) === candidateHalf) {
+          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.region === regionId).length;
+        }
+      });
+      return count;
+    };
+
     for (const team of sortedTeams) {
       for (const member of teamGroups[team]) {
         const pInfo = playerInfoMap[member];
@@ -475,24 +516,36 @@ export default function App() {
           const halfMembersTeam = halfBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
           const halfMembersRegion = halfBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
 
-          // Team conflicts
+          // Team conflicts (within same pool)
           opt.teamPoolCount = getTeamPoolMembers(opt.poolId, teamId).length;
           opt.teamHalfCount = halfMembersTeam.length;
           opt.teamQuarterCount = quarterMembersTeam.length;
           opt.teamBlockCount = opt.block.filter(name => playerInfoMap[name]?.team === teamId).length;
+
+          // *** NEW: Same-Half Conflict across pools (Final bracket awareness) ***
+          // Penalti besar jika tim yang sama sudah ada di pool lain dengan half final yang sama.
+          // Contoh: jika [CKJ-BEREBETZ]1 di Pool A, maka Pool C mendapat penalti karena A+C = half-0.
+          opt.teamSameHalfCount = getTeamSameHalfCount(opt.poolId, teamId);
 
           // Region conflicts (Only if isOpenTournament is active)
           opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(opt.poolId, regionId).length : 0;
           opt.regionHalfCount = regionId !== 'NONE' ? halfMembersRegion.length : 0;
           opt.regionQuarterCount = regionId !== 'NONE' ? quarterMembersRegion.length : 0;
           opt.regionBlockCount = regionId !== 'NONE' ? opt.block.filter(name => playerInfoMap[name]?.region === regionId).length : 0;
+
+          // *** NEW: Same-Half Region conflict (daerah yang sama juga dipisah half) ***
+          opt.regionSameHalfCount = isOpenTournament ? getRegionSameHalfCount(opt.poolId, regionId) : 0;
           
           opt.totalPoolLength = poolsMap[opt.poolId].flat().length;
           opt.totalBlockLength = opt.block.length;
         });
 
         validOptions.sort((a, b) => {
-          // Priority 1: Team conflicts
+          // Priority 0 (TERPENTING): Jangan masukkan tim yang sama ke half final yang sama!
+          // Ini mencegah sesama tim [X]1 dan [X]2 bertemu di Semifinal (A vs C / B vs D).
+          if (a.teamSameHalfCount !== b.teamSameHalfCount) return a.teamSameHalfCount - b.teamSameHalfCount;
+
+          // Priority 1: Team conflicts (dalam pool yang sama)
           if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
           if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
           if (a.teamQuarterCount !== b.teamQuarterCount) return a.teamQuarterCount - b.teamQuarterCount;
@@ -500,6 +553,8 @@ export default function App() {
 
           // Priority 2: Region conflicts (if Open Tournament is active)
           if (isOpenTournament) {
+            // Same-half region juga dipisah dulu
+            if (a.regionSameHalfCount !== b.regionSameHalfCount) return a.regionSameHalfCount - b.regionSameHalfCount;
             if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
             if (a.regionHalfCount !== b.regionHalfCount) return a.regionHalfCount - b.regionHalfCount;
             if (a.regionQuarterCount !== b.regionQuarterCount) return a.regionQuarterCount - b.regionQuarterCount;
