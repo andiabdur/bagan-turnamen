@@ -1386,16 +1386,27 @@ export default function App() {
       newData.pools['Final'] = { type: 'roundrobin', matches };
     } else if (finalFormat === 'double') {
       // Model B: Semifinal + Grand Final + Perebutan Juara 3
-      const capacity = 4;
-      const poolNames = [...winners];
-      while (poolNames.length < 4) poolNames.push(`BYE_FINAL_${poolNames.length + 1}`);
+      // Pola SILANG: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D
+      // Urutan winners = [JuaraA, JuaraB, JuaraC, JuaraD, ...]
+      // Crossover: slot 0 (A) vs slot 2 (C), slot 1 (B) vs slot 3 (D)
+      const rawWinners = [...winners];
+      while (rawWinners.length < 4) rawWinners.push(`BYE_FINAL_${rawWinners.length + 1}`);
+
+      // Reorder untuk pola silang: [A, C, B, D]
+      const crossover = [
+        rawWinners[0], // A → SF1 slot 1
+        rawWinners[2], // C → SF1 slot 2
+        rawWinners[1], // B → SF2 slot 1
+        rawWinners[3], // D → SF2 slot 2
+      ];
 
       // Semifinals (Round 1)
       const match1 = {
         id: 'fm1',
         round: 1,
-        player1: poolNames[0].startsWith('BYE_') ? null : poolNames[0],
-        player2: poolNames[1].startsWith('BYE_') ? null : poolNames[1],
+        label: 'Semifinal 1',
+        player1: crossover[0].startsWith('BYE_') ? null : crossover[0],
+        player2: crossover[1].startsWith('BYE_') ? null : crossover[1],
         winner: null,
         nextMatchId: 'fm4', // Winner to Grand Final Slot 1
         nextMatchSlot: 1,
@@ -1405,8 +1416,9 @@ export default function App() {
       const match2 = {
         id: 'fm2',
         round: 1,
-        player1: poolNames[2].startsWith('BYE_') ? null : poolNames[2],
-        player2: poolNames[3].startsWith('BYE_') ? null : poolNames[3],
+        label: 'Semifinal 2',
+        player1: crossover[2].startsWith('BYE_') ? null : crossover[2],
+        player2: crossover[3].startsWith('BYE_') ? null : crossover[3],
         winner: null,
         nextMatchId: 'fm4', // Winner to Grand Final Slot 2
         nextMatchSlot: 2,
@@ -1415,10 +1427,10 @@ export default function App() {
       };
 
       // Auto-winners for BYEs
-      if (poolNames[0].startsWith('BYE_') && !poolNames[1].startsWith('BYE_')) match1.winner = poolNames[1];
-      if (poolNames[1].startsWith('BYE_') && !poolNames[0].startsWith('BYE_')) match1.winner = poolNames[0];
-      if (poolNames[2].startsWith('BYE_') && !poolNames[3].startsWith('BYE_')) match2.winner = poolNames[3];
-      if (poolNames[3].startsWith('BYE_') && !poolNames[2].startsWith('BYE_')) match2.winner = poolNames[0];
+      if (crossover[0].startsWith('BYE_') && !crossover[1].startsWith('BYE_')) match1.winner = crossover[1];
+      if (crossover[1].startsWith('BYE_') && !crossover[0].startsWith('BYE_')) match1.winner = crossover[0];
+      if (crossover[2].startsWith('BYE_') && !crossover[3].startsWith('BYE_')) match2.winner = crossover[3];
+      if (crossover[3].startsWith('BYE_') && !crossover[2].startsWith('BYE_')) match2.winner = crossover[2];
 
       // Round 2 Matches
       const match3 = {
@@ -1455,12 +1467,24 @@ export default function App() {
         totalRounds: 2
       };
     } else {
-      // Direct Elimination Bracket for Finalists
-      // Find nearest power of 2
+      // Direct Elimination Bracket for Finalists — pola SILANG
+      // winners = [JuaraA, JuaraB, JuaraC, JuaraD, ...]
+      // Tujuan: SF1 = A vs C, SF2 = B vs D → reorder dulu sebelum dipasangkan
       const capacity = Math.pow(2, Math.ceil(Math.log2(winners.length)));
-      const poolNames = [...winners];
+      const rawWinners = [...winners];
       let counter = 1;
-      while (poolNames.length < capacity) poolNames.push(`BYE_FINAL_${counter++}`);
+      while (rawWinners.length < capacity) rawWinners.push(`BYE_FINAL_${counter++}`);
+
+      // Crossover reorder untuk pola silang (berlaku untuk 4 finalis):
+      // [A(0), B(1), C(2), D(3)] → [A(0), C(2), B(1), D(3)]
+      // Untuk jumlah pool lebih dari 4, terapkan pola silang yang sama (0,2,1,3,4,6,5,7,...)
+      const poolNames = [];
+      for (let i = 0; i < capacity; i += 4) {
+        poolNames.push(rawWinners[i] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 2] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 1] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 3] || `BYE_FINAL_${poolNames.length + 1}`);
+      }
 
       let matches = [];
       let matchIdCounter = 1;
@@ -1469,9 +1493,11 @@ export default function App() {
       for (let i = 0; i < capacity; i += 2) {
         const p1 = poolNames[i];
         const p2 = poolNames[i + 1];
+        const sfNum = Math.floor(i / 2) + 1;
         const match = { 
           id: `fm${matchIdCounter++}`, 
-          round: 1, 
+          round: 1,
+          label: capacity > 2 ? `Semifinal ${sfNum}` : 'Grand Final',
           player1: p1.startsWith('BYE_') ? null : p1, 
           player2: p2.startsWith('BYE_') ? null : p2, 
           winner: null, 
