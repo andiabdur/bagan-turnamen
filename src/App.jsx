@@ -503,6 +503,13 @@ export default function App() {
         });
 
         validOptions.forEach(opt => {
+          const poolFlat = poolsMap[opt.poolId].flat();
+
+          // *** PRIORITAS ABSOLUT: Nama identik dilarang masuk pool yang sama ***
+          // Jika [MJL-KOTA ANGIN]1 sudah ada di pool ini (meskipun di block lain),
+          // pool ini mendapat skor sangat tinggi sehingga selalu dihindari.
+          opt.sameNameInPool = poolFlat.filter(n => n === member).length;
+
           const qIdx = Math.floor(opt.bIdx / 2);
           const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
           const quarterMembersTeam = quarterBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
@@ -522,9 +529,7 @@ export default function App() {
           opt.teamQuarterCount = quarterMembersTeam.length;
           opt.teamBlockCount = opt.block.filter(name => playerInfoMap[name]?.team === teamId).length;
 
-          // *** NEW: Same-Half Conflict across pools (Final bracket awareness) ***
-          // Penalti besar jika tim yang sama sudah ada di pool lain dengan half final yang sama.
-          // Contoh: jika [CKJ-BEREBETZ]1 di Pool A, maka Pool C mendapat penalti karena A+C = half-0.
+          // Same-Half Conflict across pools (Final bracket awareness)
           opt.teamSameHalfCount = getTeamSameHalfCount(opt.poolId, teamId);
 
           // Region conflicts (Only if isOpenTournament is active)
@@ -533,16 +538,19 @@ export default function App() {
           opt.regionQuarterCount = regionId !== 'NONE' ? quarterMembersRegion.length : 0;
           opt.regionBlockCount = regionId !== 'NONE' ? opt.block.filter(name => playerInfoMap[name]?.region === regionId).length : 0;
 
-          // *** NEW: Same-Half Region conflict (daerah yang sama juga dipisah half) ***
+          // Same-Half Region conflict
           opt.regionSameHalfCount = isOpenTournament ? getRegionSameHalfCount(opt.poolId, regionId) : 0;
           
-          opt.totalPoolLength = poolsMap[opt.poolId].flat().length;
+          opt.totalPoolLength = poolFlat.length;
           opt.totalBlockLength = opt.block.length;
         });
 
         validOptions.sort((a, b) => {
-          // Priority 0 (TERPENTING): Jangan masukkan tim yang sama ke half final yang sama!
-          // Ini mencegah sesama tim [X]1 dan [X]2 bertemu di Semifinal (A vs C / B vs D).
+          // Prioritas ABSOLUT (-1): Nama yang PERSIS SAMA harus masuk pool yang BERBEDA.
+          // Ini menangani kasus 1 joki punya 2 slot — kedua slot tidak boleh di pool yang sama.
+          if (a.sameNameInPool !== b.sameNameInPool) return a.sameNameInPool - b.sameNameInPool;
+
+          // Priority 0: Jangan masukkan tim yang sama ke half final yang sama!
           if (a.teamSameHalfCount !== b.teamSameHalfCount) return a.teamSameHalfCount - b.teamSameHalfCount;
 
           // Priority 1: Team conflicts (dalam pool yang sama)
