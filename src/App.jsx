@@ -699,39 +699,45 @@ export default function App() {
       newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
     });
 
-    // 7. Jika doubleLife Aktif, Bangun Bagan Kedua (Bagan CD, dst) dengan "Beda Lawan" babak 1
+    // 7. Jika doubleLife Aktif, Bangun Bagan Kedua (Crossover: A→C, B→D)
+    // Setiap peserta dari Pool A mendapat nyawa ke-2 di Pool C dengan lawan BERBEDA dari babak 1 Pool A.
+    // Setiap peserta dari Pool B mendapat nyawa ke-2 di Pool D dengan lawan BERBEDA dari babak 1 Pool B.
+    // Struktur Final: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D.
     if (doubleLife) {
-      // Ambil daftar pemain yang sama dengan set1 (termasuk BYE)
-      const allPlayersList = [];
-      poolIds.forEach(pId => {
-        allPlayersList.push(...poolsMap[pId].flat());
-      });
+      // Crossover mapping: Pool A (idx 0) → Pool C (idx 0 + numPools), Pool B (idx 1) → Pool D, dst.
+      const set2PoolIds = Array.from({ length: numPools }, (_, i) =>
+        String.fromCharCode(65 + numPools + i)
+      );
 
-      let set2Players = [...allPlayersList];
-      let attempts = 0;
-      let bestSet2Players = [...set2Players];
-      let bestScore = Infinity;
+      poolIds.forEach((srcPoolId, pIdx) => {
+        const crossPoolId = set2PoolIds[pIdx]; // A→C, B→D, C→E (jika ada), dll.
+        
+        // Ambil pemain dari pool sumber (nyawa 1) untuk dikocok ulang di pool silang
+        const srcPlayers = poolsMap[srcPoolId].flat();
+        
+        let bestShuffle = [...srcPlayers];
+        let bestScore = Infinity;
+        let attempts = 0;
+        let shuffled = [...srcPlayers];
 
-      // Fisher-Yates shuffle yang memvalidasi lawan babak 1 beda dengan set1 & minimalkan bentrok tim/daerah
-      while (attempts < 500) {
-        attempts++;
-        for (let i = set2Players.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [set2Players[i], set2Players[j]] = [set2Players[j], set2Players[i]];
-        }
+        // Fisher-Yates shuffle per-pool: cari urutan terbaik dengan:
+        // 1. Tidak ada pasangan R1 yang sama dengan nyawa 1 (beda lawan - WAJIB)
+        // 2. Minimalisir bentrok tim & daerah dalam R1 nyawa 2
+        while (attempts < 600) {
+          attempts++;
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
 
-        let isOpponentValid = true;
-        let score = 0;
+          let isOpponentValid = true;
+          let score = 0;
 
-        for (let pIdx = 0; pIdx < numPools; pIdx++) {
-          const poolStart = pIdx * capacity;
           for (let mIdx = 0; mIdx < capacity; mIdx += 2) {
-            const idx1 = poolStart + mIdx;
-            const idx2 = poolStart + mIdx + 1;
-            const p1 = set2Players[idx1];
-            const p2 = set2Players[idx2];
+            const p1 = shuffled[mIdx];
+            const p2 = shuffled[mIdx + 1];
             if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
-              // Harus beda lawan dengan ronde pertama bagan utama
+              // WAJIB: tidak boleh bertemu lawan yang sama seperti babak 1 nyawa 1
               if (firstRoundOpponents[p1] === p2) {
                 isOpponentValid = false;
                 break;
@@ -744,52 +750,63 @@ export default function App() {
               }
             }
           }
-          if (!isOpponentValid) break;
-        }
 
-        if (isOpponentValid) {
-          if (score === 0) {
-            bestSet2Players = [...set2Players];
-            bestScore = 0;
-            break;
-          }
-          if (score < bestScore) {
-            bestSet2Players = [...set2Players];
-            bestScore = score;
+          if (isOpponentValid) {
+            if (score === 0) { bestShuffle = [...shuffled]; bestScore = 0; break; }
+            if (score < bestScore) { bestShuffle = [...shuffled]; bestScore = score; }
           }
         }
-      }
-      set2Players = bestSet2Players;
 
-      // Generate bagan kedua (setelah index poolIds pertama selesai, misal C, D...)
-      const set2PoolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + numPools + i));
-      set2PoolIds.forEach((poolId, pIdx) => {
-        const poolStart = pIdx * capacity;
-        const poolNames = set2Players.slice(poolStart, poolStart + capacity);
-
+        // Bangun bracket untuk pool silang menggunakan bestShuffle
+        const poolNames = bestShuffle;
         let matches = [];
         let matchIdCounter = 1;
         let currentRoundMatches = [];
 
+        // Kocok tiap blok dalam pool untuk pastikan R1 beda lawan & minim bentrok
+        const blockSize = capacity / 8;
+        for (let bStart = 0; bStart < capacity; bStart += blockSize) {
+          const block = poolNames.slice(bStart, bStart + blockSize);
+          let bestBlock = [...block];
+          let bestBlockConflict = Infinity;
+
+          for (let attempt = 0; attempt < 100; attempt++) {
+            const sb = [...block].sort(() => Math.random() - 0.5);
+            let conflicts = 0;
+            for (let j = 0; j < sb.length; j += 2) {
+              if (j + 1 < sb.length) {
+                const p1 = sb[j], p2 = sb[j + 1];
+                if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
+                if (firstRoundOpponents[p1] === p2) conflicts += 20;
+                const i1 = playerInfoMap[p1], i2 = playerInfoMap[p2];
+                if (i1 && i2) {
+                  if (i1.team === i2.team) conflicts += 10;
+                  if (isOpenTournament && i1.region !== 'NONE' && i1.region === i2.region) conflicts += 5;
+                }
+              }
+            }
+            if (conflicts < bestBlockConflict) { bestBlock = sb; bestBlockConflict = conflicts; }
+            if (conflicts === 0) break;
+          }
+          for (let k = 0; k < block.length; k++) poolNames[bStart + k] = bestBlock[k];
+        }
+
         for (let i = 0; i < capacity; i += 2) {
           const p1 = poolNames[i];
           const p2 = poolNames[i + 1];
-          const match = { 
-            id: `m${matchIdCounter++}`, 
-            round: 1, 
-            player1: p1.startsWith('BYE_') ? null : p1, 
-            player2: p2.startsWith('BYE_') ? null : p2, 
-            winner: null, 
-            nextMatchId: null, 
+          const match = {
+            id: `m${matchIdCounter++}`,
+            round: 1,
+            player1: p1.startsWith('BYE_') ? null : p1,
+            player2: p2.startsWith('BYE_') ? null : p2,
+            winner: null,
+            nextMatchId: null,
             nextMatchSlot: null,
             player1Points: 0,
             player2Points: 0
           };
-
-          // Auto-winner for BYE
           if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
           if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
-          
           matches.push(match);
           currentRoundMatches.push(match);
         }
@@ -800,11 +817,8 @@ export default function App() {
           currentRoundMatches = [];
           for (let i = 0; i < prevMatches.length; i += 2) {
             const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
-            
-            // Carry over winners from Round 1 BYEs
             if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
-            if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
-
+            if (prevMatches[i + 1].winner) match.player2 = prevMatches[i + 1].winner;
             matches.push(match);
             currentRoundMatches.push(match);
             prevMatches[i].nextMatchId = match.id;
@@ -815,7 +829,11 @@ export default function App() {
           prevMatches = currentRoundMatches;
           roundNum++;
         }
-        newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
+        newData.pools[crossPoolId] = {
+          matches,
+          totalRounds: roundNum - 1,
+          crossoverOf: srcPoolId // Tandai bahwa ini adalah nyawa 2 dari pool sumber
+        };
       });
     }
 
