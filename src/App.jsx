@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Shield,
-  Users,
-  Trophy,
-  RefreshCw,
-  LogOut,
-  Check,
-  AlertCircle,
-  LayoutGrid,
-  UserPlus,
+import { 
+  Shield, 
+  Users, 
+  Trophy, 
+  RefreshCw, 
+  LogOut, 
+  Check, 
+  AlertCircle, 
+  LayoutGrid, 
+  UserPlus, 
   Settings,
   X,
   ChevronRight,
@@ -21,23 +21,32 @@ import {
   Square,
   Clock,
   Flag,
-  Megaphone
+  Megaphone,
+  Archive,
+  Trash2,
+  Crown,
+  Medal,
+  Award
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  signInAnonymously,
-  signInWithCustomToken,
-  onAuthStateChanged
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged 
 } from 'firebase/auth';
-import {
-  getFirestore,
-  doc,
-  onSnapshot,
-  setDoc
+import { 
+  getFirestore, 
+  doc, 
+  onSnapshot, 
+  setDoc,
+  collection,
+  deleteDoc
 } from 'firebase/firestore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import MatchCard from './components/MatchCard';
+import SetupWizard from './components/SetupWizard';
 
 // Helper for tailwind classes
 function cn(...inputs) {
@@ -53,7 +62,7 @@ const getFirebaseConfig = () => {
       console.error("Failed to parse __firebase_config", e);
     }
   }
-
+  
   return {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -89,6 +98,8 @@ export default function App() {
   const [loadingData, setLoadingData] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [activePool, setActivePool] = useState('A');
+  const [bracketSize, setBracketSize] = useState('32'); // '16', '32', '64', 'auto'
+  const [finalFormat, setFinalFormat] = useState('roundrobin'); // 'roundrobin', 'bracket'
   const [bulkInput, setBulkInput] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
@@ -100,18 +111,37 @@ export default function App() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchResult, setSearchResult] = useState(null); // { matchId, slot }
   const [showGlobalSetup, setShowGlobalSetup] = useState(false);
+  const [tournamentTitle, setTournamentTitle] = useState('Turnamen Layangan Kabupaten Majalengka');
+  const [tournamentOrganizer, setTournamentOrganizer] = useState('Majalengka');
+  const [winnerConfirm, setWinnerConfirm] = useState(null); // { matchId, winnerName, isFinal }
+  const [doubleLife, setDoubleLife] = useState(false);
+  const [prelimPointsSystem, setPrelimPointsSystem] = useState(false);
+  const [isOpenTournament, setIsOpenTournament] = useState(false);
+  const [logoBase64, setLogoBase64] = useState('');
+  const [archivesList, setArchivesList] = useState([]);
   const matchRefs = useRef({});
   const searchInputRef = useRef(null);
+  const [viewingArchive, setViewingArchive] = useState(null);
+  const [showArchiveManagement, setShowArchiveManagement] = useState(false);
 
-  const poolsList = ['A', 'B', 'C', 'Final'];
-  const activeBracket = tournamentData.pools?.[activePool];
+  const currentTournament = viewingArchive || tournamentData;
+
+  const poolsList = [
+    ...Object.keys(currentTournament.pools || {})
+      .filter(p => p !== 'Final')
+      .sort((a, b) => a.localeCompare(b)), 
+    'Final'
+  ];
+  const activeBracket = currentTournament.pools?.[activePool];
 
   // Auto-derive final participants from pool winners
-  const finalParticipants = [
-    { pool: 'A', name: tournamentData.pools?.A?.matches?.find(m => m.round === tournamentData.pools?.A?.totalRounds)?.winner || null },
-    { pool: 'B', name: tournamentData.pools?.B?.matches?.find(m => m.round === tournamentData.pools?.B?.totalRounds)?.winner || null },
-    { pool: 'C', name: tournamentData.pools?.C?.matches?.find(m => m.round === tournamentData.pools?.C?.totalRounds)?.winner || null },
-  ];
+  const finalParticipants = Object.keys(currentTournament.pools || {})
+    .filter(p => p !== 'Final')
+    .sort()
+    .map(poolId => ({
+      pool: poolId,
+      name: currentTournament.pools[poolId].matches?.find(m => m.round === currentTournament.pools[poolId].totalRounds)?.winner || null
+    }));
   const allFinalistsReady = finalParticipants.every(p => p.name);
 
   // 2. EFFECTS
@@ -137,16 +167,166 @@ export default function App() {
     if (!user || !db) return;
     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
     const unsub = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) setTournamentData(snap.data());
-      else setTournamentData({ pools: {} });
-      setLoadingData(false);
-    }, (err) => {
-      showError("Gagal memuat data turnamen.");
-      setLoadingData(false);
-    }
+        if (snap.exists()) {
+          const data = snap.data();
+          setTournamentData(data);
+          if (data.title) setTournamentTitle(data.title);
+          if (data.organizer) setTournamentOrganizer(data.organizer);
+          if (data.doubleLife !== undefined) setDoubleLife(data.doubleLife);
+          if (data.prelimPointsSystem !== undefined) setPrelimPointsSystem(data.prelimPointsSystem);
+          if (data.isOpenTournament !== undefined) setIsOpenTournament(data.isOpenTournament);
+          if (data.finalFormat !== undefined) setFinalFormat(data.finalFormat);
+        } else {
+          setTournamentData({ pools: {} });
+        }
+        setLoadingData(false);
+      }, (err) => {
+        showError("Gagal memuat data turnamen.");
+        setLoadingData(false);
+      }
     );
-    return () => unsub();
+
+    const archivesCol = collection(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items');
+    const unsubArchives = onSnapshot(archivesCol, (snapshot) => {
+      const list = [];
+      snapshot.forEach(doc => {
+        list.push(doc.data());
+      });
+      list.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
+      setArchivesList(list);
+    }, (err) => {
+      console.error("Gagal memuat riwayat arsip:", err);
+    });
+
+    return () => {
+      unsub();
+      unsubArchives();
+    };
   }, [user]);
+
+  // 2.5 REUSABLE BRACKET RENDERER
+  const renderBracket = () => {
+    if (!activeBracket || !activeBracket.matches) return null;
+    
+    return (
+      <div
+        className="overflow-auto no-scrollbar"
+        style={{ touchAction: 'pan-x pan-y' }}
+        onTouchStart={(e) => {
+          if (e.touches.length === 2) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchRef.current = {
+              active: true,
+              startDist: Math.hypot(dx, dy),
+              startZoom: bracketZoom,
+            };
+          }
+        }}
+        onTouchMove={(e) => {
+          if (e.touches.length === 2 && pinchRef.current.active) {
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const { startDist, startZoom } = pinchRef.current;
+            if (startDist === 0) return;
+            const next = Math.min(2, Math.max(0.4,
+              parseFloat((startZoom * (dist / startDist)).toFixed(2))
+            ));
+            setBracketZoom(next);
+          }
+        }}
+        onTouchEnd={() => { pinchRef.current.active = false; }}
+      >
+        <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
+        <div className="flex items-start gap-0">
+          {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
+            const roundNum = idx + 1;
+            const matches = activeBracket.matches.filter(m => m.round === roundNum);
+            
+            // Dynamic Labels
+            let roundLabels = [];
+            if (activePool === 'Final') {
+              if (activeBracket.type === 'double') {
+                roundLabels = ["Semifinal", "Final & Juara 3"];
+              } else if (activeBracket.totalRounds === 2) {
+                roundLabels = ["Semifinal", "Grand Final"];
+              } else if (activeBracket.totalRounds === 3) {
+                roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
+              } else {
+                roundLabels = Array.from({length: activeBracket.totalRounds || 2}, (_, i) => `Round ${i+1}`);
+              }
+            } else {
+              const totalR = activeBracket.totalRounds || 5;
+              roundLabels = Array.from({ length: totalR }, (_, i) => {
+                const roundsFromEnd = totalR - 1 - i;
+                if (roundsFromEnd === 0) return "Final Pool";
+                if (roundsFromEnd === 1) return "Semifinal";
+                if (roundsFromEnd === 2) return "8 Besar";
+                if (roundsFromEnd === 3) return "16 Besar";
+                if (roundsFromEnd === 4) return "32 Besar";
+                if (roundsFromEnd === 5) return "64 Besar";
+                if (roundsFromEnd === 6) return "128 Besar";
+                return `Babak ${i + 1}`;
+              });
+            }
+
+            const matchHeight = 180 * Math.pow(2, idx);
+            return (
+              <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
+                <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
+                   <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
+                </div>
+                <div className="flex flex-col">
+                  {matches.map(match => (
+                    <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
+                      <MatchCard
+                        match={match}
+                        role={role}
+                        onSetWinner={activePool === 'Final' ? setFinalWinner : setWinner}
+                        onSetMatchState={setMatchState}
+                        onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
+                        matchRef={el => { matchRefs.current[match.id] = el; }}
+                        highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
+                        prelimPointsSystem={tournamentData.prelimPointsSystem}
+                      />
+                      {match.nextMatchId && (
+                        <>
+                          <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
+                          <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                          {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {activePool !== 'Final' && (
+            <div className="flex flex-col ml-12">
+               <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
+                  <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
+               </div>
+               <div className="flex items-center" style={{ height: '180px' }}>
+                  <div className="relative group ml-4">
+                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
+                    <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
+                      <div>
+                        <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
+                        <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
+                      </div>
+                    </div>
+                  </div>
+               </div>
+            </div>
+          )}
+        </div>
+      </div>
+      </div>
+    );
+  };
 
   // 3. HANDLERS
   const showError = (msg) => {
@@ -156,12 +336,12 @@ export default function App() {
 
   const handleLoginReferee = (e) => {
     e.preventDefault();
-    if (e.target.pin.value === 'Indo1234!') {
+    if (e.target.pin.value === 'majalengkawani2026') {
       setRole('referee');
       localStorage.setItem('tournament_role', 'referee');
       setIsMenuOpen(false);
     } else {
-      showError('PIN Wasit salah!');
+      showError('Password Wasit salah!');
     }
   };
 
@@ -174,111 +354,323 @@ export default function App() {
   const generateGlobalBracket = async () => {
     let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
     if (rawNames.length === 0) return showError("Daftar nama tidak boleh kosong.");
+    
+    // 1. Determine Capacity & Pool Count
+    let capacity = parseInt(bracketSize);
+    if (bracketSize === 'auto') {
+      if (rawNames.length <= 16) capacity = 16;
+      else if (rawNames.length <= 32) capacity = 32;
+      else if (rawNames.length <= 64) capacity = 64;
+      else capacity = 32; // Default back to split 32 for large tournaments
+    }
 
+    const numPools = Math.max(1, Math.ceil(rawNames.length / capacity));
+    const totalSlots = numPools * capacity;
+    const poolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + i)); // A, B, C...
+
+    // Fill with BYEs if needed
     let counter = 1;
-    // We need exactly 96 players for 3 pools
-    while (rawNames.length < 96) rawNames.push(`Peserta ${counter++}`);
-    if (rawNames.length > 96) rawNames = rawNames.slice(0, 96);
+    const fullNames = [...rawNames];
+    while (fullNames.length < totalSlots) fullNames.push(`BYE_${counter++}`);
 
-    // 1. Identifikasi Tim via Format "[Nama Tim] Peserta"
-    const players = rawNames.map((raw, idx) => {
-      const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
-      if (match) return { team: match[1].trim().toLowerCase(), name: raw };
-      return { team: `NONE_${idx}`, name: raw }; // Solo player
+    // 2. Identifikasi Tim & Daerah berdasarkan Mode Turnamen
+    const players = fullNames.map((raw, idx) => {
+      if (raw.startsWith('BYE_')) {
+        return { team: 'BYE', region: 'BYE', name: raw, isBye: true };
+      }
+      
+      if (isOpenTournament) {
+        // Open tournament mode: parse [Daerah-Tim] Nama Peserta
+        const match = raw.match(/^\[(.*?)-(.*?)\]\s*(.*)$/);
+        if (match) {
+          return { 
+            region: match[1].trim().toLowerCase(), 
+            team: match[2].trim().toLowerCase(), 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        
+        // Fallback if missing dash: e.g. [Majalengka] Andi
+        const fallbackMatch = raw.match(/^\[(.*?)\]\s*(.*)$/);
+        if (fallbackMatch) {
+          return { 
+            region: fallbackMatch[1].trim().toLowerCase(), 
+            team: `SOLO_${idx}`, 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        
+        // Fully solo
+        return { region: `SOLO_REG_${idx}`, team: `SOLO_${idx}`, name: raw, isBye: false };
+      } else {
+        // Normal tournament mode: parse [Tim] Nama Peserta
+        const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
+        if (match) {
+          return { 
+            region: 'NONE', 
+            team: match[1].trim().toLowerCase(), 
+            name: raw, 
+            isBye: false 
+          };
+        }
+        return { region: 'NONE', team: `SOLO_${idx}`, name: raw, isBye: false };
+      }
     });
 
-    // 2. Kelompokkan berdasarkan tim
+    const playerInfoMap = {};
+    players.forEach(p => {
+      playerInfoMap[p.name] = p;
+    });
+
+    // 3. Kelompokkan berdasarkan tim untuk menentukan urutan distribusi
     const teamGroups = {};
     players.forEach(p => {
       if (!teamGroups[p.team]) teamGroups[p.team] = [];
       teamGroups[p.team].push(p.name);
     });
 
-    // 3. Urutkan dari tim dengan anggota terbanyak
-    const sortedTeams = Object.keys(teamGroups).sort((a, b) => teamGroups[b].length - teamGroups[a].length);
+    const sortedTeams = Object.keys(teamGroups)
+      .filter(t => t !== 'BYE')
+      .sort((a, b) => teamGroups[b].length - teamGroups[a].length);
 
-    // 4. Siapkan 3 Pool (A, B, C), masing-masing 8 Sub-Blok (4 slot/blok)
-    const poolsMap = {
-      'A': Array.from({ length: 8 }, () => []),
-      'B': Array.from({ length: 8 }, () => []),
-      'C': Array.from({ length: 8 }, () => []),
+    // 4. Siapkan Pools (Masing-masing dibagi 8 Sub-Blok untuk persebaran)
+    const poolsMap = {};
+    poolIds.forEach(id => {
+      poolsMap[id] = Array.from({ length: 8 }, () => []);
+    });
+
+    const getTeamPoolMembers = (poolId, teamId) => 
+      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.team === teamId);
+    
+    const getRegionPoolMembers = (poolId, regionId) => 
+      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.region === regionId);
+
+    // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter (Menghindari Bentrok Tim & Daerah)
+    //
+    // Definisi "Final Half" berdasarkan skema silang bagan:
+    //   - 2 pool : A vs B (final langsung, tak ada masalah half)
+    //   - 3 pool : A+C satu half, B sendiri
+    //   - 4 pool : A+C = half-0, B+D = half-1 (semifinal: A vs C, B vs D)
+    //
+    // Aturan: Anggota tim yang sama HARUS di half yang berbeda
+    // sehingga mereka hanya bisa bertemu di Grand Final, bukan di Semifinal.
+    const getFinalHalf = (poolId) => {
+      const idx = poolIds.indexOf(poolId); // 0=A,1=B,2=C,3=D,...
+      if (poolIds.length <= 2) return idx;        // setiap pool adalah half sendiri
+      if (poolIds.length === 3) return idx === 1 ? 1 : 0; // B sendiri, A+C sama
+      // 4+ pools: gunakan pola silang — pool 0 & 2 (A,C) = half-0, pool 1 & 3 (B,D) = half-1, dst.
+      return idx % 2; // pool ke-0,2,4... = half-0; pool ke-1,3,5... = half-1
     };
 
-    const getPoolMembers = (poolId, teamId) => poolsMap[poolId].flat().filter(name => teamGroups[teamId].includes(name));
+    const getTeamSameHalfCount = (poolId, teamId) => {
+      let count = 0;
+      const candidateHalf = getFinalHalf(poolId);
+      poolIds.forEach(pid => {
+        if (pid === poolId) return; // pool sendiri sudah dihitung di teamPoolCount
+        if (getFinalHalf(pid) === candidateHalf) {
+          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.team === teamId).length;
+        }
+      });
+      return count;
+    };
 
-    // 5. Distribusi Cerdas Global
+    const getRegionSameHalfCount = (poolId, regionId) => {
+      if (regionId === 'NONE') return 0;
+      let count = 0;
+      const candidateHalf = getFinalHalf(poolId);
+      poolIds.forEach(pid => {
+        if (pid === poolId) return;
+        if (getFinalHalf(pid) === candidateHalf) {
+          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.region === regionId).length;
+        }
+      });
+      return count;
+    };
+
     for (const team of sortedTeams) {
       for (const member of teamGroups[team]) {
-        let validOptions = [];
-        for (const poolId of ['A', 'B', 'C']) {
-          poolsMap[poolId].forEach((block, bIdx) => {
-            if (block.length < 4) validOptions.push({ poolId, bIdx, block });
-          });
-        }
+        const pInfo = playerInfoMap[member];
+        const teamId = pInfo.team;
+        const regionId = pInfo.region;
 
-        // Hitung skor prioritas tiap opsi (semakin kecil skor, semakin prioritas)
+        let validOptions = [];
+        poolIds.forEach(poolId => {
+          poolsMap[poolId].forEach((block, bIdx) => {
+            if (block.length < (capacity / 8)) validOptions.push({ poolId, bIdx, block });
+          });
+        });
+
         validOptions.forEach(opt => {
-          // Hitung Quarter (1 kuarter = 2 sub-blok). Kuarter 0: blok 0-1, dst.
+          const poolFlat = poolsMap[opt.poolId].flat();
+
+          // *** PRIORITAS ABSOLUT: Nama identik dilarang masuk pool yang sama ***
+          // Jika [MJL-KOTA ANGIN]1 sudah ada di pool ini (meskipun di block lain),
+          // pool ini mendapat skor sangat tinggi sehingga selalu dihindari.
+          opt.sameNameInPool = poolFlat.filter(n => n === member).length;
+
           const qIdx = Math.floor(opt.bIdx / 2);
           const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
-          const quarterMembers = quarterBlocks.flat().filter(name => teamGroups[team].includes(name));
+          const quarterMembersTeam = quarterBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
+          const quarterMembersRegion = quarterBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
 
-          // Hitung Half / Setengah Bagan (1 Half = 4 sub-blok). Half 0: blok 0-3, Half 1: blok 4-7.
           const hIdx = Math.floor(opt.bIdx / 4);
           const halfBlocks = [
-            poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1],
+            poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1], 
             poolsMap[opt.poolId][hIdx * 4 + 2], poolsMap[opt.poolId][hIdx * 4 + 3]
           ];
-          const halfMembers = halfBlocks.flat().filter(name => teamGroups[team].includes(name));
+          const halfMembersTeam = halfBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
+          const halfMembersRegion = halfBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
 
-          opt.poolCount = getPoolMembers(opt.poolId, team).length; // Jauhkan antar pool
-          opt.halfCount = halfMembers.length; // Jauhkan antar separuh bagan (mencegah ketemu sebelum Final Pool)
-          opt.quarterCount = quarterMembers.length; // Jauhkan antar kuarter (mencegah ketemu di 8 besar)
-          opt.blockCount = opt.block.filter(name => teamGroups[team].includes(name)).length; // Jauhkan dalam sub-blok (mencegah ketemu di 16 besar)
+          // Team conflicts (within same pool)
+          opt.teamPoolCount = getTeamPoolMembers(opt.poolId, teamId).length;
+          opt.teamHalfCount = halfMembersTeam.length;
+          opt.teamQuarterCount = quarterMembersTeam.length;
+          opt.teamBlockCount = opt.block.filter(name => playerInfoMap[name]?.team === teamId).length;
 
-          opt.totalPoolLength = poolsMap[opt.poolId].flat().length; // Rata jumlah isi pool
-          opt.totalBlockLength = opt.block.length; // Rata jumlah isi blok
+          // Same-Half Conflict across pools (Final bracket awareness)
+          opt.teamSameHalfCount = getTeamSameHalfCount(opt.poolId, teamId);
+
+          // Region conflicts (Only if isOpenTournament is active)
+          opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(opt.poolId, regionId).length : 0;
+          opt.regionHalfCount = regionId !== 'NONE' ? halfMembersRegion.length : 0;
+          opt.regionQuarterCount = regionId !== 'NONE' ? quarterMembersRegion.length : 0;
+          opt.regionBlockCount = regionId !== 'NONE' ? opt.block.filter(name => playerInfoMap[name]?.region === regionId).length : 0;
+
+          // Same-Half Region conflict
+          opt.regionSameHalfCount = isOpenTournament ? getRegionSameHalfCount(opt.poolId, regionId) : 0;
+          
+          opt.totalPoolLength = poolFlat.length;
+          opt.totalBlockLength = opt.block.length;
         });
 
-        // Urutkan prioritas: antar pool -> antar half -> antar kuarter -> antar blok -> seimbang
         validOptions.sort((a, b) => {
-          if (a.poolCount !== b.poolCount) return a.poolCount - b.poolCount;
-          if (a.halfCount !== b.halfCount) return a.halfCount - b.halfCount;
-          if (a.quarterCount !== b.quarterCount) return a.quarterCount - b.quarterCount;
-          if (a.blockCount !== b.blockCount) return a.blockCount - b.blockCount;
+          // Prioritas ABSOLUT (-1): Nama yang PERSIS SAMA harus masuk pool yang BERBEDA.
+          // Ini menangani kasus 1 joki punya 2 slot — kedua slot tidak boleh di pool yang sama.
+          if (a.sameNameInPool !== b.sameNameInPool) return a.sameNameInPool - b.sameNameInPool;
+
+          // Priority 0: Jangan masukkan tim yang sama ke half final yang sama!
+          if (a.teamSameHalfCount !== b.teamSameHalfCount) return a.teamSameHalfCount - b.teamSameHalfCount;
+
+          // Priority 1: Team conflicts (dalam pool yang sama)
+          if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
+          if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
+          if (a.teamQuarterCount !== b.teamQuarterCount) return a.teamQuarterCount - b.teamQuarterCount;
+          if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
+
+          // Priority 2: Region conflicts (if Open Tournament is active)
+          if (isOpenTournament) {
+            // Same-half region juga dipisah dulu
+            if (a.regionSameHalfCount !== b.regionSameHalfCount) return a.regionSameHalfCount - b.regionSameHalfCount;
+            if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
+            if (a.regionHalfCount !== b.regionHalfCount) return a.regionHalfCount - b.regionHalfCount;
+            if (a.regionQuarterCount !== b.regionQuarterCount) return a.regionQuarterCount - b.regionQuarterCount;
+            if (a.regionBlockCount !== b.regionBlockCount) return a.regionBlockCount - b.regionBlockCount;
+          }
+
+          // Priority 3: Size Balance
           if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
-          if (a.totalBlockLength !== b.totalBlockLength) return a.totalBlockLength - b.totalBlockLength;
-          return 0;
+          return a.totalBlockLength - b.totalBlockLength;
         });
 
-        const bestScore = validOptions[0];
-        const bests = validOptions.filter(o =>
-          o.poolCount === bestScore.poolCount &&
-          o.halfCount === bestScore.halfCount &&
-          o.quarterCount === bestScore.quarterCount &&
-          o.blockCount === bestScore.blockCount &&
-          o.totalPoolLength === bestScore.totalPoolLength &&
-          o.totalBlockLength === bestScore.totalBlockLength
-        );
-        const chosen = bests[Math.floor(Math.random() * bests.length)];
+        const chosen = validOptions[0];
         poolsMap[chosen.poolId][chosen.bIdx].push(member);
       }
     }
 
-    const newData = JSON.parse(JSON.stringify(tournamentData));
-    if (!newData.pools) newData.pools = {};
+    // Fill BYEs into remaining spots
+    const byePlayers = teamGroups['BYE'] || [];
+    let byeIdx = 0;
+    poolIds.forEach(pId => {
+      poolsMap[pId].forEach(block => {
+        while (block.length < (capacity / 8) && byeIdx < byePlayers.length) {
+          block.push(byePlayers[byeIdx++]);
+        }
+      });
+    });
 
-    // 6. Bangun Bracket untuk A, B, C
-    ['A', 'B', 'C'].forEach(poolId => {
-      poolsMap[poolId].forEach(b => b.sort(() => Math.random() - 0.5));
+    const newData = { 
+      pools: {},
+      title: tournamentTitle,
+      organizer: tournamentOrganizer,
+      logo: logoBase64,
+      doubleLife: doubleLife,
+      prelimPointsSystem: prelimPointsSystem,
+      isOpenTournament: isOpenTournament,
+      finalFormat: finalFormat,
+      isArchived: false
+    };
+
+    const firstRoundOpponents = {};
+
+    // 6. Bangun Bracket Dinamis (Bagan Pertama / Utama)
+    poolIds.forEach(poolId => {
+      poolsMap[poolId].forEach(b => {
+        let bestBlock = [...b];
+        let bestConflictCount = Infinity;
+
+        for (let attempt = 0; attempt < 100; attempt++) {
+          const shuffled = [...b].sort(() => Math.random() - 0.5);
+          let conflicts = 0;
+          for (let j = 0; j < shuffled.length; j += 2) {
+            if (j + 1 < shuffled.length) {
+              const p1 = shuffled[j];
+              const p2 = shuffled[j + 1];
+              if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
+              const info1 = playerInfoMap[p1];
+              const info2 = playerInfoMap[p2];
+              if (info1 && info2) {
+                if (info1.team === info2.team) conflicts += 10;
+                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) conflicts += 5;
+              }
+            }
+          }
+          if (conflicts === 0) {
+            bestBlock = shuffled;
+            break;
+          }
+          if (conflicts < bestConflictCount) {
+            bestBlock = shuffled;
+            bestConflictCount = conflicts;
+          }
+        }
+        
+        for (let i = 0; i < b.length; i++) {
+          b[i] = bestBlock[i];
+        }
+      });
       const poolNames = poolsMap[poolId].flat();
 
       let matches = [];
       let matchIdCounter = 1;
       let currentRoundMatches = [];
 
-      for (let i = 0; i < 32; i += 2) {
-        const match = { id: `m${matchIdCounter++}`, round: 1, player1: poolNames[i], player2: poolNames[i + 1], winner: null, nextMatchId: null, nextMatchSlot: null };
+      for (let i = 0; i < capacity; i += 2) {
+        const p1 = poolNames[i];
+        const p2 = poolNames[i + 1];
+        const match = { 
+          id: `m${matchIdCounter++}`, 
+          round: 1, 
+          player1: p1.startsWith('BYE_') ? null : p1, 
+          player2: p2.startsWith('BYE_') ? null : p2, 
+          winner: null, 
+          nextMatchId: null, 
+          nextMatchSlot: null,
+          player1Points: 0,
+          player2Points: 0
+        };
+
+        // Catat lawan babak 1 untuk penegakan "beda lawan" di bagan selanjutnya jika doubleLife aktif
+        if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+          firstRoundOpponents[p1] = p2;
+          firstRoundOpponents[p2] = p1;
+        }
+
+        // Auto-winner for BYE
+        if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+        if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+        
         matches.push(match);
         currentRoundMatches.push(match);
       }
@@ -289,6 +681,11 @@ export default function App() {
         currentRoundMatches = [];
         for (let i = 0; i < prevMatches.length; i += 2) {
           const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+          
+          // Carry over winners from Round 1 BYEs
+          if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+          if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+
           matches.push(match);
           currentRoundMatches.push(match);
           prevMatches[i].nextMatchId = match.id;
@@ -302,12 +699,149 @@ export default function App() {
       newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
     });
 
-    if (newData.pools['Final']) delete newData.pools['Final'];
+    // 7. Jika doubleLife Aktif, Bangun Bagan Kedua (Crossover: A→C, B→D)
+    // Setiap peserta dari Pool A mendapat nyawa ke-2 di Pool C dengan lawan BERBEDA dari babak 1 Pool A.
+    // Setiap peserta dari Pool B mendapat nyawa ke-2 di Pool D dengan lawan BERBEDA dari babak 1 Pool B.
+    // Struktur Final: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D.
+    if (doubleLife) {
+      // Crossover mapping: Pool A (idx 0) → Pool C (idx 0 + numPools), Pool B (idx 1) → Pool D, dst.
+      const set2PoolIds = Array.from({ length: numPools }, (_, i) =>
+        String.fromCharCode(65 + numPools + i)
+      );
+
+      poolIds.forEach((srcPoolId, pIdx) => {
+        const crossPoolId = set2PoolIds[pIdx]; // A→C, B→D, C→E (jika ada), dll.
+        
+        // Ambil pemain dari pool sumber (nyawa 1) untuk dikocok ulang di pool silang
+        const srcPlayers = poolsMap[srcPoolId].flat();
+        
+        let bestShuffle = [...srcPlayers];
+        let bestScore = Infinity;
+        let attempts = 0;
+        let shuffled = [...srcPlayers];
+
+        // Fisher-Yates shuffle per-pool: cari urutan terbaik dengan:
+        // 1. Tidak ada pasangan R1 yang sama dengan nyawa 1 (beda lawan - WAJIB)
+        // 2. Minimalisir bentrok tim & daerah dalam R1 nyawa 2
+        while (attempts < 600) {
+          attempts++;
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+
+          let isOpponentValid = true;
+          let score = 0;
+
+          for (let mIdx = 0; mIdx < capacity; mIdx += 2) {
+            const p1 = shuffled[mIdx];
+            const p2 = shuffled[mIdx + 1];
+            if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+              // WAJIB: tidak boleh bertemu lawan yang sama seperti babak 1 nyawa 1
+              if (firstRoundOpponents[p1] === p2) {
+                isOpponentValid = false;
+                break;
+              }
+              const info1 = playerInfoMap[p1];
+              const info2 = playerInfoMap[p2];
+              if (info1 && info2) {
+                if (info1.team === info2.team) score += 10;
+                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) score += 5;
+              }
+            }
+          }
+
+          if (isOpponentValid) {
+            if (score === 0) { bestShuffle = [...shuffled]; bestScore = 0; break; }
+            if (score < bestScore) { bestShuffle = [...shuffled]; bestScore = score; }
+          }
+        }
+
+        // Bangun bracket untuk pool silang menggunakan bestShuffle
+        const poolNames = bestShuffle;
+        let matches = [];
+        let matchIdCounter = 1;
+        let currentRoundMatches = [];
+
+        // Kocok tiap blok dalam pool untuk pastikan R1 beda lawan & minim bentrok
+        const blockSize = capacity / 8;
+        for (let bStart = 0; bStart < capacity; bStart += blockSize) {
+          const block = poolNames.slice(bStart, bStart + blockSize);
+          let bestBlock = [...block];
+          let bestBlockConflict = Infinity;
+
+          for (let attempt = 0; attempt < 100; attempt++) {
+            const sb = [...block].sort(() => Math.random() - 0.5);
+            let conflicts = 0;
+            for (let j = 0; j < sb.length; j += 2) {
+              if (j + 1 < sb.length) {
+                const p1 = sb[j], p2 = sb[j + 1];
+                if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
+                if (firstRoundOpponents[p1] === p2) conflicts += 20;
+                const i1 = playerInfoMap[p1], i2 = playerInfoMap[p2];
+                if (i1 && i2) {
+                  if (i1.team === i2.team) conflicts += 10;
+                  if (isOpenTournament && i1.region !== 'NONE' && i1.region === i2.region) conflicts += 5;
+                }
+              }
+            }
+            if (conflicts < bestBlockConflict) { bestBlock = sb; bestBlockConflict = conflicts; }
+            if (conflicts === 0) break;
+          }
+          for (let k = 0; k < block.length; k++) poolNames[bStart + k] = bestBlock[k];
+        }
+
+        for (let i = 0; i < capacity; i += 2) {
+          const p1 = poolNames[i];
+          const p2 = poolNames[i + 1];
+          const match = {
+            id: `m${matchIdCounter++}`,
+            round: 1,
+            player1: p1.startsWith('BYE_') ? null : p1,
+            player2: p2.startsWith('BYE_') ? null : p2,
+            winner: null,
+            nextMatchId: null,
+            nextMatchSlot: null,
+            player1Points: 0,
+            player2Points: 0
+          };
+          if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+          if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+          matches.push(match);
+          currentRoundMatches.push(match);
+        }
+
+        let roundNum = 2;
+        let prevMatches = currentRoundMatches;
+        while (prevMatches.length > 1) {
+          currentRoundMatches = [];
+          for (let i = 0; i < prevMatches.length; i += 2) {
+            const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+            if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+            if (prevMatches[i + 1].winner) match.player2 = prevMatches[i + 1].winner;
+            matches.push(match);
+            currentRoundMatches.push(match);
+            prevMatches[i].nextMatchId = match.id;
+            prevMatches[i].nextMatchSlot = 1;
+            prevMatches[i + 1].nextMatchId = match.id;
+            prevMatches[i + 1].nextMatchSlot = 2;
+          }
+          prevMatches = currentRoundMatches;
+          roundNum++;
+        }
+        newData.pools[crossPoolId] = {
+          matches,
+          totalRounds: roundNum - 1,
+          crossoverOf: srcPoolId // Tandai bahwa ini adalah nyawa 2 dari pool sumber
+        };
+      });
+    }
 
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
       setBulkInput('');
+      setLogoBase64('');
       setShowGlobalSetup(false);
       setActivePool('A');
     } catch (err) {
@@ -315,15 +849,33 @@ export default function App() {
     }
   };
 
-  const setWinner = async (matchId, winnerName) => {
-    if (role !== 'referee' || !winnerName) return;
+  const saveGlobalSettings = async () => {
+    try {
+      const newData = JSON.parse(JSON.stringify(tournamentData));
+      newData.title = tournamentTitle;
+      newData.organizer = tournamentOrganizer;
+      newData.logo = logoBase64;
+      newData.doubleLife = doubleLife;
+      newData.prelimPointsSystem = prelimPointsSystem;
+      newData.isOpenTournament = isOpenTournament;
+      newData.finalFormat = finalFormat;
+
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setShowGlobalSetup(false);
+    } catch (err) {
+      showError("Gagal menyimpan pengaturan.");
+    }
+  };
+
+  const executeSetWinner = async (matchId, winnerName) => {
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const poolData = newData.pools[activePool];
     if (!poolData) return;
 
     const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
     const match = poolData.matches[matchIndex];
-
+    
     if (match.winner === winnerName) match.winner = null;
     else match.winner = winnerName;
 
@@ -339,8 +891,98 @@ export default function App() {
     }
   };
 
+  const setWinner = async (matchId, winnerName, isDecrement = false) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (role !== 'referee' || !winnerName) return;
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    const poolData = tournamentData.pools[activePool];
+    if (!poolData) return;
+    const match = poolData.matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    // Check if prelimPointsSystem is active and this is Round 1
+    const isPrelimPoints = tournamentData.prelimPointsSystem && match.round === 1;
+
+    if (isPrelimPoints) {
+      const isPlayer1 = match.player1 === winnerName;
+      const currentPoints = isPlayer1 ? (match.player1Points || 0) : (match.player2Points || 0);
+
+      if (isDecrement) {
+        // Decrement points
+        const newPoints = Math.max(0, currentPoints - 1);
+        await executeSetPoints(matchId, winnerName, newPoints, null);
+      } else {
+        // Increment points
+        if (currentPoints === 0) {
+          await executeSetPoints(matchId, winnerName, 1, null);
+        } else if (currentPoints === 1) {
+          // Confirm reaching score 2 and winning
+          if (window.confirm(`Apakah Anda yakin ${winnerName} mendapatkan poin ke-2, memenangkan pertandingan, dan lolos ke babak berikutnya?`)) {
+            await executeSetPoints(matchId, winnerName, 2, winnerName);
+          }
+        } else if (currentPoints >= 2) {
+          // Already has 2 points and won. If clicked again, allow resetting the match.
+          if (window.confirm(`Batalkan kemenangan ${winnerName} dan reset skor pertandingan ini?`)) {
+            await executeSetPoints(matchId, winnerName, 0, null, true); // reset both
+          }
+        }
+      }
+    } else {
+      // Normal 1 life winner logic
+      if (match.winner === winnerName) {
+        await executeSetWinner(matchId, winnerName);
+      } else {
+        setWinnerConfirm({ matchId, winnerName, isFinal: false });
+      }
+    }
+  };
+
+  const executeSetPoints = async (matchId, playerName, points, winnerName, isReset = false) => {
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const poolData = newData.pools[activePool];
+    if (!poolData) return;
+
+    const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
+    const match = poolData.matches[matchIndex];
+    if (!match) return;
+
+    const isPlayer1 = match.player1 === playerName;
+
+    if (isReset) {
+      match.player1Points = 0;
+      match.player2Points = 0;
+      match.winner = null;
+    } else {
+      if (isPlayer1) {
+        match.player1Points = points;
+      } else {
+        match.player2Points = points;
+      }
+      
+      if (winnerName) {
+        match.winner = winnerName;
+      } else {
+        match.winner = null;
+      }
+    }
+
+    // Update next round slot
+    if (match.nextMatchId) {
+      updateNextMatch(poolData.matches, match.nextMatchId, match.nextMatchSlot, match.winner);
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal mengupdate poin penyisihan.");
+    }
+  };
+
   const setMatchState = async (matchId, action) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (role !== 'referee') return;
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const poolData = newData.pools[activePool];
     if (!poolData) return;
@@ -365,7 +1007,7 @@ export default function App() {
         match.accumulatedTime = 0;
       } else if (action === 'call') {
         match.playState = 'call';
-        match.startTime = null;
+        match.startTime = now; // Store start time for 10 minutes countdown
         match.accumulatedTime = 0;
       } else if (action === 'pause') {
         if (match.playState === 'playing') {
@@ -397,16 +1039,21 @@ export default function App() {
     if (nextMatch.nextMatchId) {
       updateNextMatch(matches, nextMatch.nextMatchId, nextMatch.nextMatchSlot, null);
     }
+    if (nextMatch.loserNextMatchId) {
+      updateNextMatch(matches, nextMatch.loserNextMatchId, nextMatch.loserNextMatchSlot, null);
+    }
   };
 
   const handleUpdatePlayerName = async (newName) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
     if (!editingPlayer || !newName.trim()) return;
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     const { matchId, playerSlot } = editingPlayer;
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const poolData = newData.pools[activePool];
     const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
     if (matchIndex === -1) return;
-
+    
     const match = poolData.matches[matchIndex];
     const oldName = playerSlot === 1 ? match.player1 : match.player2;
     if (playerSlot === 1) match.player1 = newName;
@@ -428,7 +1075,108 @@ export default function App() {
     }
   };
 
+  const handleDisqualifyPlayer = async (matchId, playerSlot) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (role !== 'referee') return;
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    const poolData = newData.pools[activePool];
+    if (!poolData) return;
+
+    const matchIndex = poolData.matches.findIndex(m => m.id === matchId);
+    if (matchIndex === -1) return;
+    const match = poolData.matches[matchIndex];
+
+    const opponentName = playerSlot === 1 ? match.player2 : match.player1;
+    const isCurrentlyDis = playerSlot === 1 ? match.player1Disqualified : match.player2Disqualified;
+
+    if (isCurrentlyDis) {
+      if (playerSlot === 1) match.player1Disqualified = false;
+      else match.player2Disqualified = false;
+      
+      match.winner = null;
+      if (match.nextMatchId) {
+        updateNextMatch(poolData.matches, match.nextMatchId, match.nextMatchSlot, null);
+      }
+    } else {
+      if (playerSlot === 1) match.player1Disqualified = true;
+      else match.player2Disqualified = true;
+
+      if (opponentName && !opponentName.startsWith('BYE_')) {
+        match.winner = opponentName;
+        if (match.nextMatchId) {
+          updateNextMatch(poolData.matches, match.nextMatchId, match.nextMatchSlot, opponentName);
+        }
+      } else {
+        match.winner = null;
+      }
+    }
+
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setEditingPlayer(null);
+    } catch (err) {
+      showError("Gagal memproses diskualifikasi.");
+    }
+  };
+
+  const archiveTournament = async () => {
+    if (role !== 'referee') return;
+    if (!tournamentData.pools || Object.keys(tournamentData.pools).length === 0) {
+      return showError("Tidak ada bagan aktif untuk diarsipkan.");
+    }
+    
+    if (!window.confirm("Apakah Anda yakin ingin mengarsipkan turnamen ini? Turnamen yang diarsipkan akan disimpan ke riwayat publik dan bagan aktif saat ini akan dikosongkan agar Anda dapat membuat turnamen baru.")) {
+      return;
+    }
+    
+    const archiveId = 'archive_' + Date.now();
+    const archiveData = {
+      id: archiveId,
+      title: tournamentData.title || tournamentTitle,
+      organizer: tournamentData.organizer || tournamentOrganizer,
+      logo: tournamentData.logo || null,
+      doubleLife: tournamentData.doubleLife || false,
+      pools: tournamentData.pools || {},
+      archivedAt: new Date().toISOString()
+    };
+    
+    try {
+      // 1. Post to archives collection
+      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items', archiveId);
+      await setDoc(archiveRef, archiveData);
+      
+      // 2. Clear the active tournament document
+      const activeRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(activeRef, { pools: {} });
+      
+      setIsMenuOpen(false);
+      alert("Turnamen berhasil diarsipkan! Bagan aktif telah dikosongkan untuk turnamen baru.");
+    } catch (err) {
+      console.error(err);
+      showError("Gagal mengarsipkan turnamen.");
+    }
+  };
+
+  const handleDeleteArchive = async (archiveId, title) => {
+    if (role !== 'referee') return;
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus arsip "${title}" secara permanen?`)) return;
+    if (!window.confirm(`PERINGATAN KEDUA: Seluruh bagan dan data pemenang dari turnamen "${title}" akan hilang selamanya. Lanjutkan?`)) return;
+    
+    try {
+      const archiveRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'archive_hub', 'items', archiveId);
+      await deleteDoc(archiveRef);
+      alert("Arsip berhasil dihapus secara permanen.");
+    } catch (err) {
+      console.error(err);
+      showError("Gagal menghapus arsip.");
+    }
+  };
+
   const resetPool = async () => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
     if (!window.confirm(`Hapus semua data di Bagan ${activePool}?`)) return;
     const newData = JSON.parse(JSON.stringify(tournamentData));
     if (newData.pools && newData.pools[activePool]) {
@@ -442,18 +1190,374 @@ export default function App() {
     }
   };
 
-  // Build/sync round-robin final bracket from pool winners A, B, C
+  const getFinalFormatText = () => {
+    const format = activeBracket?.type || finalFormat;
+    if (format === 'roundrobin') return "Sistem Round-Robin — Finalis Saling Bertemu (Liga)";
+    if (format === 'double') return "Sistem Gugur Ganda — Semifinal + Juara 3 + Grand Final";
+    return "Sistem Gugur Tunggal — Bagan Eliminasi Langsung";
+  };
+
+  const getChampions = () => {
+    if (!activeBracket || !activeBracket.matches) return null;
+    let j1 = null, j2 = null, j3 = null, j4 = null;
+
+    if (activeBracket.type === 'roundrobin') {
+      const standings = computeStandings(activeBracket);
+      if (activeBracket.matches.some(m => m.winner)) {
+        j1 = standings[0]?.name || null;
+        j2 = standings[1]?.name || null;
+        j3 = standings[2]?.name || null;
+        j4 = standings[3]?.name || null;
+      }
+    } else if (activeBracket.type === 'double') {
+      const fm4 = activeBracket.matches.find(m => m.id === 'fm4');
+      const fm3 = activeBracket.matches.find(m => m.id === 'fm3');
+      j1 = fm4?.winner || null;
+      if (j1 && fm4) {
+        j2 = j1 === fm4.player1 ? fm4.player2 : fm4.player1;
+      }
+      j3 = fm3?.winner || null;
+      if (j3 && fm3) {
+        j4 = j3 === fm3.player1 ? fm3.player2 : fm3.player1;
+      }
+    } else {
+      const totalR = activeBracket.totalRounds || 1;
+      const finalMatch = activeBracket.matches.find(m => m.round === totalR);
+      j1 = finalMatch?.winner || null;
+      if (j1 && finalMatch) {
+        j2 = j1 === finalMatch.player1 ? finalMatch.player2 : finalMatch.player1;
+      }
+      if (totalR > 1) {
+        const sfMatches = activeBracket.matches.filter(m => m.round === totalR - 1);
+        if (sfMatches[0] && sfMatches[0].winner) {
+          j3 = sfMatches[0].winner === sfMatches[0].player1 ? sfMatches[0].player2 : sfMatches[0].player1;
+        }
+        if (sfMatches[1] && sfMatches[1].winner) {
+          j4 = sfMatches[1].winner === sfMatches[1].player1 ? sfMatches[1].player2 : sfMatches[1].player1;
+        }
+      }
+    }
+
+    return { j1, j2, j3, j4 };
+  };
+
+  const renderPodium = () => {
+    const champs = getChampions();
+    if (!champs || (!champs.j1 && !champs.j2 && !champs.j3 && !champs.j4)) return null;
+
+    const isBracket = activeBracket?.type === 'bracket';
+
+    return (
+      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border-2 border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
+        {/* Decorative background gradients */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-100/40 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-100/30 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
+
+        <div className="relative text-center mb-6">
+          <span className="inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-200/50">
+            🥇 Podium Juara
+          </span>
+          <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Pemenang Turnamen</h3>
+          <p className="text-xs text-slate-500 font-bold mt-1">Daftar pemenang resmi turnamen saat ini</p>
+        </div>
+
+        {/* Podium Layout */}
+        <div className="flex flex-col gap-4">
+          {/* Juara 1 */}
+          {champs.j1 && (
+            <div className="relative group overflow-hidden bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500 text-white p-4 rounded-2xl shadow-lg shadow-yellow-100 flex items-center justify-between border-2 border-yellow-300 min-h-[88px]">
+              <div className="absolute -inset-y-0 -left-12 w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 group-hover:left-[110%] transition-all duration-1000 ease-out"></div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/20 text-yellow-100">
+                  <Crown size={26} className="animate-bounce" style={{ animationDuration: '3s' }} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-amber-100 uppercase tracking-widest">Juara 1 (Gold)</p>
+                  <p className="text-base font-black tracking-tight">{champs.j1}</p>
+                </div>
+              </div>
+              <Trophy size={32} className="text-white/25 shrink-0 mr-1" />
+            </div>
+          )}
+
+          {/* Juara 2 */}
+          {champs.j2 && (
+            <div className="relative overflow-hidden bg-gradient-to-r from-slate-400 via-slate-500 to-slate-600 text-white p-4 rounded-2xl shadow-md flex items-center justify-between border border-slate-350 h-20">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/10 text-slate-100">
+                  <Medal size={22} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-200 uppercase tracking-widest">Juara 2 (Silver)</p>
+                  <p className="text-sm font-black tracking-tight">{champs.j2}</p>
+                </div>
+              </div>
+              <Medal size={26} className="text-white/20 shrink-0 mr-1" />
+            </div>
+          )}
+
+          {/* Juara 3 (Bronze) & Juara 4 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {champs.j3 && (
+              <div className="relative overflow-hidden bg-gradient-to-r from-orange-600 via-amber-700 to-amber-800 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between border border-orange-500/30 h-20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner bg-white/10 text-orange-200">
+                    <Medal size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-orange-200 uppercase tracking-widest">
+                      {isBracket ? "Juara 3 Bersama" : "Juara 3 (Bronze)"}
+                    </p>
+                    <p className="text-xs font-black tracking-tight">{champs.j3}</p>
+                  </div>
+                </div>
+                <Medal size={22} className="text-white/20 shrink-0 mr-1" />
+              </div>
+            )}
+
+            {champs.j4 && (
+              <div className={cn(
+                "relative overflow-hidden p-4 rounded-2xl flex items-center justify-between border h-20",
+                isBracket
+                  ? "bg-gradient-to-r from-orange-600 via-amber-700 to-amber-800 text-white border-orange-500/30"
+                  : "bg-white text-slate-800 border-slate-200 shadow-sm"
+              )}>
+                <div className="flex items-center gap-4">
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner",
+                    isBracket ? "bg-white/10 text-orange-200" : "bg-slate-100 text-slate-500"
+                  )}>
+                    {isBracket ? <Medal size={20} /> : <Award size={20} />}
+                  </div>
+                  <div>
+                    <p className={cn(
+                      "text-[9px] font-black uppercase tracking-widest",
+                      isBracket ? "text-orange-200" : "text-slate-400"
+                    )}>
+                      {isBracket ? "Juara 3 Bersama" : "Juara 4 (Harapan 1)"}
+                    </p>
+                    <p className="text-xs font-black tracking-tight">{champs.j4}</p>
+                  </div>
+                </div>
+                {isBracket ? (
+                  <Medal size={22} className="text-white/20 shrink-0 mr-1" />
+                ) : (
+                  <Award size={22} className="text-slate-300 shrink-0 mr-1" />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const changeFinalFormat = async (newFormat) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    
+    setFinalFormat(newFormat);
+    
+    try {
+      const newData = JSON.parse(JSON.stringify(tournamentData));
+      newData.finalFormat = newFormat;
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal mengubah format final.");
+    }
+  };
+
+  const resetAllPools = async () => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    if (!window.confirm("Apakah Anda yakin ingin menghapus SEMUA bagan secara permanen? Semua data pertandingan aktif akan hilang!")) return;
+    const newData = JSON.parse(JSON.stringify(tournamentData));
+    newData.pools = {};
+    try {
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+      setIsMenuOpen(false);
+    } catch (err) {
+      showError("Gagal mereset semua bagan.");
+    }
+  };
+
+  // Build/sync final bracket from pool winners
   const syncFinalBracket = async () => {
-    const [pA, pB, pC] = finalParticipants.map(p => p.name);
-    if (!pA || !pB || !pC) return showError('Semua juara Pool A, B, C harus sudah ada!');
-    const matches = [
-      { id: 'f1', label: 'Pool A vs Pool B', player1: pA, player2: pB, winner: null },
-      { id: 'f2', label: 'Pool A vs Pool C', player1: pA, player2: pC, winner: null },
-      { id: 'f3', label: 'Pool B vs Pool C', player1: pB, player2: pC, winner: null },
-    ];
+    const winners = finalParticipants.map(p => p.name);
+    if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
+    if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
+    
+    if (tournamentData.pools?.Final) {
+      if (!window.confirm("PERINGATAN: Menyusun ulang finalis akan menghapus bagan final saat ini beserta seluruh skor/pemenang yang sudah tercatat. Lanjutkan?")) return;
+    }
+    
     const newData = JSON.parse(JSON.stringify(tournamentData));
     if (!newData.pools) newData.pools = {};
-    newData.pools['Final'] = { type: 'roundrobin', matches };
+
+    if (finalFormat === 'roundrobin') {
+      let matches = [];
+      for (let i = 0; i < winners.length; i++) {
+        for (let j = i + 1; j < winners.length; j++) {
+          matches.push({
+            id: `f${matches.length + 1}`,
+            label: `Final: ${winners[i]} vs ${winners[j]}`,
+            player1: winners[i],
+            player2: winners[j],
+            winner: null
+          });
+        }
+      }
+      newData.pools['Final'] = { type: 'roundrobin', matches };
+    } else if (finalFormat === 'double') {
+      // Model B: Semifinal + Grand Final + Perebutan Juara 3
+      // Pola SILANG: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D
+      // Urutan winners = [JuaraA, JuaraB, JuaraC, JuaraD, ...]
+      // Crossover: slot 0 (A) vs slot 2 (C), slot 1 (B) vs slot 3 (D)
+      const rawWinners = [...winners];
+      while (rawWinners.length < 4) rawWinners.push(`BYE_FINAL_${rawWinners.length + 1}`);
+
+      // Reorder untuk pola silang: [A, C, B, D]
+      const crossover = [
+        rawWinners[0], // A → SF1 slot 1
+        rawWinners[2], // C → SF1 slot 2
+        rawWinners[1], // B → SF2 slot 1
+        rawWinners[3], // D → SF2 slot 2
+      ];
+
+      // Semifinals (Round 1)
+      const match1 = {
+        id: 'fm1',
+        round: 1,
+        label: 'Semifinal 1',
+        player1: crossover[0].startsWith('BYE_') ? null : crossover[0],
+        player2: crossover[1].startsWith('BYE_') ? null : crossover[1],
+        winner: null,
+        nextMatchId: 'fm4', // Winner to Grand Final Slot 1
+        nextMatchSlot: 1,
+        loserNextMatchId: 'fm3', // Loser to Juara 3 Match Slot 1
+        loserNextMatchSlot: 1
+      };
+      const match2 = {
+        id: 'fm2',
+        round: 1,
+        label: 'Semifinal 2',
+        player1: crossover[2].startsWith('BYE_') ? null : crossover[2],
+        player2: crossover[3].startsWith('BYE_') ? null : crossover[3],
+        winner: null,
+        nextMatchId: 'fm4', // Winner to Grand Final Slot 2
+        nextMatchSlot: 2,
+        loserNextMatchId: 'fm3', // Loser to Juara 3 Match Slot 2
+        loserNextMatchSlot: 2
+      };
+
+      // Auto-winners for BYEs
+      if (crossover[0].startsWith('BYE_') && !crossover[1].startsWith('BYE_')) match1.winner = crossover[1];
+      if (crossover[1].startsWith('BYE_') && !crossover[0].startsWith('BYE_')) match1.winner = crossover[0];
+      if (crossover[2].startsWith('BYE_') && !crossover[3].startsWith('BYE_')) match2.winner = crossover[3];
+      if (crossover[3].startsWith('BYE_') && !crossover[2].startsWith('BYE_')) match2.winner = crossover[2];
+
+      // Round 2 Matches
+      const match3 = {
+        id: 'fm3',
+        round: 2,
+        player1: null,
+        player2: null,
+        winner: null,
+        nextMatchId: null,
+        nextMatchSlot: null,
+        label: 'Perebutan Juara 3'
+      };
+      if (match1.winner) {
+        match3.player1 = match1.winner === match1.player1 ? match1.player2 : match1.player1;
+      }
+      if (match2.winner) {
+        match3.player2 = match2.winner === match2.player1 ? match2.player2 : match2.player1;
+      }
+
+      const match4 = {
+        id: 'fm4',
+        round: 2,
+        player1: match1.winner || null,
+        player2: match2.winner || null,
+        winner: null,
+        nextMatchId: null,
+        nextMatchSlot: null,
+        label: 'Grand Final'
+      };
+
+      newData.pools['Final'] = {
+        type: 'double',
+        matches: [match1, match2, match3, match4],
+        totalRounds: 2
+      };
+    } else {
+      // Direct Elimination Bracket for Finalists — pola SILANG
+      // winners = [JuaraA, JuaraB, JuaraC, JuaraD, ...]
+      // Tujuan: SF1 = A vs C, SF2 = B vs D → reorder dulu sebelum dipasangkan
+      const capacity = Math.pow(2, Math.ceil(Math.log2(winners.length)));
+      const rawWinners = [...winners];
+      let counter = 1;
+      while (rawWinners.length < capacity) rawWinners.push(`BYE_FINAL_${counter++}`);
+
+      // Crossover reorder untuk pola silang (berlaku untuk 4 finalis):
+      // [A(0), B(1), C(2), D(3)] → [A(0), C(2), B(1), D(3)]
+      // Untuk jumlah pool lebih dari 4, terapkan pola silang yang sama (0,2,1,3,4,6,5,7,...)
+      const poolNames = [];
+      for (let i = 0; i < capacity; i += 4) {
+        poolNames.push(rawWinners[i] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 2] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 1] || `BYE_FINAL_${poolNames.length + 1}`);
+        poolNames.push(rawWinners[i + 3] || `BYE_FINAL_${poolNames.length + 1}`);
+      }
+
+      let matches = [];
+      let matchIdCounter = 1;
+      let currentRoundMatches = [];
+
+      for (let i = 0; i < capacity; i += 2) {
+        const p1 = poolNames[i];
+        const p2 = poolNames[i + 1];
+        const sfNum = Math.floor(i / 2) + 1;
+        const match = { 
+          id: `fm${matchIdCounter++}`, 
+          round: 1,
+          label: capacity > 2 ? `Semifinal ${sfNum}` : 'Grand Final',
+          player1: p1.startsWith('BYE_') ? null : p1, 
+          player2: p2.startsWith('BYE_') ? null : p2, 
+          winner: null, 
+          nextMatchId: null, 
+          nextMatchSlot: null 
+        };
+        if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
+        if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
+        
+        matches.push(match);
+        currentRoundMatches.push(match);
+      }
+
+      let roundNum = 2;
+      let prevMatches = currentRoundMatches;
+      while (prevMatches.length > 1) {
+        currentRoundMatches = [];
+        for (let i = 0; i < prevMatches.length; i += 2) {
+          const match = { id: `fm${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
+          if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
+          if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+          matches.push(match);
+          currentRoundMatches.push(match);
+          prevMatches[i].nextMatchId = match.id;
+          prevMatches[i].nextMatchSlot = 1;
+          prevMatches[i + 1].nextMatchId = match.id;
+          prevMatches[i + 1].nextMatchSlot = 2;
+        }
+        prevMatches = currentRoundMatches;
+        roundNum++;
+      }
+      newData.pools['Final'] = { type: 'bracket', matches, totalRounds: roundNum - 1 };
+    }
+
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
@@ -462,19 +1566,51 @@ export default function App() {
     }
   };
 
-  const setFinalWinner = async (matchId, winnerName) => {
-    if (role !== 'referee' || !winnerName) return;
+  const executeSetFinalWinner = async (matchId, winnerName) => {
     const newData = JSON.parse(JSON.stringify(tournamentData));
     const finalData = newData.pools['Final'];
     if (!finalData) return;
-    const match = finalData.matches.find(m => m.id === matchId);
-    if (!match) return;
-    match.winner = match.winner === winnerName ? null : winnerName;
+    const matchIndex = finalData.matches.findIndex(m => m.id === matchId);
+    if (matchIndex === -1) return;
+    const match = finalData.matches[matchIndex];
+
+    if (match.winner === winnerName) match.winner = null;
+    else match.winner = winnerName;
+
+    // Propagate winner
+    if (match.nextMatchId) {
+      updateNextMatch(finalData.matches, match.nextMatchId, match.nextMatchSlot, match.winner);
+    }
+
+    // Propagate loser (for Double / Bronze match format)
+    if (match.loserNextMatchId) {
+      let loser = null;
+      if (match.winner) {
+        loser = match.winner === match.player1 ? match.player2 : match.player1;
+      }
+      updateNextMatch(finalData.matches, match.loserNextMatchId, match.loserNextMatchSlot, loser);
+    }
+
     try {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
     } catch (err) {
       showError('Gagal update pemenang final.');
+    }
+  };
+
+  const setFinalWinner = async (matchId, winnerName) => {
+    if (role !== 'referee' || !winnerName) return;
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    const finalData = tournamentData.pools['Final'];
+    if (!finalData) return;
+    const match = finalData.matches.find(m => m.id === matchId);
+    if (!match) return;
+
+    if (match.winner === winnerName) {
+      await executeSetFinalWinner(matchId, winnerName);
+    } else {
+      setWinnerConfirm({ matchId, winnerName, isFinal: true });
     }
   };
 
@@ -521,7 +1657,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 text-center">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-red-100">
-          <AlertCircle className="w-20 h-20 text-red-600 mx-auto mb-6" />
+          <AlertCircle className="w-20 h-20 text-red-600 mx-auto mb-6"/>
           <h1 className="text-2xl font-bold text-slate-800 mb-4">Firebase Belum Dikonfigurasi</h1>
           <p className="text-slate-600 mb-8">Silahkan atur Env Vars di Vercel.</p>
         </div>
@@ -532,51 +1668,113 @@ export default function App() {
   if (!user || loadingData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <RefreshCw className="animate-spin text-brand-600 w-12 h-12 mb-4" />
+        <RefreshCw className="animate-spin text-brand-600 w-12 h-12 mb-4"/>
         <p className="text-slate-500 font-medium">Menghubungkan ke Server...</p>
         {errorMessage && <p className="mt-4 text-red-500 text-sm font-bold">{errorMessage}</p>}
       </div>
     );
   }
 
-  if (!role) {
+  if (!role && !viewingArchive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans relative">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
-          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white">
-            <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg" />
-            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none">PIALA BERGILIR MAJALENGKA</h1>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-12 px-4 font-sans overflow-y-auto">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in shrink-0">
+          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white flex flex-col items-center">
+            {tournamentData.logo ? (
+              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-2xl shadow-xl bg-white/10 backdrop-blur-md p-2 mb-4 border border-white/20 animate-scale-in" />
+            ) : (
+              <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg"/>
+            )}
+            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none mt-2">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
           </div>
           <div className="p-8 space-y-6">
-            <button
+            <button 
               onClick={() => {
                 setRole('spectator');
                 localStorage.setItem('tournament_role', 'spectator');
-              }}
+              }} 
               className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border-2 border-slate-100 hover:border-brand-200 p-6 rounded-2xl transition-all group"
             >
               <div className="flex items-center gap-4 text-left">
                 <div className="bg-white p-3 rounded-xl shadow-sm text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
-                  <Users className="w-6 h-6" />
+                  <Users className="w-6 h-6"/>
                 </div>
                 <div>
                   <h3 className="font-black text-slate-800">Lihat Bagan</h3>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pantau Skor Real-time</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-300" />
+              <ChevronRight className="w-5 h-5 text-slate-300"/>
             </button>
             <form onSubmit={handleLoginReferee} className="space-y-4">
               <div className="relative">
-                <input type="password" name="pin" placeholder="Login Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
+                <input type="password" name="pin" placeholder="Password Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
               </div>
               <button type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-xl active:scale-95">Login</button>
             </form>
           </div>
+
+          {/* Section Riwayat Turnamen */}
+          {archivesList.length > 0 && (
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                <Archive size={14} className="text-brand-500" /> RIWAYAT TURNAMEN ARSIP
+              </h3>
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+                {archivesList.map((archive) => {
+                  const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                  return (
+                    <div 
+                      key={archive.id}
+                      onClick={() => {
+                        setViewingArchive(archive);
+                        if (archive.pools && Object.keys(archive.pools).length > 0) {
+                          const sortedPools = Object.keys(archive.pools).sort();
+                          setActivePool(sortedPools[0]);
+                        }
+                      }}
+                      className="w-full flex items-center justify-between bg-white border border-slate-100 hover:border-brand-300 p-4 rounded-2xl transition-all shadow-sm cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        {archive.logo ? (
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-slate-50" />
+                        ) : (
+                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
+                            <Trophy size={16} />
+                          </div>
+                        )}
+                        <div className="text-left">
+                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none group-hover:text-brand-600 transition-colors">
+                            {archive.title}
+                          </h4>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                            {archive.organizer} • {dateStr}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="bg-slate-50 group-hover:bg-brand-50 text-slate-400 group-hover:text-brand-600 p-1.5 rounded-xl transition-all">
+                        <ChevronRight size={16} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
+        
         {/* Footer for Landing Page */}
-        <div className="absolute bottom-8 left-0 right-0 text-center">
-          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">© Copyright by Senyap</p>
+        <div className="text-center px-4 flex flex-col items-center gap-1 mt-8 pb-4 shrink-0">
+           <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+             Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+           </p>
+           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
+             © Copyright by Senyap
+           </p>
         </div>
       </div>
     );
@@ -584,18 +1782,43 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans overflow-hidden">
+      {/* Sticky Archive Indicator Banner */}
+      {viewingArchive && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3.5 px-4 flex items-center justify-between shadow-md z-[45] animate-slide-down shrink-0">
+          <span className="flex items-center gap-2">
+            <Archive size={14} className="animate-pulse text-amber-100" />
+            ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} (READ-ONLY)
+          </span>
+          <button 
+            onClick={() => setViewingArchive(null)} 
+            className="bg-white/20 hover:bg-white/30 text-white font-black text-[9px] md:text-[10px] py-1 px-3 rounded-lg transition-colors border border-white/20 active:scale-95 shrink-0"
+          >
+            KEMBALI KE BERANDA
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block">
-            <Trophy className="w-6 h-6 text-white" />
-          </div>
+          {currentTournament.logo ? (
+            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shrink-0 shadow-sm" />
+          ) : (
+            <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block shrink-0">
+              <Trophy className="w-6 h-6 text-white"/>
+            </div>
+          )}
           <div>
-            <h1 className="font-black text-slate-800 text-sm md:text-xl tracking-tighter leading-none mb-1">
-              Turnamen Layangan Piala Bergilir Majalengka
+            <h1 className="font-black text-slate-800 text-sm md:text-xl tracking-tighter leading-none mb-1 flex items-center flex-wrap">
+              {currentTournament.title || tournamentTitle}
+              {(currentTournament.isArchived || viewingArchive) && (
+                <span className="inline-flex items-center gap-1 text-[8px] font-black bg-red-500 text-white px-2.5 py-0.5 rounded-full uppercase ml-2 animate-pulse shrink-0">
+                  <Archive size={8}/> Terarsip
+                </span>
+              )}
             </h1>
             <p className="text-[9px] md:text-[11px] text-brand-600 font-black uppercase tracking-[0.1em]">
-              Kota Angin x Senyap
+              {currentTournament.organizer || tournamentOrganizer}
             </p>
           </div>
         </div>
@@ -612,26 +1835,35 @@ export default function App() {
               onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 80); }}
               className={cn('p-2.5 rounded-xl transition-colors', showSearch ? 'bg-emerald-500 text-white' : 'hover:bg-slate-100 text-slate-600')}
             >
-              <Search className="w-5 h-5" />
+              <Search className="w-5 h-5"/>
             </button>
           )}
           <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors">
-            <Settings className="w-5 h-5 text-slate-600" />
+            <Settings className="w-5 h-5 text-slate-600"/>
           </button>
         </div>
-
+        
         {isMenuOpen && (
           <div className="absolute right-4 top-20 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-scale-in">
             <div className="px-4 py-2 border-b border-slate-50 mb-2">
-              <p className="text-[9px] font-black text-slate-400 uppercase">Akses: {role === 'referee' ? 'Wasit' : 'Penonton'}</p>
+               <p className="text-[9px] font-black text-slate-400 uppercase">Akses: {role === 'referee' ? 'Wasit' : 'Penonton'}</p>
             </div>
             {role === 'referee' && (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14} /> Pengoclokan Otomatis</button>
-                {activeBracket && <button onClick={() => { resetPool(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14} /> Reset Bagan {activePool}</button>}
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-slate-700 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-b border-slate-100"><Trash2 size={14} className="text-red-500"/> Kelola Arsip</button>
+                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                {Object.keys(tournamentData.pools || {}).length > 0 && (
+                  <>
+                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-700 text-sm font-bold flex items-center gap-3 hover:bg-red-100/50"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                    <button onClick={archiveTournament} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50 mt-1 pt-2">
+                      <Archive size={14}/> Arsipkan Turnamen
+                    </button>
+                  </>
+                )}
               </>
             )}
-            <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50"><LogOut size={14} /> Keluar Sistem</button>
+            <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50"><LogOut size={14}/> Keluar Sistem</button>
           </div>
         )}
       </header>
@@ -647,16 +1879,116 @@ export default function App() {
       </div>
 
 
-      {/* Edit Modal */}
+      {/* Edit Modal / Setelan Peserta */}
       {editingPlayer && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
           <div className="relative bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100">
-            <h3 className="text-xl font-black text-slate-800 mb-4">Edit Nama Peserta</h3>
-            <input autoFocus id="edit-name-input" type="text" defaultValue={editingPlayer.currentName} className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all" onKeyDown={(e) => e.key === 'Enter' && handleUpdatePlayerName(e.target.value)} />
-            <div className="flex gap-3">
-              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-colors">Batal</button>
-              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-brand-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all">Simpan</button>
+            <h3 className="text-xl font-black text-slate-800 mb-1">Setelan Peserta</h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Kelola: {editingPlayer.currentName}</p>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Ubah Nama Peserta</label>
+                <input 
+                  autoFocus 
+                  id="edit-name-input" 
+                  type="text" 
+                  defaultValue={editingPlayer.currentName} 
+                  className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
+                  onKeyDown={(e) => e.key === 'Enter' && handleUpdatePlayerName(e.target.value)} 
+                />
+              </div>
+              
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tindakan Khusus</label>
+                {(() => {
+                  const poolData = tournamentData.pools[activePool];
+                  const match = poolData?.matches?.find(m => m.id === editingPlayer.matchId);
+                  const isDis = editingPlayer.playerSlot === 1 ? match?.player1Disqualified : match?.player2Disqualified;
+                  
+                  return (
+                    <button 
+                      onClick={() => handleDisqualifyPlayer(editingPlayer.matchId, editingPlayer.playerSlot)}
+                      className={cn(
+                        "w-full py-4 rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-2 border",
+                        isDis 
+                          ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200" 
+                          : "bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                      )}
+                    >
+                      {isDis ? "✅ BATALKAN DISKUALIFIKASI" : "❌ DISKUALIFIKASI PESERTA (DIS)"}
+                    </button>
+                  );
+                })()}
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-8 pt-6 border-t border-slate-100">
+              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">Tutup</button>
+              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-brand-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all">Simpan Nama</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Management Modal */}
+      {showArchiveManagement && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
+          <div className="relative bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 flex flex-col max-h-[85vh]">
+            <h3 className="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
+              <Archive className="text-brand-500" size={24}/> Kelola Arsip Turnamen
+            </h3>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            
+            <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin flex-1">
+              {archivesList.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 font-bold">Belum ada turnamen yang diarsipkan.</div>
+              ) : (
+                archivesList.map((archive) => {
+                  const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  });
+                  return (
+                    <div key={archive.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 p-4 rounded-2xl shadow-sm">
+                      <div className="flex items-center gap-3">
+                        {archive.logo ? (
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-white" />
+                        ) : (
+                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
+                            <Trophy size={16} />
+                          </div>
+                        )}
+                        <div className="text-left">
+                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none">
+                            {archive.title}
+                          </h4>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                            {archive.organizer} • {dateStr}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleDeleteArchive(archive.id, archive.title)}
+                        className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all border border-red-100 hover:border-red-200 active:scale-95 shrink-0"
+                        title="Hapus Arsip"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-end">
+              <button onClick={() => setShowArchiveManagement(false)} className="bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm">
+                Selesai & Tutup
+              </button>
             </div>
           </div>
         </div>
@@ -664,155 +1996,131 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-slate-50">
+        {currentTournament.isArchived && (
+          <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30 animate-pulse">
+            <Archive size={16}/> Turnamen ini telah diarsipkan dan bersifat final (Read-Only)
+          </div>
+        )}
+
         {/* ===== GLOBAL SEEDING SETUP ===== */}
-        {(showGlobalSetup || (!tournamentData.pools?.A && !tournamentData.pools?.B && !tournamentData.pools?.C)) ? (
-          role === 'referee' ? (
-            <div className="max-w-2xl mx-auto p-4 md:p-8 animate-slide-up">
-              <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                {/* Hero Header */}
-                <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
-                  <div className="absolute top-0 right-0 p-4 opacity-10"><Shuffle size={120} /></div>
-                  <div className="relative z-10">
-                    <h2 className="text-2xl font-black leading-none mb-2">Pengoclokan Global 96 Slot</h2>
-                    <p className="text-slate-300 text-sm font-bold">Membangun Bagan A, B, & C Secara Serentak</p>
-                  </div>
-                  {showGlobalSetup && (
-                    <button onClick={() => setShowGlobalSetup(false)} className="relative z-10 bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
-                      <X size={20} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Rules & Narrative */}
-                <div className="p-4 md:p-8 bg-slate-50 border-b border-slate-100">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
-                      <Shield className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-sm text-slate-800 mb-1.5 uppercase tracking-wide">Sistem Seeding Keadilan Mutlak</h3>
-                      <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                        Ditenagai oleh algoritma <strong className="text-brand-600">Smart Global Distribution</strong> kelas turnamen E-Sports. Sistem membaca identitas tim peserta dan mendistribusikannya seadil mungkin secara matematis. Wasit tidak perlu lagi pusing mengatur letak slot secara manual!
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-                      <div className="flex items-center gap-2 mb-2 text-brand-600">
-                        <LayoutGrid size={16} />
-                        <h4 className="font-black text-[10px] uppercase tracking-widest">Distribusi Lintas Pool</h4>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                        Jika sebuah tim mendaftar 9 peserta, sistem otomatis membaginya rata: 3 di Bagan A, 3 di Bagan B, dan 3 di Bagan C.
-                      </p>
-                    </div>
-                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-                      <div className="flex items-center gap-2 mb-2 text-emerald-600">
-                        <Shield size={16} />
-                        <h4 className="font-black text-[10px] uppercase tracking-widest">Anti Perang Saudara</h4>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                        Di dalam satu bagan, anggota tim dipisah paksa ke Kuarter dan Half yang berbeda. <strong>Mustahil bentrok</strong> di babak 32, 16, hingga 8 Besar!
-                      </p>
-                    </div>
-                    <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-                      <div className="flex items-center gap-2 mb-2 text-yellow-500">
-                        <Shuffle size={16} />
-                        <h4 className="font-black text-[10px] uppercase tracking-widest">Undian Acak Sempurna</h4>
-                      </div>
-                      <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                        Setelah pemain tim diamankan tempatnya, peserta solo dan sisa slot kosong akan diundi murni dan di-shuffle oleh sistem.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-800 text-white shadow-lg p-5 rounded-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-2 opacity-5"><Check size={80} /></div>
-                    <h4 className="font-black text-[11px] text-brand-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
-                      <AlertCircle size={14} /> Aturan Format Input Wasit (Wajib):
-                    </h4>
-                    <div className="flex flex-col md:flex-row gap-4 relative z-10">
-                      <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
-                        <span className="text-emerald-400">[Senyap]</span> Rian<br />
-                        <span className="text-emerald-400">[Senyap]</span> Budi<br />
-                        <span className="text-yellow-400">[Keparat]</span> Joko<br />
-                        <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
-                      </code>
-                      <div className="flex-1 flex flex-col justify-center">
-                        <p className="text-[11px] font-bold text-slate-400 mb-2 leading-relaxed">
-                          Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal.
-                        </p>
-                        <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                          Pastikan penulisan nama tim <strong className="text-white">SAMA PERSIS</strong> (ejaan dan spasinya) agar sistem mengenali mereka sebagai satu kesatuan.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Input Area */}
-                <div className="p-8">
-                  <textarea
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    placeholder="[Tim A] Peserta 1&#10;[Tim A] Peserta 2&#10;[Tim B] Peserta 3&#10;Peserta Solo"
-                    rows={12}
-                    className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner"
-                  />
-                  <button
-                    onClick={generateGlobalBracket}
-                    className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
-                  >
-                    <Shuffle size={20} /> OCLOK 96 SLOT SEKARANG
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6" /><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar 96 peserta.</p></div>
+        {(showGlobalSetup || (!currentTournament.pools?.A && !currentTournament.pools?.B && !currentTournament.pools?.C)) ? (
+          <SetupWizard
+            showGlobalSetup={showGlobalSetup}
+            setShowGlobalSetup={setShowGlobalSetup}
+            bracketSize={bracketSize}
+            setBracketSize={setBracketSize}
+            finalFormat={finalFormat}
+            setFinalFormat={setFinalFormat}
+            doubleLife={doubleLife}
+            setDoubleLife={setDoubleLife}
+            prelimPointsSystem={prelimPointsSystem}
+            setPrelimPointsSystem={setPrelimPointsSystem}
+            isOpenTournament={isOpenTournament}
+            setIsOpenTournament={setIsOpenTournament}
+            logoBase64={logoBase64}
+            setLogoBase64={setLogoBase64}
+            bulkInput={bulkInput}
+            setBulkInput={setBulkInput}
+            generateGlobalBracket={generateGlobalBracket}
+            role={role}
+            tournamentTitle={tournamentTitle}
+            setTournamentTitle={setTournamentTitle}
+            tournamentOrganizer={tournamentOrganizer}
+            setTournamentOrganizer={setTournamentOrganizer}
+            hasExistingTournament={!!currentTournament.pools?.A}
+            saveGlobalSettings={saveGlobalSettings}
+          />
         ) : activePool === 'Final' ? (
-          <div className="max-w-3xl mx-auto p-6 md:p-12 animate-slide-up">
+          <div className="max-w-7xl mx-auto p-6 md:p-12 animate-slide-up">
             {/* Header Final */}
-            <div className="relative mb-8">
+            <div className="relative mb-8 max-w-3xl mx-auto">
               <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-xl opacity-20"></div>
               <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 flex items-center gap-6 shadow-xl">
-                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36} /></div>
+                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36}/></div>
                 <div>
                   <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Grand Final</p>
-                  <h2 className="text-2xl font-black text-slate-800">Piala Bergilir Majalengka</h2>
-                  <p className="text-xs text-slate-500 font-bold mt-1">Sistem Round-Robin — 3 Finalis Saling Bertemu</p>
+                  <h2 className="text-2xl font-black text-slate-800">{currentTournament.title || tournamentTitle}</h2>
+                  <p className="text-xs text-slate-500 font-bold mt-1">{getFinalFormatText()}</p>
                 </div>
               </div>
             </div>
 
             {/* Finalists Status */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8 max-w-3xl mx-auto">
               {finalParticipants.map((p) => (
                 <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
                   <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
-                  <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-300 italic')}>{p.name || 'Belum Ada'}</p>
+                  <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-300 italic')}>{ p.name || 'Belum Ada'}</p>
                   {p.name && <div className="mt-2 w-2 h-2 bg-emerald-500 rounded-full mx-auto"></div>}
                 </div>
               ))}
             </div>
 
-            {/* Setup / Reset Button */}
+            {/* Champions Podium */}
+            {renderPodium()}
+
+            {/* Referee Quick Setup Panel */}
             {role === 'referee' && (
-              <div className="mb-8 flex gap-3">
-                <button onClick={syncFinalBracket} className={cn("flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", allFinalistsReady ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' : 'bg-slate-200 text-slate-400 cursor-not-allowed')} disabled={!allFinalistsReady}>
-                  <LayoutGrid size={18} /> {activeBracket?.type === 'roundrobin' ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
-                </button>
-                {activeBracket?.type === 'roundrobin' && (
-                  <button onClick={resetPool} className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-100 hover:bg-red-50 transition-all">
-                    Reset
-                  </button>
-                )}
+              <div className="bg-slate-100/80 border-2 border-slate-200/50 p-6 rounded-3xl mb-8 max-w-3xl mx-auto shadow-sm">
+                <div className="flex flex-col gap-6">
+                  {/* Format Selector */}
+                  <div>
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
+                    <div className="grid grid-cols-3 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
+                      {[
+                        { id: 'bracket', label: 'Gugur Tunggal' },
+                        { id: 'double', label: 'Gugur Ganda' },
+                        { id: 'roundrobin', label: 'Round Robin' }
+                      ].map(opt => {
+                        const isActive = activeBracket?.type === opt.id || (!activeBracket && finalFormat === opt.id);
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => changeFinalFormat(opt.id)}
+                            className={cn(
+                              "py-2.5 px-3 rounded-xl text-xs font-black transition-all",
+                              isActive
+                                ? "bg-white text-slate-800 shadow-md"
+                                : "text-slate-450 hover:text-slate-700"
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={syncFinalBracket} 
+                      className={cn(
+                        "flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", 
+                        allFinalistsReady 
+                          ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      )} 
+                      disabled={!allFinalistsReady}
+                    >
+                      <LayoutGrid size={18}/> {activeBracket ? 'Sync Ulang Finalis' : 'Mulai Bagan Final'}
+                    </button>
+                    {activeBracket && (
+                      <button 
+                        onClick={resetPool} 
+                        className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-150 hover:bg-red-50 transition-all bg-white shadow-sm"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Round-Robin Matches */}
             {activeBracket?.type === 'roundrobin' && (
-              <div className="space-y-4">
+              <div className="space-y-4 max-w-3xl mx-auto">
                 <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Pertandingan Final</h3>
                 {activeBracket.matches.map((match, idx) => (
                   <div key={match.id} className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
@@ -821,14 +2129,14 @@ export default function App() {
                       <span className="text-[9px] font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full">{match.label}</span>
                     </div>
                     <div className="flex flex-col gap-2">
-                      {[{ name: match.player1, slot: 1 }, { name: match.player2, slot: 2 }].map(p => (
+                      {[{name: match.player1, slot: 1}, {name: match.player2, slot: 2}].map(p => (
                         <button key={p.slot} onClick={() => setFinalWinner(match.id, p.name)} disabled={role !== 'referee' || !p.name} className={cn(
                           'w-full flex items-center gap-4 p-4 rounded-xl border-2 font-black text-sm transition-all text-left',
                           match.winner === p.name ? 'bg-brand-600 border-brand-600 text-white' : 'bg-slate-50 border-transparent hover:border-brand-200'
                         )}>
-                          <div className={cn('w-3 h-3 rounded-full shrink-0', match.winner === p.name ? 'bg-white' : 'bg-slate-300')} />
+                          <div className={cn('w-3 h-3 rounded-full shrink-0', match.winner === p.name ? 'bg-white' : 'bg-slate-300')}/>
                           {p.name || 'TBA'}
-                          {match.winner === p.name && <Check size={14} className="ml-auto" />}
+                          {match.winner === p.name && <Check size={14} className="ml-auto"/>}
                         </button>
                       ))}
                     </div>
@@ -845,7 +2153,7 @@ export default function App() {
                     {computeStandings(activeBracket).map((s, i) => (
                       <div key={s.name} className={cn('grid grid-cols-4 px-6 py-4 border-b last:border-0 items-center', i === 0 && 'bg-yellow-50')}>
                         <div className="flex items-center gap-3">
-                          {i === 0 && <Trophy size={14} className="text-yellow-500 shrink-0" />}
+                          {i === 0 && <Trophy size={14} className="text-yellow-500 shrink-0"/>}
                           <span className="font-black text-sm text-slate-800 truncate">{s.name}</span>
                         </div>
                         <div className="text-center font-black text-emerald-600">{s.w}</div>
@@ -858,9 +2166,19 @@ export default function App() {
               </div>
             )}
 
+            {/* Tree Bracket Matches (Gugur Tunggal / Gugur Ganda) */}
+            {activeBracket && activeBracket.type !== 'roundrobin' && (
+              <div className="relative mt-8 border-t border-slate-150 pt-8 overflow-visible">
+                <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-6 text-center">Bagan Pertandingan Final</h3>
+                <div className="border-2 border-slate-200/60 rounded-3xl bg-slate-100/30 overflow-hidden shadow-inner">
+                  {renderBracket()}
+                </div>
+              </div>
+            )}
+
             {/* Empty state */}
             {!activeBracket && role !== 'referee' && (
-              <div className="text-center py-20"><Trophy size={60} className="text-slate-200 mx-auto mb-4" /><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
+              <div className="text-center py-20 max-w-3xl mx-auto"><Trophy size={60} className="text-slate-200 mx-auto mb-4"/><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
             )}
           </div>
         ) : (
@@ -869,103 +2187,18 @@ export default function App() {
             {!activeBracket ? (
               role === 'referee' ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
-                  <Shuffle size={80} className="text-slate-200 mb-6" />
+                  <Shuffle size={80} className="text-slate-200 mb-6"/>
                   <h2 className="text-2xl font-black text-slate-800 uppercase tracking-widest">Bagan {activePool} Kosong</h2>
-                  <p className="text-slate-500 font-bold mt-2 mb-8">Anda harus menggunakan fitur Pengoclokan Global untuk mengisi ulang bagan.</p>
+                  <p className="text-slate-500 font-bold mt-2 mb-8">Anda harus menggunakan fitur Buat Bagan Otomatis untuk mengisi ulang bagan.</p>
                   <button onClick={() => setShowGlobalSetup(true)} className="bg-brand-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                    <Shuffle size={20} /> BUKA PENGOCLOKAN GLOBAL (96 SLOT)
+                    <Shuffle size={20}/> BUAT BAGAN OTOMATIS (96 SLOT)
                   </button>
                 </div>
-              ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6" /><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
+              ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
             ) : (
               <div className="relative">
-                {/* Pinch-to-zoom bracket container */}
-                <div
-                  className="overflow-auto"
-                  style={{ touchAction: 'pan-x pan-y' }}
-                  onTouchStart={(e) => {
-                    if (e.touches.length === 2) {
-                      const dx = e.touches[0].clientX - e.touches[1].clientX;
-                      const dy = e.touches[0].clientY - e.touches[1].clientY;
-                      pinchRef.current = {
-                        active: true,
-                        startDist: Math.hypot(dx, dy),
-                        startZoom: bracketZoom,
-                      };
-                    }
-                  }}
-                  onTouchMove={(e) => {
-                    if (e.touches.length === 2 && pinchRef.current.active) {
-                      const dx = e.touches[0].clientX - e.touches[1].clientX;
-                      const dy = e.touches[0].clientY - e.touches[1].clientY;
-                      const dist = Math.hypot(dx, dy);
-                      const { startDist, startZoom } = pinchRef.current;
-                      if (startDist === 0) return;
-                      const next = Math.min(2, Math.max(0.4,
-                        parseFloat((startZoom * (dist / startDist)).toFixed(2))
-                      ));
-                      setBracketZoom(next);
-                    }
-                  }}
-                  onTouchEnd={() => { pinchRef.current.active = false; }}
-                >
-                  <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
-                    <div className="flex items-start gap-0">
-                      {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
-                        const roundNum = idx + 1;
-                        const matches = activeBracket.matches.filter(m => m.round === roundNum);
-                        const roundLabels = ["32 Besar", "16 Besar", "8 Besar", "Semifinal", "Final Pool"];
-                        const matchHeight = 180 * Math.pow(2, idx);
-                        return (
-                          <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
-                            <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
-                              <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx]}</span>
-                            </div>
-                            <div className="flex flex-col">
-                              {matches.map(match => (
-                                <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
-                                  <MatchCard
-                                    match={match}
-                                    role={role}
-                                    onSetWinner={setWinner}
-                                    onSetMatchState={setMatchState}
-                                    onEditName={(slot, name) => setEditingPlayer({ matchId: match.id, playerSlot: slot, currentName: name })}
-                                    matchRef={el => { matchRefs.current[match.id] = el; }}
-                                    highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
-                                  />
-                                  {match.nextMatchId && (
-                                    <>
-                                      <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                                      <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
-                                      {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
-                                    </>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div className="flex flex-col ml-12">
-                        <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
-                          <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
-                        </div>
-                        <div className="flex items-center" style={{ height: '180px' }}>
-                          <div className="relative group ml-4">
-                            <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
-                            <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
-                              <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md" /></div>
-                              <div>
-                                <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
-                                <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Reusable Bracket Renderer */}
+                {renderBracket()}
 
                 {/* Floating Controls — Zoom + Search */}
                 <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1 select-none">
@@ -974,18 +2207,18 @@ export default function App() {
                       onClick={() => setBracketZoom(z => Math.min(2, parseFloat((z + 0.1).toFixed(1))))}
                       className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
                     >
-                      <ZoomIn size={18} className="text-slate-700" />
+                      <ZoomIn size={18} className="text-slate-700"/>
                     </button>
-                    <div className="w-8 h-px bg-slate-200" />
+                    <div className="w-8 h-px bg-slate-200"/>
                     <div className="w-11 h-8 flex items-center justify-center">
                       <span className="text-[9px] font-black text-slate-500">{Math.round(bracketZoom * 100)}%</span>
                     </div>
-                    <div className="w-8 h-px bg-slate-200" />
+                    <div className="w-8 h-px bg-slate-200"/>
                     <button
                       onClick={() => setBracketZoom(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
                       className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
                     >
-                      <ZoomOut size={18} className="text-slate-700" />
+                      <ZoomOut size={18} className="text-slate-700"/>
                     </button>
                   </div>
                   <button
@@ -1004,7 +2237,7 @@ export default function App() {
                         : 'bg-white/90 backdrop-blur-md border-slate-200 text-slate-700 hover:bg-slate-50'
                     )}
                   >
-                    <Search size={18} />
+                    <Search size={18}/>
                   </button>
                 </div>
               </div>
@@ -1019,7 +2252,7 @@ export default function App() {
           <div className="pointer-events-auto w-full max-w-md">
             <div className="bg-white/95 backdrop-blur-xl border border-slate-200 rounded-3xl shadow-2xl p-4 flex items-center gap-3 animate-scale-in">
               <div className="flex-1 relative">
-                <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -1043,7 +2276,7 @@ export default function App() {
                 onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResult(null); }}
                 className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
               >
-                <X size={16} className="text-slate-500" />
+                <X size={16} className="text-slate-500"/>
               </button>
             </div>
             {searchResult && (
@@ -1056,136 +2289,49 @@ export default function App() {
       )}
 
       {/* Footer Branding */}
-      <footer className="bg-white border-t border-slate-200 p-6 flex flex-col items-center justify-center gap-2 z-40">
-        <div className="flex items-center gap-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kota Angin</p>
-          <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Senyap</p>
-        </div>
+      <footer className="bg-white border-t border-slate-200 p-6 flex flex-col items-center justify-center gap-2 z-40 text-center">
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+          Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
+        </p>
         <p className="text-[11px] font-bold text-slate-400">
           © Copyright by <span className="text-brand-600">Senyap</span>
         </p>
       </footer>
 
-      {errorMessage && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-4 animate-slide-up"><AlertCircle size={20} className="text-brand-400" /><span className="text-sm font-bold">{errorMessage}</span><button onClick={() => setErrorMessage('')} className="p-1 hover:bg-white/10 rounded-lg"><X size={16} /></button></div>}
-    </div>
-  );
-}
-
-function MatchCard({ match, role, onSetWinner, onEditName, matchRef, highlightedSlot, onSetMatchState }) {
-  const isReferee = role === 'referee';
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    let interval;
-    if (match.playState === 'playing') {
-      interval = setInterval(() => {
-        setElapsed((match.accumulatedTime || 0) + (Date.now() - match.startTime));
-      }, 1000);
-    } else {
-      setElapsed(match.accumulatedTime || 0);
-    }
-    return () => clearInterval(interval);
-  }, [match.playState, match.startTime, match.accumulatedTime]);
-
-  const formatTime = (ms) => {
-    const totalSec = Math.floor(ms / 1000);
-    const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
-    const s = (totalSec % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  const isPlaying = match.playState === 'playing';
-  const isPrep = match.playState === 'prep';
-  const isCall = match.playState === 'call';
-
-  return (
-    <div className="relative group w-full" ref={matchRef}>
-      <div className="absolute -top-3 left-3 px-2 py-0.5 bg-slate-900 rounded shadow-md z-20 flex items-center gap-2">
-        <p className="text-[7px] font-black text-white uppercase tracking-widest">Match {match.id.replace('m', '')}</p>
-        {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
-        {isPrep && <span className="flex h-2 w-2 relative"><span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span></span>}
-        {isCall && <span className="flex h-2 w-2 relative"><span className="animate-bounce absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
-      </div>
-
-      {isPlaying && (
-        <div className="absolute -top-4 right-4 bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
-          SEDANG BERTANDING
-        </div>
-      )}
-      {isPrep && (
-        <div className="absolute -top-4 right-4 bg-yellow-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
-          SEDANG PERSIAPAN
-        </div>
-      )}
-      {isCall && (
-        <div className="absolute -top-4 right-4 bg-blue-500 text-white text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-t-lg animate-pulse z-0">
-          HARAP MENUJU LAPAK
-        </div>
-      )}
-
-      <div className={cn(
-        "bg-white border-2 rounded-2xl overflow-hidden shadow-sm hover:border-brand-400 hover:shadow-2xl transition-all duration-300 relative z-10 flex flex-col",
-        highlightedSlot ? 'border-emerald-400 shadow-lg shadow-emerald-100 ring-4 ring-emerald-400/20' :
-          isPlaying ? 'border-red-500 shadow-lg shadow-red-200 ring-4 ring-red-500/20' :
-            isPrep ? 'border-yellow-500 shadow-lg shadow-yellow-200 ring-4 ring-yellow-500/20' :
-              isCall ? 'border-blue-500 shadow-lg shadow-blue-200 ring-4 ring-blue-500/20' : 'border-slate-100'
-      )}>
-        <div className="flex-1 flex flex-col">
-          {[1, 2].map(slot => {
-            const playerName = slot === 1 ? match.player1 : match.player2;
-            const isWinner = match.winner === playerName && playerName;
-            const isHighlighted = highlightedSlot === slot;
-            return (
-              <div key={slot} className={cn(
-                "p-3.5 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300 flex-1",
-                isHighlighted ? "bg-emerald-500 text-white" : isWinner ? "bg-brand-600 text-white" : "bg-white"
-              )}>
-                <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-4 text-left min-w-0">
-                  <div className={cn(
-                    "w-2.5 h-2.5 rounded-full shrink-0",
-                    isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
-                  )} />
-                  <span className={cn(
-                    "text-[13px] font-black truncate leading-none",
-                    !playerName ? "text-slate-300 italic" : (isHighlighted || isWinner) ? "text-white" : "text-slate-800"
-                  )}>{playerName || 'TBA'}</span>
-                  {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
-                </button>
-                {isReferee && playerName && (
-                  <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors ml-2", (isHighlighted || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14} /></button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Live Match Controls / Stopwatch */}
-        {(match.playState || isReferee) && (
-          <div className={cn(
-            "flex items-center justify-between px-4 py-2.5 border-t-2",
-            isPlaying ? "bg-red-50 border-red-100" : "bg-slate-50 border-slate-100"
-          )}>
-            <div className={cn("flex items-center gap-2 font-mono text-xs font-black", isPlaying ? "text-red-600" : "text-slate-500")}>
-              <Clock size={14} /> {formatTime(elapsed)}
+      {winnerConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setWinnerConfirm(null)}></div>
+          <div className="relative bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 text-center">
+            <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-100 animate-bounce">
+              <Trophy size={32}/>
             </div>
-            {isReferee && (
-              <div className="flex gap-1">
-                <button onClick={() => onSetMatchState(match.id, 'call')} className={cn("p-1.5 rounded transition-colors", isCall ? "bg-blue-500 text-white" : "text-slate-400 hover:bg-blue-100 hover:text-blue-600")} title="Harap Menuju Lapak"><Megaphone size={14} /></button>
-                <button onClick={() => onSetMatchState(match.id, 'prep')} className={cn("p-1.5 rounded transition-colors", isPrep ? "bg-yellow-500 text-white" : "text-slate-400 hover:bg-yellow-100 hover:text-yellow-600")} title="Sedang Persiapan"><Flag size={14} /></button>
-                {isPlaying ? (
-                  <button onClick={() => onSetMatchState(match.id, 'pause')} className="p-1.5 text-amber-500 hover:bg-amber-100 rounded transition-colors" title="Pause"><Pause size={14} /></button>
-                ) : (
-                  <button onClick={() => onSetMatchState(match.id, 'play')} className="p-1.5 text-emerald-500 hover:bg-emerald-100 rounded transition-colors" title="Play"><Play size={14} /></button>
-                )}
-                {(match.accumulatedTime > 0 || isPlaying) && (
-                  <button onClick={() => onSetMatchState(match.id, 'stop')} className="p-1.5 text-slate-400 hover:bg-slate-200 hover:text-red-600 rounded transition-colors" title="Stop/Reset"><Square size={14} /></button>
-                )}
-              </div>
-            )}
+            <h3 className="text-xl font-black text-slate-800 mb-2">Konfirmasi Pemenang</h3>
+            <p className="text-slate-500 font-bold text-xs leading-relaxed mb-6">
+              Apakah Anda yakin ingin menetapkan <strong className="text-brand-600 font-black">{winnerConfirm.winnerName}</strong> sebagai pemenang pertandingan ini?
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setWinnerConfirm(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">Batal</button>
+              <button 
+                onClick={async () => {
+                  const { matchId, winnerName, isFinal } = winnerConfirm;
+                  if (isFinal) {
+                    await executeSetFinalWinner(matchId, winnerName);
+                  } else {
+                    await executeSetWinner(matchId, winnerName);
+                  }
+                  setWinnerConfirm(null);
+                }} 
+                className="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-200 transition-all"
+              >
+                Ya, Konfirmasi
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {errorMessage && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-4 animate-slide-up"><AlertCircle size={20} className="text-brand-400"/><span className="text-sm font-bold">{errorMessage}</span><button onClick={() => setErrorMessage('')} className="p-1 hover:bg-white/10 rounded-lg"><X size={16}/></button></div>}
     </div>
   );
 }
+
