@@ -411,51 +411,118 @@ export default function App() {
 
   const handlePrintPDF = () => {
     if (!activeBracket) return;
-    
-    const originalTitle = document.title;
+
     const poolName = activePool === 'Final' ? 'FINAL' : `POOL ${activePool}`;
-    document.title = `Bagan ${poolName} - ${tournamentTitle || 'Turnamen Layangan'}`;
 
-    // A4 landscape usable area in px at 96dpi (277mm x 190mm minus 6mm margins each side)
-    const PAGE_W = 1052; // ~265mm
-    const PAGE_H = 722;  // ~178mm (minus header ~40px)
+    // Get the bracket wrapper DOM element
+    const bracketEl = document.querySelector('.bracket-tree-wrapper');
+    if (!bracketEl) return;
 
-    // Measure the actual bracket DOM dimensions
-    const wrapper = document.querySelector('.bracket-tree-wrapper');
-    if (wrapper) {
-      // Temporarily reset transform to measure real size
-      wrapper.style.transform = 'scale(1)';
-      const rect = wrapper.getBoundingClientRect();
-      const naturalW = rect.width;
-      const naturalH = rect.height;
-      
-      // Calculate scale to fit, never scale up
-      const scaleX = PAGE_W / naturalW;
-      const scaleY = PAGE_H / naturalH;
-      const printScale = Math.min(1, scaleX, scaleY);
-      
-      document.documentElement.style.setProperty('--print-scale', printScale.toString());
-      
-      // Restore current zoom for screen
-      wrapper.style.transform = '';
-    } else {
-      // Fallback: estimate from bracket data
-      const totalR = activeBracket.totalRounds;
-      const estimatedWidth = (totalR * 280) + (activePool !== 'Final' ? 350 : 0);
-      const numMatchesR1 = Math.pow(2, totalR - 1);
-      const estimatedHeight = (numMatchesR1 * 90) + 120;
-      const scaleX = PAGE_W / estimatedWidth;
-      const scaleY = PAGE_H / estimatedHeight;
-      const printScale = Math.min(1, scaleX, scaleY);
-      document.documentElement.style.setProperty('--print-scale', printScale.toString());
+    // Temporarily reset transform to measure real natural size
+    const prevTransform = bracketEl.style.transform;
+    bracketEl.style.transform = 'scale(1)';
+    const rect = bracketEl.getBoundingClientRect();
+    const naturalW = rect.width;
+    const naturalH = rect.height;
+    bracketEl.style.transform = prevTransform;
+
+    // A4 landscape usable px area (297mm x 210mm, 6mm margin each side @ 96dpi)
+    // 1mm = 3.7795px at 96dpi
+    const PX_PER_MM = 3.7795;
+    const MARGIN_MM = 6;
+    const PAGE_W_PX = Math.floor((297 - MARGIN_MM * 2) * PX_PER_MM); // ~1059px
+    const PAGE_H_PX = Math.floor((210 - MARGIN_MM * 2) * PX_PER_MM) - 60; // ~722px minus header
+
+    const scaleX = PAGE_W_PX / naturalW;
+    const scaleY = PAGE_H_PX / naturalH;
+    const scale = Math.min(1, scaleX, scaleY);
+
+    // Clone just the bracket content HTML
+    const bracketHTML = bracketEl.outerHTML;
+
+    // Grab all existing stylesheets from current page
+    const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map(l => `<link rel="stylesheet" href="${l.href}">`)
+      .join('\n');
+    const inlineStyles = Array.from(document.querySelectorAll('style'))
+      .map(s => `<style>${s.innerHTML}</style>`)
+      .join('\n');
+
+    const dateStr = new Date().toLocaleDateString('id-ID', { 
+      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+    });
+
+    const printHTML = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Bagan ${poolName} - ${tournamentTitle || 'Turnamen Layangan'}</title>
+  ${styleLinks}
+  ${inlineStyles}
+  <style>
+    @page { size: A4 landscape; margin: 6mm; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    html, body { margin: 0; padding: 0; background: white; font-family: 'Inter', sans-serif; }
+    
+    /* Header */
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #cbd5e1;
+      margin-bottom: 10px;
+    }
+    .print-header h1 { font-size: 18px; font-weight: 900; color: #1e293b; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
+    .print-header p { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin: 2px 0 0; }
+    .print-header h2 { font-size: 15px; font-weight: 900; color: #2563eb; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; text-align: right; }
+    .print-header small { font-size: 8px; color: #94a3b8; display: block; text-align: right; margin-top: 2px; }
+
+    /* Bracket scaled to fit */
+    .bracket-scale-wrapper {
+      transform-origin: top left;
+      transform: scale(${scale.toFixed(4)});
+      width: ${naturalW}px;
     }
 
-    window.print();
-    
-    setTimeout(() => {
-      document.title = originalTitle;
-    }, 1000);
+    /* Restore bracket styles that might be stripped */
+    .bracket-tree-wrapper {
+      transform: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .no-scrollbar { overflow: visible !important; }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <div>
+      <h1>${tournamentTitle || 'TURNAMEN LAYANGAN'}</h1>
+      <p>Penyelenggara: ${tournamentOrganizer || 'Panitia'}</p>
+    </div>
+    <div>
+      <h2>BAGAN ${poolName}</h2>
+      <small>Dicetak: ${dateStr}</small>
+    </div>
+  </div>
+  <div class="bracket-scale-wrapper">
+    ${bracketHTML}
+  </div>
+  <script>
+    window.onload = function() {
+      setTimeout(function() { window.print(); window.close(); }, 500);
+    };
+  <\/script>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank', 'width=1200,height=800');
+    if (printWindow) {
+      printWindow.document.write(printHTML);
+      printWindow.document.close();
+    }
   };
+
 
   const generateGlobalBracket = async () => {
     let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
