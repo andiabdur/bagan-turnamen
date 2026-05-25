@@ -26,7 +26,8 @@ import {
   Trash2,
   Crown,
   Medal,
-  Award
+  Award,
+  Printer
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -210,7 +211,8 @@ export default function App() {
     
     return (
       <div
-        className="overflow-auto no-scrollbar"
+        id="bracket-root-container"
+        className="overflow-auto no-scrollbar bracket-print-container"
         style={{ touchAction: 'pan-x pan-y' }}
         onTouchStart={(e) => {
           if (e.touches.length === 2) {
@@ -238,7 +240,25 @@ export default function App() {
         }}
         onTouchEnd={() => { pinchRef.current.active = false; }}
       >
-        <div className="p-8 md:p-16 min-w-max pb-40" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
+        {/* Print-Only Header */}
+        <div className="hidden print:block mb-8 border-b-2 border-slate-300 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-black text-slate-800 uppercase tracking-widest">{tournamentTitle || 'TURNAMEN LAYANGAN'}</h1>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Penyelenggara: {tournamentOrganizer || 'Panitia'}</p>
+            </div>
+            <div className="text-right">
+              <h2 className="text-xl font-black text-brand-600 uppercase tracking-widest">
+                {activePool === 'Final' ? 'BAGAN FINAL' : `BAGAN POOL ${activePool}`}
+              </h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
+                Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-8 md:p-16 min-w-max pb-40 bracket-tree-wrapper" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
         <div className="flex items-start gap-0">
           {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
             const roundNum = idx + 1;
@@ -349,6 +369,27 @@ export default function App() {
     setRole(null);
     localStorage.removeItem('tournament_role');
     setIsMenuOpen(false);
+  };
+
+  const handlePrintPDF = () => {
+    if (!activeBracket) return;
+    
+    const originalTitle = document.title;
+    const poolName = activePool === 'Final' ? 'FINAL' : `POOL ${activePool}`;
+    document.title = `Bagan ${poolName} - ${tournamentTitle || 'Turnamen Layangan'}`;
+    
+    const estimatedWidth = activePool === 'Final' 
+      ? (activeBracket.totalRounds * 280) 
+      : (activeBracket.totalRounds * 280 + 350);
+      
+    const printScale = Math.min(1, 1080 / estimatedWidth);
+    document.documentElement.style.setProperty('--print-scale', printScale.toString());
+    
+    window.print();
+    
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1000);
   };
 
   const generateGlobalBracket = async () => {
@@ -1869,13 +1910,24 @@ export default function App() {
       </header>
 
       {/* Pool Tabs */}
-      <div className="bg-white border-b border-slate-200 px-4 flex items-center gap-1 overflow-x-auto sticky top-[77px] z-30 no-scrollbar shadow-sm">
-        {poolsList.map(pool => (
-          <button key={pool} onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
-            {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
-            {activePool === pool && <div className={cn("absolute bottom-0 left-0 right-0 h-1 rounded-t-full", pool === 'Final' ? 'bg-yellow-500 shadow-[0_-2px_10px_rgba(234,179,8,0.4)]' : 'bg-brand-600 shadow-[0_-2px_10px_rgba(16,137,226,0.3)]')}></div>}
+      <div className="bg-white border-b border-slate-200 px-4 flex items-center justify-between sticky top-[77px] z-30 shadow-sm">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
+          {poolsList.map(pool => (
+            <button key={pool} onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
+              {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
+              {activePool === pool && <div className={cn("absolute bottom-0 left-0 right-0 h-1 rounded-t-full", pool === 'Final' ? 'bg-yellow-500 shadow-[0_-2px_10px_rgba(234,179,8,0.4)]' : 'bg-brand-600 shadow-[0_-2px_10px_rgba(16,137,226,0.3)]')}></div>}
+            </button>
+          ))}
+        </div>
+        {activeBracket && (
+          <button 
+            onClick={handlePrintPDF}
+            className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700 py-2.5 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-sm"
+          >
+            <Printer size={14}/>
+            CETAK PDF
           </button>
-        ))}
+        )}
       </div>
 
 

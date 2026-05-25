@@ -56,3 +56,51 @@ body {
   width: 2px;
   @apply bg-gray-200;
 }
+
+/* Print styles for A4 Landscape PDF */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide screen-only interactive elements */
+  header,
+  footer,
+  .sticky,
+  .fixed,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Expand main container to use full page width */
+  #root,
+  main,
+  .bracket-print-container {
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Scale the bracket tree using the calculated scaling factor */
+  .bracket-tree-wrapper {
+    transform: scale(var(--print-scale, 1)) !important;
+    transform-origin: top left !important;
+    padding: 0 !important;
+    margin-top: 1.5rem !important;
+  }
+}
