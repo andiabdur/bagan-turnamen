@@ -291,15 +291,15 @@ export default function App() {
               });
             }
 
-            const matchHeight = 180 * Math.pow(2, idx);
+            const multiplier = Math.pow(2, idx);
             return (
               <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
-                <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4">
+                <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4 print:mb-2 print:h-8">
                    <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
                 </div>
                 <div className="flex flex-col">
                   {matches.map(match => (
-                    <div key={match.id} className="relative flex items-center px-4" style={{ height: `${matchHeight}px` }}>
+                    <div key={match.id} className="relative flex items-center px-4" style={{ height: `calc(var(--base-match-height, 180px) * ${multiplier})` }}>
                       <MatchCard
                         match={match}
                         role={role}
@@ -313,7 +313,7 @@ export default function App() {
                       {match.nextMatchId && (
                         <>
                           <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                          <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `${matchHeight / 2}px`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                          <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
                           {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
                         </>
                       )}
@@ -382,7 +382,12 @@ export default function App() {
       ? (activeBracket.totalRounds * 280) 
       : (activeBracket.totalRounds * 280 + 350);
       
-    const printScale = Math.min(1, 1080 / estimatedWidth);
+    const numMatchesRound1 = Math.pow(2, activeBracket.totalRounds - 1);
+    const estimatedHeight = (numMatchesRound1 * 90) + 120;
+      
+    const scaleX = 1080 / estimatedWidth;
+    const scaleY = 740 / estimatedHeight;
+    const printScale = Math.min(1, scaleX, scaleY);
     document.documentElement.style.setProperty('--print-scale', printScale.toString());
     
     window.print();
