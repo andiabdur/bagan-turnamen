@@ -411,116 +411,8 @@ export default function App() {
 
   const handlePrintPDF = () => {
     if (!activeBracket) return;
-
-    const poolName = activePool === 'Final' ? 'FINAL' : `POOL ${activePool}`;
-
-    // Get the bracket wrapper DOM element
-    const bracketEl = document.querySelector('.bracket-tree-wrapper');
-    if (!bracketEl) return;
-
-    // Temporarily reset transform to measure real natural size
-    const prevTransform = bracketEl.style.transform;
-    bracketEl.style.transform = 'scale(1)';
-    const rect = bracketEl.getBoundingClientRect();
-    const naturalW = rect.width;
-    const naturalH = rect.height;
-    bracketEl.style.transform = prevTransform;
-
-    // A4 landscape usable px area (297mm x 210mm, 6mm margin each side @ 96dpi)
-    // 1mm = 3.7795px at 96dpi
-    const PX_PER_MM = 3.7795;
-    const MARGIN_MM = 6;
-    const PAGE_W_PX = Math.floor((297 - MARGIN_MM * 2) * PX_PER_MM); // ~1059px
-    const PAGE_H_PX = Math.floor((210 - MARGIN_MM * 2) * PX_PER_MM) - 60; // ~722px minus header
-
-    const scaleX = PAGE_W_PX / naturalW;
-    const scaleY = PAGE_H_PX / naturalH;
-    const scale = Math.min(1, scaleX, scaleY);
-
-    // Clone just the bracket content HTML
-    const bracketHTML = bracketEl.outerHTML;
-
-    // Grab all existing stylesheets from current page
-    const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-      .map(l => `<link rel="stylesheet" href="${l.href}">`)
-      .join('\n');
-    const inlineStyles = Array.from(document.querySelectorAll('style'))
-      .map(s => `<style>${s.innerHTML}</style>`)
-      .join('\n');
-
-    const dateStr = new Date().toLocaleDateString('id-ID', { 
-      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
-    });
-
-    const printHTML = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <title>Bagan ${poolName} - ${tournamentTitle || 'Turnamen Layangan'}</title>
-  ${styleLinks}
-  ${inlineStyles}
-  <style>
-    @page { size: A4 landscape; margin: 6mm; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    html, body { margin: 0; padding: 0; background: white; font-family: 'Inter', sans-serif; }
-    
-    /* Header */
-    .print-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #cbd5e1;
-      margin-bottom: 10px;
-    }
-    .print-header h1 { font-size: 18px; font-weight: 900; color: #1e293b; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; }
-    .print-header p { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.15em; margin: 2px 0 0; }
-    .print-header h2 { font-size: 15px; font-weight: 900; color: #2563eb; text-transform: uppercase; letter-spacing: 0.1em; margin: 0; text-align: right; }
-    .print-header small { font-size: 8px; color: #94a3b8; display: block; text-align: right; margin-top: 2px; }
-
-    /* Bracket scaled to fit */
-    .bracket-scale-wrapper {
-      transform-origin: top left;
-      transform: scale(${scale.toFixed(4)});
-      width: ${naturalW}px;
-    }
-
-    /* Restore bracket styles that might be stripped */
-    .bracket-tree-wrapper {
-      transform: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-    }
-    .no-scrollbar { overflow: visible !important; }
-  </style>
-</head>
-<body>
-  <div class="print-header">
-    <div>
-      <h1>${tournamentTitle || 'TURNAMEN LAYANGAN'}</h1>
-      <p>Penyelenggara: ${tournamentOrganizer || 'Panitia'}</p>
-    </div>
-    <div>
-      <h2>BAGAN ${poolName}</h2>
-      <small>Dicetak: ${dateStr}</small>
-    </div>
-  </div>
-  <div class="bracket-scale-wrapper">
-    ${bracketHTML}
-  </div>
-  <script>
-    window.onload = function() {
-      setTimeout(function() { window.print(); window.close(); }, 500);
-    };
-  <\/script>
-</body>
-</html>`;
-
-    const printWindow = window.open('', '_blank', 'width=1200,height=800');
-    if (printWindow) {
-      printWindow.document.write(printHTML);
-      printWindow.document.close();
-    }
+    const printUrl = `${window.location.origin}${window.location.pathname}?page=print&pool=${encodeURIComponent(activePool)}`;
+    window.open(printUrl, '_blank');
   };
 
 
@@ -2054,10 +1946,10 @@ export default function App() {
         {activeBracket && (
           <button 
             onClick={handlePrintPDF}
-            className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700 py-2.5 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-sm"
+            className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 py-2.5 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-sm"
           >
             <Printer size={14}/>
-            CETAK PDF
+            CETAK / PDF
           </button>
         )}
       </div>
