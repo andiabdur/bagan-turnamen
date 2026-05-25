@@ -254,6 +254,10 @@ export default function App() {
               <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
                 Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </p>
+            </div>
+          </div>
+        </div>
+
         <div className="p-8 md:p-16 min-w-max pb-40 bracket-tree-wrapper" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
           {(() => {
             const totalR = activeBracket.totalRounds;
@@ -378,7 +382,6 @@ export default function App() {
             </div>
           )}
         </div>
-      </div>
       </div>
     );
   };
