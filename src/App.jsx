@@ -206,13 +206,13 @@ export default function App() {
   }, [user]);
 
   // 2.5 REUSABLE BRACKET RENDERER
-  const renderBracket = () => {
+  const renderBracket = (isPrintMode = false) => {
     if (!activeBracket || !activeBracket.matches) return null;
     
     return (
       <div
-        id="bracket-root-container"
-        className="overflow-auto no-scrollbar bracket-print-container"
+        id={isPrintMode ? "bracket-root-container-print" : "bracket-root-container"}
+        className={`overflow-auto no-scrollbar bracket-print-container ${isPrintMode ? 'hidden print:block' : 'block print:hidden'}`}
         style={{ touchAction: 'pan-x pan-y' }}
         onTouchStart={(e) => {
           if (e.touches.length === 2) {
@@ -289,7 +289,7 @@ export default function App() {
               });
             }
 
-            const isTwoSided = totalR >= 3 && activeBracket.type !== 'double';
+            const isTwoSided = isPrintMode && totalR >= 3 && activeBracket.type !== 'double';
 
             const renderColumn = (idx, side) => {
               const roundNum = idx + 1;
@@ -2274,7 +2274,8 @@ export default function App() {
               <div className="relative mt-8 border-t border-slate-150 pt-8 overflow-visible">
                 <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-6 text-center">Bagan Pertandingan Final</h3>
                 <div className="border-2 border-slate-200/60 rounded-3xl bg-slate-100/30 overflow-hidden shadow-inner">
-                  {renderBracket()}
+                  {renderBracket(false)}
+                  {renderBracket(true)}
                 </div>
               </div>
             )}
@@ -2301,7 +2302,8 @@ export default function App() {
             ) : (
               <div className="relative">
                 {/* Reusable Bracket Renderer */}
-                {renderBracket()}
+                {renderBracket(false)}
+                {renderBracket(true)}
 
                 {/* Floating Controls — Zoom + Search */}
                 <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1 select-none">
