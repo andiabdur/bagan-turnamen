@@ -1,0 +1,1278 @@
+{
+  "doubleLife": true,
+  "isOpenTournament": true,
+  "isArchived": false,
+  "finalFormat": "double",
+  "logo": "",
+  "pools": {
+    "B": {
+      "matches": [
+        {
+          "id": "m1",
+          "player1": "YOUNG KITE-SENNA",
+          "player2": "QUEEN - DON JUAN",
+          "player2Points": 0,
+          "nextMatchId": "m17",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m17",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "id": "m2",
+          "player1": "[CRB-TIM 06] Z'DAN",
+          "player2": "HORE-ARSEN",
+          "player2Points": 0
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m18",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "id": "m3",
+          "player1": "BEREBETZ-H. HASIL",
+          "player2": "[CRB-SJ] K-OLEN",
+          "player2Points": 0
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m18",
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "round": 1,
+          "player1": "$3NGGOL B4COK",
+          "id": "m4",
+          "player2Points": 0,
+          "player2": "KUMBUL-ABRET"
+        },
+        {
+          "player1": "BTR-ELANG PUTRA",
+          "id": "m5",
+          "player2Points": 0,
+          "player2": "AP - ARI",
+          "nextMatchId": "m19",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1
+        },
+        {
+          "id": "m6",
+          "player1": "WIBOWO-EXCEL",
+          "player2": "CRB TRIMBI-DAU",
+          "player2Points": 0,
+          "winner": null,
+          "nextMatchId": "m19",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1
+        },
+        {
+          "player2": "SINGAPARNA",
+          "player2Points": 0,
+          "id": "m7",
+          "player1": "KOTA ANGIN-KRISNA",
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "nextMatchId": "m20",
+          "winner": null
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m20",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "CRB UTARA-BANDITZ",
+          "id": "m8",
+          "player2Points": 0,
+          "player2": "MEGAKILL-EKA"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m21",
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "round": 1,
+          "player1": "CRB UTARA-JUNA",
+          "id": "m9",
+          "player2Points": 0,
+          "player2": "[MJL]FAISAL KITE"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m21",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "HORE-ARKAAN",
+          "id": "m10",
+          "player2Points": 0,
+          "player2": "LETTER E-YOGI"
+        },
+        {
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "nextMatchId": "m22",
+          "winner": null,
+          "player2": "[MJL-KOTA ANGIN]4",
+          "player2Points": 0,
+          "id": "m11",
+          "player1": "[TIM-SATRIA] SATRIA"
+        },
+        {
+          "player1": "H. MANYUNG",
+          "id": "m12",
+          "player2Points": 0,
+          "player2": "[CRB-POC] OHMC",
+          "nextMatchId": "m22",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2
+        },
+        {
+          "id": "m13",
+          "player1": "CRB TRIMBI-NONO",
+          "player2": "KUMBUL-RIYAN",
+          "player2Points": 0,
+          "nextMatchId": "m23",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m23",
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "round": 1,
+          "id": "m14",
+          "player1": "MEGAKILL-KOKOZO",
+          "player2": "Wa Gendoy",
+          "player2Points": 0
+        },
+        {
+          "nextMatchId": "m24",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "player1": "WIBOWO-ALI",
+          "id": "m15",
+          "player2Points": 0,
+          "player2": "LIVERPOOL"
+        },
+        {
+          "nextMatchId": "m24",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "id": "m16",
+          "player1": "SEREPETZ-RIFAL",
+          "player2": "AP-MANG GEMBOL",
+          "player2Points": 0
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m17",
+          "nextMatchId": "m25",
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 2
+        },
+        {
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "id": "m18",
+          "nextMatchId": "m25"
+        },
+        {
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "id": "m19",
+          "nextMatchId": "m26",
+          "player1": null,
+          "winner": null
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m26",
+          "id": "m20",
+          "winner": null,
+          "round": 2,
+          "nextMatchSlot": 2,
+          "player2": null
+        },
+        {
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "id": "m21",
+          "nextMatchId": "m27",
+          "player1": null,
+          "winner": null
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m27",
+          "id": "m22",
+          "winner": null,
+          "round": 2,
+          "nextMatchSlot": 2,
+          "player2": null
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m28",
+          "id": "m23",
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 2
+        },
+        {
+          "nextMatchId": "m28",
+          "id": "m24",
+          "player1": null,
+          "winner": null,
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m29",
+          "id": "m25",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 3
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 3,
+          "winner": null,
+          "nextMatchId": "m29",
+          "id": "m26",
+          "player1": null
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m27",
+          "nextMatchId": "m30",
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 3
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 3,
+          "winner": null,
+          "id": "m28",
+          "nextMatchId": "m30",
+          "player1": null
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 4,
+          "winner": null,
+          "id": "m29",
+          "nextMatchId": "m31",
+          "player1": null
+        },
+        {
+          "round": 4,
+          "nextMatchSlot": 2,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m31",
+          "id": "m30",
+          "winner": null
+        },
+        {
+          "round": 5,
+          "player2": null,
+          "nextMatchSlot": null,
+          "nextMatchId": null,
+          "id": "m31",
+          "player1": null,
+          "winner": null
+        }
+      ],
+      "totalRounds": 5
+    },
+    "A": {
+      "totalRounds": 5,
+      "matches": [
+        {
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "nextMatchId": "m17",
+          "winner": null,
+          "player2": "HORE-PA ICI",
+          "player2Points": 0,
+          "id": "m1",
+          "player1": " [CRB-TIM 06] - MA'GOT"
+        },
+        {
+          "player2": "LETTER E-KRISS",
+          "player2Points": 0,
+          "id": "m2",
+          "player1": "QUEEN-ANGGA",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m17"
+        },
+        {
+          "id": "m3",
+          "player1": "AP-RENDI",
+          "player2": "MEGAKILL-BAIM",
+          "player2Points": 0,
+          "winner": null,
+          "nextMatchId": "m18",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m18",
+          "player2Points": 0,
+          "player2": "KUMBUL-BEI",
+          "player1": "CRB TRIMBI-SAMANI",
+          "id": "m4"
+        },
+        {
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "nextMatchId": "m19",
+          "winner": null,
+          "player2Points": 0,
+          "player2": "BEREBETZ-PA UDIN",
+          "player1": "SLEBEW",
+          "id": "m5"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m19",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "HAFIZH",
+          "id": "m6",
+          "player2Points": 0,
+          "player2": "SEREPETZ-ADS"
+        },
+        {
+          "nextMatchId": "m20",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "id": "m7",
+          "player1": "KOTA ANGIN-CAKRI",
+          "player2": "H. GUFRON",
+          "player2Points": 0
+        },
+        {
+          "player2Points": 0,
+          "player2": "BTR-ECON WAWAW",
+          "player1": "CRB UTARA-B. JACK",
+          "id": "m8",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m20"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m21",
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "round": 1,
+          "player1": "HORE-DIKI",
+          "id": "m9",
+          "player2Points": 0,
+          "player2": "YOUNG KITE-UCUP"
+        },
+        {
+          "player2Points": 0,
+          "player2": "BEREBETZ-H. EBO",
+          "player1": "[CRB-SJ] K-TEMPANG",
+          "id": "m10",
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m21"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m22",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "id": "m11",
+          "player1": "KING ARDI",
+          "player2": "AP-DOLE",
+          "player2Points": 0
+        },
+        {
+          "player2Points": 0,
+          "player2": "SEREPETZ-KUMIZ",
+          "player1": "[CRB-POC] DINO",
+          "id": "m12",
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "nextMatchId": "m22",
+          "winner": null
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m23",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "id": "m13",
+          "player1": "CRB TRIMBI-DUDE",
+          "player2": "WIBOWO-FAISAL",
+          "player2Points": 0
+        },
+        {
+          "nextMatchId": "m23",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "player1": "WIBOWO-LUKMAN",
+          "id": "m14",
+          "player2Points": 0,
+          "player2": "KUMBUL-IBONK"
+        },
+        {
+          "player1": "QUEEN-INDRAKILLA",
+          "id": "m15",
+          "player2Points": 0,
+          "player2": "CRB UTARA-CACA",
+          "nextMatchId": "m24",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0
+        },
+        {
+          "nextMatchId": "m24",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "id": "m16",
+          "player1": "[TIM-SATRIA] OOY",
+          "player2": "KOTA ANGIN-AR",
+          "player2Points": 0
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m17",
+          "nextMatchId": "m25",
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 2
+        },
+        {
+          "round": 2,
+          "nextMatchSlot": 2,
+          "player2": null,
+          "player1": null,
+          "id": "m18",
+          "nextMatchId": "m25",
+          "winner": null
+        },
+        {
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m26",
+          "id": "m19"
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m20",
+          "nextMatchId": "m26",
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2
+        },
+        {
+          "id": "m21",
+          "nextMatchId": "m27",
+          "player1": null,
+          "winner": null,
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 1
+        },
+        {
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m27",
+          "id": "m22"
+        },
+        {
+          "round": 2,
+          "nextMatchSlot": 1,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m28",
+          "id": "m23",
+          "winner": null
+        },
+        {
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "id": "m24",
+          "nextMatchId": "m28"
+        },
+        {
+          "id": "m25",
+          "nextMatchId": "m29",
+          "player1": null,
+          "winner": null,
+          "round": 3,
+          "player2": null,
+          "nextMatchSlot": 1
+        },
+        {
+          "id": "m26",
+          "nextMatchId": "m29",
+          "player1": null,
+          "winner": null,
+          "round": 3,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m27",
+          "nextMatchId": "m30",
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 3
+        },
+        {
+          "winner": null,
+          "id": "m28",
+          "nextMatchId": "m30",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 3
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m31",
+          "id": "m29",
+          "winner": null,
+          "round": 4,
+          "nextMatchSlot": 1,
+          "player2": null
+        },
+        {
+          "id": "m30",
+          "nextMatchId": "m31",
+          "player1": null,
+          "winner": null,
+          "round": 4,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "id": "m31",
+          "nextMatchId": null,
+          "player1": null,
+          "winner": null,
+          "round": 5,
+          "player2": null,
+          "nextMatchSlot": null
+        }
+      ]
+    },
+    "C": {
+      "matches": [
+        {
+          "player1": "KUMBUL-BEI",
+          "id": "m1",
+          "player2Points": 0,
+          "player2": "BEREBETZ-PA UDIN",
+          "winner": null,
+          "nextMatchId": "m17",
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "round": 1
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m17",
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "round": 1,
+          "id": "m2",
+          "player1": "QUEEN-INDRAKILLA",
+          "player2": "WIBOWO-FAISAL",
+          "player2Points": 0
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m18",
+          "player2Points": 0,
+          "player2": "CRB UTARA-B. JACK",
+          "player1": "KOTA ANGIN-CAKRI",
+          "id": "m3"
+        },
+        {
+          "player2Points": 0,
+          "player2": "MEGAKILL-BAIM",
+          "player1": "CRB TRIMBI-SAMANI",
+          "id": "m4",
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "nextMatchId": "m18",
+          "winner": null
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m19",
+          "player2": "YOUNG KITE-UCUP",
+          "player2Points": 0,
+          "id": "m5",
+          "player1": "KING ARDI"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m19",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "SLEBEW",
+          "id": "m6",
+          "player2Points": 0,
+          "player2": "SEREPETZ-ADS"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m20",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "player1": "HORE-DIKI",
+          "id": "m7",
+          "player2Points": 0,
+          "player2": "HAFIZH"
+        },
+        {
+          "nextMatchId": "m20",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "player1": "AP-DOLE",
+          "id": "m8",
+          "player2Points": 0,
+          "player2": " [CRB-TIM 06] - MA'GOT"
+        },
+        {
+          "player2": "AP-RENDI",
+          "player2Points": 0,
+          "id": "m9",
+          "player1": "BEREBETZ-H. EBO",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m21"
+        },
+        {
+          "player2": "SEREPETZ-KUMIZ",
+          "player2Points": 0,
+          "id": "m10",
+          "player1": "LETTER E-KRISS",
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m21"
+        },
+        {
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "nextMatchId": "m22",
+          "winner": null,
+          "player2Points": 0,
+          "player2": "TIM SATRIA-OOY",
+          "player1": "H. GUFRON",
+          "id": "m11"
+        },
+        {
+          "nextMatchId": "m22",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "player1": "POC-DINO",
+          "id": "m12",
+          "player2Points": 0,
+          "player2": "QUEEN-ANGGA"
+        },
+        {
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "nextMatchId": "m23",
+          "winner": null,
+          "player2Points": 0,
+          "player2": "CRB UTARA-CACA",
+          "player1": "HORE-PA ICI",
+          "id": "m13"
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m23",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "WIBOWO 4",
+          "id": "m14",
+          "player2Points": 0,
+          "player2": "KOTA ANGIN-AR"
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m24",
+          "player2": "KUMBUL-BONK",
+          "player2Points": 0,
+          "id": "m15",
+          "player1": "[CRB-SJ] K-TEMPANG"
+        },
+        {
+          "player2": "BTR-ECON WAWAW",
+          "player2Points": 0,
+          "id": "m16",
+          "player1": "CRB TRIMBI-DUDE",
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "nextMatchId": "m24",
+          "winner": null
+        },
+        {
+          "winner": null,
+          "id": "m17",
+          "nextMatchId": "m25",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 2
+        },
+        {
+          "round": 2,
+          "nextMatchSlot": 2,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m25",
+          "id": "m18",
+          "winner": null
+        },
+        {
+          "nextMatchId": "m26",
+          "id": "m19",
+          "player1": null,
+          "winner": null,
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 1
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 2,
+          "winner": null,
+          "nextMatchId": "m26",
+          "id": "m20",
+          "player1": null
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 2,
+          "winner": null,
+          "nextMatchId": "m27",
+          "id": "m21",
+          "player1": null
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "id": "m22",
+          "nextMatchId": "m27",
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 2,
+          "winner": null,
+          "id": "m23",
+          "nextMatchId": "m28",
+          "player1": null
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m28",
+          "id": "m24",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 2
+        },
+        {
+          "nextMatchId": "m29",
+          "id": "m25",
+          "player1": null,
+          "winner": null,
+          "round": 3,
+          "player2": null,
+          "nextMatchSlot": 1
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 2,
+          "round": 3,
+          "winner": null,
+          "nextMatchId": "m29",
+          "id": "m26",
+          "player1": null
+        },
+        {
+          "winner": null,
+          "id": "m27",
+          "nextMatchId": "m30",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 3
+        },
+        {
+          "round": 3,
+          "nextMatchSlot": 2,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m30",
+          "id": "m28",
+          "winner": null
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m31",
+          "id": "m29",
+          "winner": null,
+          "round": 4,
+          "nextMatchSlot": 1,
+          "player2": null
+        },
+        {
+          "id": "m30",
+          "nextMatchId": "m31",
+          "player1": null,
+          "winner": null,
+          "round": 4,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "nextMatchSlot": null,
+          "player2": null,
+          "round": 5,
+          "winner": null,
+          "player1": null,
+          "nextMatchId": null,
+          "id": "m31"
+        }
+      ],
+      "totalRounds": 5,
+      "crossoverOf": "A"
+    },
+    "D": {
+      "totalRounds": 5,
+      "matches": [
+        {
+          "player1": "WIBOWO-EXCEL",
+          "id": "m1",
+          "player2Points": 0,
+          "player2": "KOTA ANGIN-KRISNA",
+          "nextMatchId": "m17",
+          "winner": null,
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m17",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "id": "m2",
+          "player1": "FAISAL KITE",
+          "player2": "HORE-ARSEN",
+          "player2Points": 0
+        },
+        {
+          "player2Points": 0,
+          "player2": "MEGAKILL-KOKOZO",
+          "player1": "TIM 06-Z'DAN",
+          "id": "m3",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m18"
+        },
+        {
+          "player2Points": 0,
+          "player2": "AP-ARI",
+          "player1": "[TIM-SATRIA]-SATRIA",
+          "id": "m4",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m18"
+        },
+        {
+          "player2Points": 0,
+          "player2": "Wa Gendoy",
+          "player1": "[CRB-UTARA] JUNA",
+          "id": "m5",
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "nextMatchId": "m19",
+          "winner": null
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m19",
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "player1": "SEREPETZ-RIFAL",
+          "id": "m6",
+          "player2Points": 0,
+          "player2": "CRB-UTARA-BANDITZ"
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m20",
+          "player2": "BEREBETZ-H. HASIL",
+          "player2Points": 0,
+          "id": "m7",
+          "player1": "$3NGGOL B4COK"
+        },
+        {
+          "nextMatchId": "m20",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "player1": "KUMBUL-ABRET",
+          "id": "m8",
+          "player2Points": 0,
+          "player2": "CRB TRIMBI-NONO"
+        },
+        {
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0,
+          "nextMatchId": "m21",
+          "winner": null,
+          "player2": "WIBOWO-ALI",
+          "player2Points": 0,
+          "id": "m9",
+          "player1": "YOUNG KITE-SENNA"
+        },
+        {
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "nextMatchId": "m21",
+          "winner": null,
+          "player2": "QUEEN - DON JUAN",
+          "player2Points": 0,
+          "id": "m10",
+          "player1": "H. MANYUNG"
+        },
+        {
+          "player1": "SINGAPARNA",
+          "id": "m11",
+          "player2Points": 0,
+          "player2": "MEGAKILL-EKA",
+          "winner": null,
+          "nextMatchId": "m22",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1
+        },
+        {
+          "player2": "LETTER E-YOGI",
+          "player2Points": 0,
+          "id": "m12",
+          "player1": "KUMBUL-RIYAN",
+          "round": 1,
+          "nextMatchSlot": 2,
+          "player1Points": 0,
+          "nextMatchId": "m22",
+          "winner": null
+        },
+        {
+          "id": "m13",
+          "player1": "HORE-ARKAAN",
+          "player2": "AP-MANG GEMBOL",
+          "player2Points": 0,
+          "winner": null,
+          "nextMatchId": "m23",
+          "player1Points": 0,
+          "nextMatchSlot": 1,
+          "round": 1
+        },
+        {
+          "round": 1,
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "nextMatchId": "m23",
+          "winner": null,
+          "player2Points": 0,
+          "player2": "CRB TRIMBI-DAU",
+          "player1": "LIVERPOOL ",
+          "id": "m14"
+        },
+        {
+          "id": "m15",
+          "player1": "[CRB-POC] OHMC",
+          "player2": "[MJL-KOTA ANGIN]4",
+          "player2Points": 0,
+          "nextMatchId": "m24",
+          "winner": null,
+          "round": 1,
+          "nextMatchSlot": 1,
+          "player1Points": 0
+        },
+        {
+          "player1Points": 0,
+          "nextMatchSlot": 2,
+          "round": 1,
+          "winner": null,
+          "nextMatchId": "m24",
+          "player2Points": 0,
+          "player2": "[CRB-SJ] K-OLEN",
+          "player1": "BTR-ELANG PUTRA",
+          "id": "m16"
+        },
+        {
+          "round": 2,
+          "nextMatchSlot": 1,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m25",
+          "id": "m17",
+          "winner": null
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m25",
+          "id": "m18",
+          "winner": null,
+          "round": 2,
+          "nextMatchSlot": 2,
+          "player2": null
+        },
+        {
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 2,
+          "winner": null,
+          "id": "m19",
+          "nextMatchId": "m26",
+          "player1": null
+        },
+        {
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m26",
+          "id": "m20"
+        },
+        {
+          "nextMatchSlot": 1,
+          "player2": null,
+          "round": 2,
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m27",
+          "id": "m21"
+        },
+        {
+          "nextMatchId": "m27",
+          "id": "m22",
+          "player1": null,
+          "winner": null,
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m28",
+          "id": "m23",
+          "winner": null,
+          "round": 2,
+          "nextMatchSlot": 1,
+          "player2": null
+        },
+        {
+          "nextMatchId": "m28",
+          "id": "m24",
+          "player1": null,
+          "winner": null,
+          "round": 2,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "round": 3,
+          "nextMatchSlot": 1,
+          "player2": null,
+          "player1": null,
+          "nextMatchId": "m29",
+          "id": "m25",
+          "winner": null
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "nextMatchId": "m29",
+          "id": "m26",
+          "nextMatchSlot": 2,
+          "player2": null,
+          "round": 3
+        },
+        {
+          "winner": null,
+          "nextMatchId": "m30",
+          "id": "m27",
+          "player1": null,
+          "player2": null,
+          "nextMatchSlot": 1,
+          "round": 3
+        },
+        {
+          "player1": null,
+          "id": "m28",
+          "nextMatchId": "m30",
+          "winner": null,
+          "round": 3,
+          "nextMatchSlot": 2,
+          "player2": null
+        },
+        {
+          "player1": null,
+          "nextMatchId": "m31",
+          "id": "m29",
+          "winner": null,
+          "round": 4,
+          "nextMatchSlot": 1,
+          "player2": null
+        },
+        {
+          "nextMatchId": "m31",
+          "id": "m30",
+          "player1": null,
+          "winner": null,
+          "round": 4,
+          "player2": null,
+          "nextMatchSlot": 2
+        },
+        {
+          "winner": null,
+          "player1": null,
+          "nextMatchId": null,
+          "id": "m31",
+          "nextMatchSlot": null,
+          "player2": null,
+          "round": 5
+        }
+      ],
+      "crossoverOf": "B"
+    }
+  },
+  "prelimPointsSystem": false,
+  "organizer": "CIKIJING",
+  "title": "AINGS SABLON OPEN CUP S1"
+}

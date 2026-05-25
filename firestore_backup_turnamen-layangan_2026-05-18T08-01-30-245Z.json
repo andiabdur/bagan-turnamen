@@ -1,0 +1,1069 @@
+{
+  "artifacts": {
+    "turnamen-layangan-2026": {
+      "exists": false,
+      "data": null,
+      "subcollections": {
+        "public": {
+          "data": {
+            "exists": false,
+            "data": null,
+            "subcollections": {
+              "tournament": {
+                "all_pools": {
+                  "exists": true,
+                  "data": {
+                    "pools": {
+                      "A": {
+                        "totalRounds": 5,
+                        "matches": [
+                          {
+                            "id": "m1",
+                            "playState": "idle",
+                            "player1": "[Kota Angin] Adik",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player2": "[Hore]\tArsen",
+                            "winner": "[Kota Angin] Adik",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m17"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[BL Tempur]\tBar bar",
+                            "playState": "idle",
+                            "id": "m2",
+                            "player1": "[SENYAP]\tDaim",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m17",
+                            "winner": "[SENYAP]\tDaim"
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "[Berebet]\tKokozo",
+                            "playState": "idle",
+                            "id": "m3",
+                            "player1": "[Faisal kite]\tKAKA",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m18",
+                            "winner": "[Berebet]\tKokozo"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[BROTHER]\tAkdan",
+                            "id": "m4",
+                            "playState": "idle",
+                            "player1": "[AP]\tAri",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m18",
+                            "winner": "[AP]\tAri"
+                          },
+                          {
+                            "player1": "[BTR]\tBaim",
+                            "id": "m5",
+                            "playState": "idle",
+                            "player2": "[BL Tempur]\tFaras",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "winner": "[BTR]\tBaim",
+                            "nextMatchId": "m19",
+                            "round": 1,
+                            "accumulatedTime": 0
+                          },
+                          {
+                            "playState": "idle",
+                            "id": "m6",
+                            "player1": "[IBK]\tBerry",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[SENYAP]\tIvan",
+                            "winner": "[IBK]\tBerry",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m19"
+                          },
+                          {
+                            "winner": "[SG Kite]\tAlif",
+                            "nextMatchId": "m20",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[Berebet]\tP.asep",
+                            "playState": "idle",
+                            "id": "m7",
+                            "player2": "[SG Kite]\tAlif",
+                            "startTime": null,
+                            "nextMatchSlot": 1
+                          },
+                          {
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player2": "[Kumbul]\tBintang",
+                            "id": "m8",
+                            "playState": "idle",
+                            "player1": "[Wibowo]\tExcel",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m20",
+                            "winner": "[Kumbul]\tBintang"
+                          },
+                          {
+                            "id": "m9",
+                            "playState": "idle",
+                            "player1": "[Keparat]\tRio",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "[Kumbul]\tBah Sinchan",
+                            "winner": "[Kumbul]\tBah Sinchan",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m21"
+                          },
+                          {
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player2": "[BTR]\tRestu",
+                            "playState": "idle",
+                            "id": "m10",
+                            "player1": "[Hore]\tH.mayung",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m21",
+                            "winner": "[Hore]\tH.mayung"
+                          },
+                          {
+                            "nextMatchId": "m22",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "winner": "[Berebet]\tThaus",
+                            "player2": "[Berebet]\tThaus",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player1": "[Sangraja]\tIbang",
+                            "playState": "idle",
+                            "id": "m11"
+                          },
+                          {
+                            "player1": "[Wibowo]\tAli",
+                            "playState": "idle",
+                            "id": "m12",
+                            "player2": "[SENYAP]\tBagas",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "winner": "[SENYAP]\tBagas",
+                            "nextMatchId": "m22",
+                            "round": 1,
+                            "accumulatedTime": 0
+                          },
+                          {
+                            "winner": "[Hore]\tGufron",
+                            "nextMatchId": "m23",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[BL Tempur]\tAhu",
+                            "playState": "idle",
+                            "id": "m13",
+                            "player2": "[Hore]\tGufron",
+                            "startTime": null,
+                            "nextMatchSlot": 1
+                          },
+                          {
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m23",
+                            "winner": "[HLD]\tMPHOT",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[HLD]\tMPHOT",
+                            "playState": "idle",
+                            "id": "m14",
+                            "player1": "[Serepet]\tBrey"
+                          },
+                          {
+                            "winner": "Indrakila",
+                            "nextMatchId": "m24",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "Indrakila",
+                            "playState": "idle",
+                            "id": "m15",
+                            "player2": "[BROTHER]\tP.Haze",
+                            "startTime": null,
+                            "nextMatchSlot": 1
+                          },
+                          {
+                            "player2": "[AP]\tBob",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player1": "[Kota Angin]\tAR",
+                            "id": "m16",
+                            "playState": "idle",
+                            "nextMatchId": "m24",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "winner": "[Kota Angin]\tAR"
+                          },
+                          {
+                            "winner": "[SENYAP]\tDaim",
+                            "round": 2,
+                            "accumulatedTime": 203449,
+                            "nextMatchId": "m25",
+                            "playState": "paused",
+                            "id": "m17",
+                            "player1": "[Kota Angin] Adik",
+                            "startTime": 1779008052655,
+                            "nextMatchSlot": 1,
+                            "player2": "[SENYAP]\tDaim"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[AP]\tAri",
+                            "id": "m18",
+                            "playState": "idle",
+                            "player1": "[Berebet]\tKokozo",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m25",
+                            "winner": "[AP]\tAri"
+                          },
+                          {
+                            "winner": "[IBK]\tBerry",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m26",
+                            "id": "m19",
+                            "playState": "idle",
+                            "player1": "[BTR]\tBaim",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "[IBK]\tBerry"
+                          },
+                          {
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player2": "[Kumbul]\tBintang",
+                            "id": "m20",
+                            "playState": "idle",
+                            "player1": "[SG Kite]\tAlif",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m26",
+                            "winner": "[SG Kite]\tAlif"
+                          },
+                          {
+                            "id": "m21",
+                            "playState": "idle",
+                            "player1": "[Kumbul]\tBah Sinchan",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player2": "[Hore]\tH.mayung",
+                            "winner": "[Hore]\tH.mayung",
+                            "accumulatedTime": 0,
+                            "round": 2,
+                            "nextMatchId": "m27"
+                          },
+                          {
+                            "player2": "[SENYAP]\tBagas",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player1": "[Berebet]\tThaus",
+                            "playState": "idle",
+                            "id": "m22",
+                            "nextMatchId": "m27",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "winner": "[SENYAP]\tBagas"
+                          },
+                          {
+                            "nextMatchId": "m28",
+                            "accumulatedTime": 0,
+                            "round": 2,
+                            "winner": "[HLD]\tMPHOT",
+                            "player2": "[HLD]\tMPHOT",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player1": "[Hore]\tGufron",
+                            "id": "m23",
+                            "playState": "idle"
+                          },
+                          {
+                            "winner": "Indrakila",
+                            "nextMatchId": "m28",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "player1": "Indrakila",
+                            "playState": "idle",
+                            "id": "m24",
+                            "player2": "[Kota Angin]\tAR",
+                            "startTime": null,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "winner": "[SENYAP]\tDaim",
+                            "nextMatchId": "m29",
+                            "round": 3,
+                            "accumulatedTime": 0,
+                            "player1": "[SENYAP]\tDaim",
+                            "id": "m25",
+                            "playState": "idle",
+                            "player2": "[AP]\tAri",
+                            "startTime": null,
+                            "nextMatchSlot": 1
+                          },
+                          {
+                            "player2": "[SG Kite]\tAlif",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player1": "[IBK]\tBerry",
+                            "id": "m26",
+                            "playState": "idle",
+                            "nextMatchId": "m29",
+                            "round": 3,
+                            "accumulatedTime": 0,
+                            "winner": "[SG Kite]\tAlif"
+                          },
+                          {
+                            "id": "m27",
+                            "player1": "[Hore]\tH.mayung",
+                            "winner": null,
+                            "nextMatchSlot": 1,
+                            "round": 3,
+                            "player2": "[SENYAP]\tBagas",
+                            "nextMatchId": "m30"
+                          },
+                          {
+                            "player1": "[HLD]\tMPHOT",
+                            "winner": null,
+                            "id": "m28",
+                            "nextMatchId": "m30",
+                            "player2": "Indrakila",
+                            "round": 3,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "nextMatchId": "m31",
+                            "player2": "[SG Kite]\tAlif",
+                            "nextMatchSlot": 1,
+                            "round": 4,
+                            "winner": null,
+                            "player1": "[SENYAP]\tDaim",
+                            "id": "m29"
+                          },
+                          {
+                            "round": 4,
+                            "nextMatchSlot": 2,
+                            "nextMatchId": "m31",
+                            "player2": null,
+                            "id": "m30",
+                            "player1": null,
+                            "winner": null
+                          },
+                          {
+                            "nextMatchSlot": null,
+                            "round": 5,
+                            "player2": null,
+                            "nextMatchId": null,
+                            "id": "m31",
+                            "player1": null,
+                            "winner": null
+                          }
+                        ]
+                      },
+                      "C": {
+                        "totalRounds": 5,
+                        "matches": [
+                          {
+                            "nextMatchId": "m17",
+                            "round": 1,
+                            "accumulatedTime": 10757,
+                            "winner": "[BL Tempur]\tAkmal",
+                            "player2": "[SENYAP]\tAgus",
+                            "startTime": 1779002000260,
+                            "nextMatchSlot": 1,
+                            "player1": "[BL Tempur]\tAkmal",
+                            "playState": "paused",
+                            "id": "m1"
+                          },
+                          {
+                            "winner": "[BROTHER]\tHaris",
+                            "nextMatchId": "m17",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[Faisal kite]\tP.UJANG",
+                            "id": "m2",
+                            "playState": "idle",
+                            "player2": "[BROTHER]\tHaris",
+                            "nextMatchSlot": 2,
+                            "startTime": null
+                          },
+                          {
+                            "player2": "[Berebet]\tH.hasilBsrebet",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player1": "[AP]\tDole",
+                            "playState": "idle",
+                            "id": "m3",
+                            "nextMatchId": "m18",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "winner": "[AP]\tDole"
+                          },
+                          {
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player2": "[BTR]\tEcon",
+                            "id": "m4",
+                            "playState": "idle",
+                            "player1": "[IBK]\tJono",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m18",
+                            "winner": "[IBK]\tJono"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player2": "[Kumbul]\tBei",
+                            "id": "m5",
+                            "playState": "idle",
+                            "player1": "[SENYAP]\tRino",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m19",
+                            "winner": "[Kumbul]\tBei"
+                          },
+                          {
+                            "player2": "[Wibowo]\tExil",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player1": "[SG Kite]\tP.Syahla",
+                            "playState": "idle",
+                            "id": "m6",
+                            "nextMatchId": "m19",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "winner": "[SG Kite]\tP.Syahla"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player2": "[Hore]\tDiki",
+                            "playState": "idle",
+                            "id": "m7",
+                            "player1": "[BL Tempur]\tAbi",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m20",
+                            "winner": "[Hore]\tDiki"
+                          },
+                          {
+                            "player2": "[Keparat]\tBedul",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player1": "[Serepet]\tWewen",
+                            "id": "m8",
+                            "playState": "idle",
+                            "nextMatchId": "m20",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "winner": "[Keparat]\tBedul"
+                          },
+                          {
+                            "player1": "[IBK] Yoga",
+                            "id": "m9",
+                            "playState": "idle",
+                            "player2": "[Kumbul]\tWa ibonk",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "winner": "[Kumbul]\tWa ibonk",
+                            "nextMatchId": "m21",
+                            "accumulatedTime": 0,
+                            "round": 1
+                          },
+                          {
+                            "id": "m10",
+                            "playState": "idle",
+                            "player1": "[SENYAP]\tAkew",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[BTR]\tELPUT",
+                            "winner": "[BTR]\tELPUT",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m21"
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "[HLD]\tKuril",
+                            "id": "m11",
+                            "playState": "idle",
+                            "player1": "[Berebet]\tP.udin",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m22",
+                            "winner": "[Berebet]\tP.udin"
+                          },
+                          {
+                            "winner": "[Wibowo]\tFaisal",
+                            "nextMatchId": "m22",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[Hore]\tAlif",
+                            "playState": "idle",
+                            "id": "m12",
+                            "player2": "[Wibowo]\tFaisal",
+                            "startTime": null,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "player1": "[Kumbul]\tOglek",
+                            "playState": "idle",
+                            "id": "m13",
+                            "player2": "[BL Tempur]\tBison",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "winner": "[Kumbul]\tOglek",
+                            "nextMatchId": "m23",
+                            "accumulatedTime": 0,
+                            "round": 1
+                          },
+                          {
+                            "winner": "Keenandra",
+                            "nextMatchId": "m23",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "player1": "[Serepet]\tKing Ardi",
+                            "id": "m14",
+                            "playState": "idle",
+                            "player2": "Keenandra",
+                            "nextMatchSlot": 2,
+                            "startTime": null
+                          },
+                          {
+                            "winner": null,
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m24",
+                            "playState": "idle",
+                            "id": "m15",
+                            "player1": "[BROTHER]\tP.Adi",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "[AP]\tGendoy"
+                          },
+                          {
+                            "nextMatchSlot": 2,
+                            "round": 1,
+                            "player2": "Ceceng batara",
+                            "nextMatchId": "m24",
+                            "id": "m16",
+                            "player1": "[Kota Angin]\tCakri",
+                            "winner": null
+                          },
+                          {
+                            "player2": "[BROTHER]\tHaris",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player1": "[BL Tempur]\tAkmal",
+                            "playState": "idle",
+                            "id": "m17",
+                            "nextMatchId": "m25",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "winner": null
+                          },
+                          {
+                            "id": "m18",
+                            "winner": null,
+                            "player1": "[AP]\tDole",
+                            "round": 2,
+                            "nextMatchSlot": 2,
+                            "nextMatchId": "m25",
+                            "player2": "[IBK]\tJono"
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "round": 2,
+                            "nextMatchId": "m26",
+                            "player2": "[SG Kite]\tP.Syahla",
+                            "id": "m19",
+                            "player1": "[Kumbul]\tBei",
+                            "winner": null
+                          },
+                          {
+                            "winner": null,
+                            "player1": "[Hore]\tDiki",
+                            "id": "m20",
+                            "nextMatchId": "m26",
+                            "player2": "[Keparat]\tBedul",
+                            "round": 2,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "player2": "[BTR]\tELPUT",
+                            "nextMatchId": "m27",
+                            "nextMatchSlot": 1,
+                            "round": 2,
+                            "player1": "[Kumbul]\tWa ibonk",
+                            "winner": null,
+                            "id": "m21"
+                          },
+                          {
+                            "round": 2,
+                            "nextMatchSlot": 2,
+                            "nextMatchId": "m27",
+                            "player2": "[Wibowo]\tFaisal",
+                            "id": "m22",
+                            "player1": "[Berebet]\tP.udin",
+                            "winner": null
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "round": 2,
+                            "nextMatchId": "m28",
+                            "player2": "Keenandra",
+                            "id": "m23",
+                            "player1": "[Kumbul]\tOglek",
+                            "winner": null
+                          },
+                          {
+                            "player1": null,
+                            "winner": null,
+                            "id": "m24",
+                            "nextMatchId": "m28",
+                            "player2": null,
+                            "nextMatchSlot": 2,
+                            "round": 2
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "round": 3,
+                            "player2": null,
+                            "nextMatchId": "m29",
+                            "id": "m25",
+                            "winner": null,
+                            "player1": null
+                          },
+                          {
+                            "player1": null,
+                            "winner": null,
+                            "id": "m26",
+                            "player2": null,
+                            "nextMatchId": "m29",
+                            "nextMatchSlot": 2,
+                            "round": 3
+                          },
+                          {
+                            "round": 3,
+                            "nextMatchSlot": 1,
+                            "nextMatchId": "m30",
+                            "player2": null,
+                            "id": "m27",
+                            "player1": null,
+                            "winner": null
+                          },
+                          {
+                            "nextMatchId": "m30",
+                            "player2": null,
+                            "nextMatchSlot": 2,
+                            "round": 3,
+                            "player1": null,
+                            "winner": null,
+                            "id": "m28"
+                          },
+                          {
+                            "id": "m29",
+                            "player1": null,
+                            "winner": null,
+                            "round": 4,
+                            "nextMatchSlot": 1,
+                            "player2": null,
+                            "nextMatchId": "m31"
+                          },
+                          {
+                            "player2": null,
+                            "nextMatchId": "m31",
+                            "round": 4,
+                            "nextMatchSlot": 2,
+                            "winner": null,
+                            "player1": null,
+                            "id": "m30"
+                          },
+                          {
+                            "player2": null,
+                            "nextMatchId": null,
+                            "round": 5,
+                            "nextMatchSlot": null,
+                            "player1": null,
+                            "winner": null,
+                            "id": "m31"
+                          }
+                        ]
+                      },
+                      "B": {
+                        "matches": [
+                          {
+                            "winner": "[Hore]\tPa.Ici",
+                            "nextMatchId": "m17",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[SENYAP]\tAndi",
+                            "playState": "idle",
+                            "id": "m1",
+                            "player2": "[Hore]\tPa.Ici",
+                            "nextMatchSlot": 1,
+                            "startTime": null
+                          },
+                          {
+                            "player2": "[Serepet]\tAlif Bjs",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player1": "[BL Tempur]\tirsad",
+                            "id": "m2",
+                            "playState": "idle",
+                            "nextMatchId": "m17",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "winner": "[Serepet]\tAlif Bjs"
+                          },
+                          {
+                            "winner": "[Berebet]\tOpar",
+                            "nextMatchId": "m18",
+                            "accumulatedTime": 110837,
+                            "round": 1,
+                            "player1": "[AP]\tAbi",
+                            "playState": "paused",
+                            "id": "m3",
+                            "player2": "[Berebet]\tOpar",
+                            "nextMatchSlot": 1,
+                            "startTime": 1779010343286
+                          },
+                          {
+                            "player1": "[BROTHER]\tIvan",
+                            "playState": "idle",
+                            "id": "m4",
+                            "player2": "[Faisal kite]\tyoga",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "winner": "[BROTHER]\tIvan",
+                            "nextMatchId": "m18",
+                            "round": 1,
+                            "accumulatedTime": 0
+                          },
+                          {
+                            "player1": "[AP]\tViky",
+                            "id": "m5",
+                            "playState": "idle",
+                            "player2": "[SENYAP]\tAldo",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "winner": "[SENYAP]\tAldo",
+                            "nextMatchId": "m19",
+                            "accumulatedTime": 0,
+                            "round": 1
+                          },
+                          {
+                            "playState": "idle",
+                            "id": "m6",
+                            "player1": "[IBK]\tRidwan",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[BROTHER]\tH.Imron",
+                            "winner": "[BROTHER]\tH.Imron",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m19"
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "startTime": 1779006207170,
+                            "player2": "[BTR]\tWest",
+                            "playState": "paused",
+                            "id": "m7",
+                            "player1": "[SG Kite]\tInu",
+                            "accumulatedTime": 180739,
+                            "round": 1,
+                            "nextMatchId": "m20",
+                            "winner": "[BTR]\tWest"
+                          },
+                          {
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player2": "[Kumbul]\tRian 1",
+                            "id": "m8",
+                            "playState": "idle",
+                            "player1": "[Berebet]\tP.Opik 1",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m20",
+                            "winner": "[Kumbul]\tRian 1"
+                          },
+                          {
+                            "winner": "[Wibowo]\tLukman 1",
+                            "nextMatchId": "m21",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "player1": "[Kumbul]\tBerry 1",
+                            "playState": "idle",
+                            "id": "m9",
+                            "player2": "[Wibowo]\tLukman 1",
+                            "nextMatchSlot": 1,
+                            "startTime": null
+                          },
+                          {
+                            "winner": " [Hore]\tArkan 1",
+                            "nextMatchId": "m21",
+                            "accumulatedTime": 120880,
+                            "round": 1,
+                            "player1": "[Keparat]\tOtet",
+                            "playState": "paused",
+                            "id": "m10",
+                            "player2": " [Hore]\tArkan 1",
+                            "startTime": 1779001249817,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "winner": "[SENYAP]\tAyah Tiara",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "nextMatchId": "m22",
+                            "id": "m11",
+                            "playState": "idle",
+                            "player1": "[SENYAP]\tAyah Tiara",
+                            "startTime": null,
+                            "nextMatchSlot": 1,
+                            "player2": "[Serepet]\tRifal 1 bagian bawah"
+                          },
+                          {
+                            "nextMatchId": "m22",
+                            "round": 1,
+                            "accumulatedTime": 74961,
+                            "winner": "[Berebet]\tEbo ",
+                            "player2": "[Berebet]\tEbo ",
+                            "nextMatchSlot": 2,
+                            "startTime": 1779002494234,
+                            "player1": "[Sangraja]\tUmam",
+                            "id": "m12",
+                            "playState": "paused"
+                          },
+                          {
+                            "player2": "Liverpool",
+                            "startTime": 1779003806757,
+                            "nextMatchSlot": 1,
+                            "player1": "[BL Tempur]\tBara",
+                            "playState": "paused",
+                            "id": "m13",
+                            "nextMatchId": "m23",
+                            "round": 1,
+                            "accumulatedTime": 199377,
+                            "winner": "[BL Tempur]\tBara"
+                          },
+                          {
+                            "winner": "[Kota Angin]\tKisna",
+                            "nextMatchId": "m23",
+                            "accumulatedTime": 0,
+                            "round": 1,
+                            "player1": "[Kota Angin]\tKisna",
+                            "id": "m14",
+                            "playState": "idle",
+                            "player2": "[BROTHER]\tP.Ade",
+                            "startTime": null,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "winner": "[BTR]\tEka",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m24",
+                            "id": "m15",
+                            "playState": "idle",
+                            "player1": "[BTR]\tEka",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": "KNK Kevin"
+                          },
+                          {
+                            "nextMatchId": "m24",
+                            "round": 1,
+                            "accumulatedTime": 0,
+                            "winner": "[Faisal kite]\tP.Faisal",
+                            "player2": "[Faisal kite]\tP.Faisal",
+                            "startTime": null,
+                            "nextMatchSlot": 2,
+                            "player1": "[AP]\tRendi",
+                            "id": "m16",
+                            "playState": "idle"
+                          },
+                          {
+                            "nextMatchId": "m25",
+                            "accumulatedTime": 241259,
+                            "round": 2,
+                            "winner": "[Serepet]\tAlif Bjs",
+                            "player2": "[Serepet]\tAlif Bjs",
+                            "startTime": 1779011062684,
+                            "nextMatchSlot": 1,
+                            "player1": "[Hore]\tPa.Ici",
+                            "playState": "paused",
+                            "id": "m17"
+                          },
+                          {
+                            "winner": "[BROTHER]\tIvan",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m25",
+                            "id": "m18",
+                            "playState": "idle",
+                            "player1": "[Berebet]\tOpar",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player2": "[BROTHER]\tIvan"
+                          },
+                          {
+                            "id": "m19",
+                            "winner": null,
+                            "player1": "[SENYAP]\tAldo",
+                            "nextMatchSlot": 1,
+                            "round": 2,
+                            "nextMatchId": "m26",
+                            "player2": "[BROTHER]\tH.Imron"
+                          },
+                          {
+                            "nextMatchId": "m26",
+                            "accumulatedTime": 0,
+                            "round": 2,
+                            "winner": "[BTR]\tWest",
+                            "player2": "[Kumbul]\tRian 1",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player1": "[BTR]\tWest",
+                            "playState": "idle",
+                            "id": "m20"
+                          },
+                          {
+                            "id": "m21",
+                            "playState": "idle",
+                            "player1": "[Wibowo]\tLukman 1",
+                            "nextMatchSlot": 1,
+                            "startTime": null,
+                            "player2": " [Hore]\tArkan 1",
+                            "winner": " [Hore]\tArkan 1",
+                            "round": 2,
+                            "accumulatedTime": 0,
+                            "nextMatchId": "m27"
+                          },
+                          {
+                            "player2": "[Berebet]\tEbo ",
+                            "nextMatchSlot": 2,
+                            "startTime": null,
+                            "player1": "[SENYAP]\tAyah Tiara",
+                            "playState": "idle",
+                            "id": "m22",
+                            "nextMatchId": "m27",
+                            "accumulatedTime": 0,
+                            "round": 2,
+                            "winner": "[Berebet]\tEbo "
+                          },
+                          {
+                            "round": 2,
+                            "nextMatchSlot": 1,
+                            "player2": "[Kota Angin]\tKisna",
+                            "nextMatchId": "m28",
+                            "id": "m23",
+                            "player1": "[BL Tempur]\tBara",
+                            "winner": null
+                          },
+                          {
+                            "winner": null,
+                            "player1": "[BTR]\tEka",
+                            "id": "m24",
+                            "player2": "[Faisal kite]\tP.Faisal",
+                            "nextMatchId": "m28",
+                            "round": 2,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "nextMatchSlot": 1,
+                            "round": 3,
+                            "player2": "[BROTHER]\tIvan",
+                            "nextMatchId": "m29",
+                            "id": "m25",
+                            "player1": "[Serepet]\tAlif Bjs",
+                            "winner": null
+                          },
+                          {
+                            "winner": null,
+                            "player1": null,
+                            "id": "m26",
+                            "player2": "[BTR]\tWest",
+                            "nextMatchId": "m29",
+                            "round": 3,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "player1": " [Hore]\tArkan 1",
+                            "winner": null,
+                            "id": "m27",
+                            "nextMatchId": "m30",
+                            "player2": "[Berebet]\tEbo ",
+                            "nextMatchSlot": 1,
+                            "round": 3
+                          },
+                          {
+                            "id": "m28",
+                            "player1": null,
+                            "winner": null,
+                            "nextMatchSlot": 2,
+                            "round": 3,
+                            "nextMatchId": "m30",
+                            "player2": null
+                          },
+                          {
+                            "id": "m29",
+                            "player1": null,
+                            "winner": null,
+                            "round": 4,
+                            "nextMatchSlot": 1,
+                            "nextMatchId": "m31",
+                            "player2": null
+                          },
+                          {
+                            "player1": null,
+                            "winner": null,
+                            "id": "m30",
+                            "nextMatchId": "m31",
+                            "player2": null,
+                            "round": 4,
+                            "nextMatchSlot": 2
+                          },
+                          {
+                            "id": "m31",
+                            "winner": null,
+                            "player1": null,
+                            "nextMatchSlot": null,
+                            "round": 5,
+                            "nextMatchId": null,
+                            "player2": null
+                          }
+                        ],
+                        "totalRounds": 5
+                      }
+                    }
+                  },
+                  "subcollections": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
