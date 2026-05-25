@@ -254,32 +254,26 @@ export default function App() {
               <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">
                 Dicetak: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </p>
-            </div>
-          </div>
-        </div>
-
         <div className="p-8 md:p-16 min-w-max pb-40 bracket-tree-wrapper" style={{ transform: `scale(${bracketZoom})`, transformOrigin: 'top left', transition: 'transform 0.15s ease' }}>
-        <div className="flex items-start gap-0">
-          {Array.from({ length: activeBracket.totalRounds }).map((_, idx) => {
-            const roundNum = idx + 1;
-            const matches = activeBracket.matches.filter(m => m.round === roundNum);
+          {(() => {
+            const totalR = activeBracket.totalRounds;
             
-            // Dynamic Labels
+            // Generate labels once
             let roundLabels = [];
             if (activePool === 'Final') {
               if (activeBracket.type === 'double') {
                 roundLabels = ["Semifinal", "Final & Juara 3"];
-              } else if (activeBracket.totalRounds === 2) {
+              } else if (totalR === 2) {
                 roundLabels = ["Semifinal", "Grand Final"];
-              } else if (activeBracket.totalRounds === 3) {
+              } else if (totalR === 3) {
                 roundLabels = ["Perempat Final", "Semifinal", "Grand Final"];
               } else {
-                roundLabels = Array.from({length: activeBracket.totalRounds || 2}, (_, i) => `Round ${i+1}`);
+                roundLabels = Array.from({length: totalR || 2}, (_, i) => `Round ${i+1}`);
               }
             } else {
-              const totalR = activeBracket.totalRounds || 5;
-              roundLabels = Array.from({ length: totalR }, (_, i) => {
-                const roundsFromEnd = totalR - 1 - i;
+              const tr = totalR || 5;
+              roundLabels = Array.from({ length: tr }, (_, i) => {
+                const roundsFromEnd = tr - 1 - i;
                 if (roundsFromEnd === 0) return "Final Pool";
                 if (roundsFromEnd === 1) return "Semifinal";
                 if (roundsFromEnd === 2) return "8 Besar";
@@ -291,39 +285,80 @@ export default function App() {
               });
             }
 
-            const multiplier = Math.pow(2, idx);
-            return (
-              <div key={roundNum} className="flex flex-col" style={{ width: '280px' }}>
-                <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4 print:mb-2 print:h-8">
-                   <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
+            const isTwoSided = totalR >= 3 && activeBracket.type !== 'double';
+
+            const renderColumn = (idx, side) => {
+              const roundNum = idx + 1;
+              const allMatches = activeBracket.matches.filter(m => m.round === roundNum);
+              
+              let matches = allMatches;
+              if (isTwoSided && roundNum < totalR) {
+                 const mid = Math.ceil(allMatches.length / 2);
+                 matches = side === 'left' ? allMatches.slice(0, mid) : allMatches.slice(mid);
+              }
+
+              const multiplier = Math.pow(2, idx);
+              return (
+                <div key={`${side}-${roundNum}`} className="flex flex-col" style={{ width: '280px' }}>
+                  <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4 print:mb-2 print:h-8">
+                     <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    {matches.map(match => (
+                      <div key={match.id} className="relative flex items-center px-4" style={{ height: `calc(var(--base-match-height, 180px) * ${multiplier})` }}>
+                        <MatchCard
+                          match={match}
+                          role={role}
+                          onSetWinner={activePool === 'Final' ? setFinalWinner : setWinner}
+                          onSetMatchState={setMatchState}
+                          onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
+                          matchRef={el => { matchRefs.current[match.id] = el; }}
+                          highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
+                          prelimPointsSystem={tournamentData.prelimPointsSystem}
+                        />
+                        {match.nextMatchId && (side === 'left' || side === 'center') && (
+                          <>
+                            <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
+                            <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                            {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
+                          </>
+                        )}
+                        {match.nextMatchId && side === 'right' && (
+                          <>
+                            <div className="absolute left-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
+                            <div className="absolute -left-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                            {match.nextMatchSlot === 1 && <div className="absolute -left-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  {matches.map(match => (
-                    <div key={match.id} className="relative flex items-center px-4" style={{ height: `calc(var(--base-match-height, 180px) * ${multiplier})` }}>
-                      <MatchCard
-                        match={match}
-                        role={role}
-                        onSetWinner={activePool === 'Final' ? setFinalWinner : setWinner}
-                        onSetMatchState={setMatchState}
-                        onEditName={(slot, name) => setEditingPlayer({matchId: match.id, playerSlot: slot, currentName: name})}
-                        matchRef={el => { matchRefs.current[match.id] = el; }}
-                        highlightedSlot={searchResult?.matchId === match.id ? searchResult.slot : null}
-                        prelimPointsSystem={tournamentData.prelimPointsSystem}
-                      />
-                      {match.nextMatchId && (
-                        <>
-                          <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                          <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
-                          {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
-                        </>
-                      )}
-                    </div>
-                  ))}
+              );
+            };
+
+            if (!isTwoSided) {
+              return (
+                <div className="flex items-start gap-0">
+                  {Array.from({ length: totalR }).map((_, idx) => renderColumn(idx, 'left'))}
+                </div>
+              );
+            }
+
+            return (
+              <div className="flex items-center gap-0">
+                <div className="flex items-start gap-0">
+                  {Array.from({ length: totalR - 1 }).map((_, idx) => renderColumn(idx, 'left'))}
+                </div>
+                <div className="flex items-start gap-0">
+                  {renderColumn(totalR - 1, 'center')}
+                </div>
+                <div className="flex items-start gap-0 flex-row-reverse">
+                  {Array.from({ length: totalR - 1 }).map((_, idx) => renderColumn(idx, 'right'))}
                 </div>
               </div>
             );
-          })}
-          {activePool !== 'Final' && (
+          })()}  {activePool !== 'Final' && (
             <div className="flex flex-col ml-12">
                <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
                   <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
@@ -378,12 +413,20 @@ export default function App() {
     const poolName = activePool === 'Final' ? 'FINAL' : `POOL ${activePool}`;
     document.title = `Bagan ${poolName} - ${tournamentTitle || 'Turnamen Layangan'}`;
     
-    const estimatedWidth = activePool === 'Final' 
-      ? (activeBracket.totalRounds * 280) 
-      : (activeBracket.totalRounds * 280 + 350);
-      
-    const numMatchesRound1 = Math.pow(2, activeBracket.totalRounds - 1);
-    const estimatedHeight = (numMatchesRound1 * 90) + 120;
+    const isTwoSided = activeBracket.totalRounds >= 3 && activeBracket.type !== 'double';
+    
+    let estimatedWidth, estimatedHeight;
+    if (isTwoSided) {
+      estimatedWidth = (activeBracket.totalRounds * 2 - 1) * 280;
+      const numMatchesRound1Left = Math.pow(2, activeBracket.totalRounds - 2);
+      estimatedHeight = (numMatchesRound1Left * 90) + 120;
+    } else {
+      estimatedWidth = activePool === 'Final' 
+        ? (activeBracket.totalRounds * 280) 
+        : (activeBracket.totalRounds * 280 + 350);
+      const numMatchesRound1 = Math.pow(2, activeBracket.totalRounds - 1);
+      estimatedHeight = (numMatchesRound1 * 90) + 120;
+    }
       
     const scaleX = 1080 / estimatedWidth;
     const scaleY = 740 / estimatedHeight;
