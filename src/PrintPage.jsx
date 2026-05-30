@@ -138,38 +138,74 @@ function BracketColumn({ matches, roundIdx, totalR, isPool, side, slotH, colW })
 
           {/* Connector lines */}
           {match.nextMatchId && (
-            side === 'left' ? (
-              <>
-                {/* → horizontal arm right */}
-                <div style={{ position:'absolute', right:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
-                {/* | vertical bridge */}
-                <div style={{
-                  position:'absolute', right:-1, width:1.5, background:CLR.conn,
-                  height: cellH/2,
-                  top:    match.nextMatchSlot===1 ? '50%' : 'auto',
-                  bottom: match.nextMatchSlot===2 ? '50%' : 'auto',
-                }}/>
-                {/* → cap at junction end */}
-                {match.nextMatchSlot===1 && (
-                  <div style={{ position:'absolute', right:-1, top:'100%', width:CONN_W, height:1.5, background:CLR.conn }}/>
-                )}
-              </>
+            roundIdx === totalR - 2 ? (
+              // Semifinal connectors pointing up to the Final match card
+              side === 'left' ? (
+                (() => {
+                  const targetY = match.nextMatchSlot === 1 ? 42 : 66;
+                  const semiY = cellH / 2;
+                  return (
+                    <>
+                      {/* Horizontal line from card to right edge */}
+                      <div style={{ position:'absolute', right:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                      {/* Vertical line going UP to the final card level */}
+                      <div style={{ position:'absolute', right:-1, width:1.5, background:CLR.conn, top:targetY, height:semiY - targetY }}/>
+                      {/* Horizontal line going into final card */}
+                      <div style={{ position:'absolute', left:'100%', top:targetY, width:CONN_W, height:1.5, background:CLR.conn }}/>
+                    </>
+                  );
+                })()
+              ) : (
+                (() => {
+                  const targetY = match.nextMatchSlot === 1 ? 42 : 66;
+                  const semiY = cellH / 2;
+                  return (
+                    <>
+                      {/* Horizontal line from card to left edge */}
+                      <div style={{ position:'absolute', left:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                      {/* Vertical line going UP to the final card level */}
+                      <div style={{ position:'absolute', left:-1, width:1.5, background:CLR.conn, top:targetY, height:semiY - targetY }}/>
+                      {/* Horizontal line going into final card */}
+                      <div style={{ position:'absolute', right:'100%', top:targetY, width:CONN_W, height:1.5, background:CLR.conn }}/>
+                    </>
+                  );
+                })()
+              )
             ) : (
-              <>
-                {/* ← horizontal arm left */}
-                <div style={{ position:'absolute', left:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
-                {/* | vertical bridge */}
-                <div style={{
-                  position:'absolute', left:-1, width:1.5, background:CLR.conn,
-                  height: cellH/2,
-                  top:    match.nextMatchSlot===1 ? '50%' : 'auto',
-                  bottom: match.nextMatchSlot===2 ? '50%' : 'auto',
-                }}/>
-                {/* ← cap at junction end */}
-                {match.nextMatchSlot===1 && (
-                  <div style={{ position:'absolute', left:-1, top:'100%', width:CONN_W, height:1.5, background:CLR.conn }}/>
-                )}
-              </>
+              // Standard connectors for earlier rounds
+              side === 'left' ? (
+                <>
+                  {/* → horizontal arm right */}
+                  <div style={{ position:'absolute', right:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                  {/* | vertical bridge */}
+                  <div style={{
+                    position:'absolute', right:-1, width:1.5, background:CLR.conn,
+                    height: cellH/2,
+                    top:    match.nextMatchSlot===1 ? '50%' : 'auto',
+                    bottom: match.nextMatchSlot===2 ? '50%' : 'auto',
+                  }}/>
+                  {/* → cap at junction end */}
+                  {match.nextMatchSlot===1 && (
+                    <div style={{ position:'absolute', right:-1, top:'100%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* ← horizontal arm left */}
+                  <div style={{ position:'absolute', left:0, top:'50%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                  {/* | vertical bridge */}
+                  <div style={{
+                    position:'absolute', left:-1, width:1.5, background:CLR.conn,
+                    height: cellH/2,
+                    top:    match.nextMatchSlot===1 ? '50%' : 'auto',
+                    bottom: match.nextMatchSlot===2 ? '50%' : 'auto',
+                  }}/>
+                  {/* ← cap at junction end */}
+                  {match.nextMatchSlot===1 && (
+                    <div style={{ position:'absolute', left:-1, top:'100%', width:CONN_W, height:1.5, background:CLR.conn }}/>
+                  )}
+                </>
+              )
             )
           )}
         </div>
@@ -190,7 +226,7 @@ function FinalColumn({ match, roundIdx, totalR, isPool, bracketH, centerW }) {
           {label}
         </span>
       </div>
-      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, paddingTop:16 }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', gap:12, paddingTop:16 }}>
         {/* Final match card */}
         {match && (
           <div style={{ background:'#fff', border:'2px solid #fde68a', borderRadius:8, overflow:'hidden', width:centerW-8, boxShadow:'0 2px 12px rgba(245,158,11,.18)' }}>
