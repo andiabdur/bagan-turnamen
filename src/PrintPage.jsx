@@ -76,9 +76,9 @@ function MatchCard({ match }) {
         const color = (isWin || r.dis) ? '#fff' : r.name ? CLR.name : CLR.tba;
         return (
           <div key={i} style={{ padding:'4px 7px', background:bg, color, borderTop: i ? `1px solid ${CLR.border}` : 'none', display:'flex', alignItems:'center', gap:5, minHeight:22 }}>
-            <div style={{ width:5, height:5, borderRadius:'50%', background:(isWin||r.dis)?'rgba(255,255,255,.6)':CLR.border, flexShrink:0 }}/>
+            {r.name ? <div style={{ width:5, height:5, borderRadius:'50%', background:(isWin||r.dis)?'rgba(255,255,255,.6)':CLR.border, flexShrink:0 }}/> : null}
             <span style={{ fontSize:9, fontWeight:700, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontStyle:r.name?'normal':'italic' }}>
-              {r.name || 'TBA'}{r.dis ? ' ✗' : ''}
+              {r.name || ''}{r.dis ? ' ✗' : ''}
             </span>
           </div>
         );
@@ -242,9 +242,9 @@ function FinalColumn({ match, roundIdx, totalR, isPool, bracketH, centerW }) {
               const color = (isWin||r.dis) ? '#fff' : r.name ? CLR.name : CLR.tba;
               return (
                 <div key={i} style={{ padding:'5px 10px', background:bg, color, borderTop: i ? '1px solid #fde68a' : 'none', display:'flex', alignItems:'center', gap:6, minHeight:24 }}>
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:(isWin||r.dis)?'rgba(255,255,255,.7)':'#fde68a', flexShrink:0 }}/>
+                  {r.name ? <div style={{ width:6, height:6, borderRadius:'50%', background:(isWin||r.dis)?'rgba(255,255,255,.7)':'#fde68a', flexShrink:0 }}/> : null}
                   <span style={{ fontSize:9.5, fontWeight:900, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                    {r.name || 'TBA'}{r.dis ? ' ✗' : ''}
+                    {r.name || ''}{r.dis ? ' ✗' : ''}
                   </span>
                 </div>
               );
