@@ -34,7 +34,7 @@ const APP_ID = typeof __app_id !== 'undefined' ? __app_id
 // A4 landscape @ 8mm margin = usable 281×194mm = ~1062×733px at 96dpi
 // Subtract print header (≈55px): bracket gets ~678px height
 const PRINT_W   = 1062;
-const PRINT_H   = 678;
+const PRINT_H   = 620;
 const COL_W     = 175;   // natural column width (before scaling)
 const SLOT_H    = 80;    // natural slot height for round-1 match (before scaling)
 const LABEL_H   = 38;    // column header height
