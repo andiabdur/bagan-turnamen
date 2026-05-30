@@ -787,8 +787,8 @@ export default function App() {
 
         // Fisher-Yates shuffle per-pool: cari urutan terbaik dengan:
         // 1. Tidak ada pasangan R1 yang sama dengan nyawa 1 (beda lawan - WAJIB)
-        // 2. Minimalisir bentrok tim & daerah dalam R1 nyawa 2
-        while (attempts < 600) {
+        // 2. Minimalisir bentrok tim & daerah dalam R1 nyawa 2 serta sebaran Kuarter & Half
+        while (attempts < 1500) {
           attempts++;
           for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -810,13 +810,95 @@ export default function App() {
               const info1 = playerInfoMap[p1];
               const info2 = playerInfoMap[p2];
               if (info1 && info2) {
-                if (info1.team === info2.team) score += 10;
-                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) score += 5;
+                if (info1.team === info2.team) score += 100;
+                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) score += 50;
               }
             }
           }
 
           if (isOpponentValid) {
+            // Smart distribution penalty: avoid putting same team/region in same block, quarter, or half
+            const teamQuarterCounts = {};
+            const teamHalfCounts = {};
+            const teamBlockCounts = {};
+            
+            const regionQuarterCounts = {};
+            const regionHalfCounts = {};
+            const regionBlockCounts = {};
+
+            const blockSize = capacity / 8;
+            const quarterSize = capacity / 4;
+            const halfSize = capacity / 2;
+
+            for (let i = 0; i < capacity; i++) {
+              const p = shuffled[i];
+              if (p.startsWith('BYE_')) continue;
+              const info = playerInfoMap[p];
+              if (!info) continue;
+
+              const bIdx = Math.floor(i / blockSize);
+              const qIdx = Math.floor(i / quarterSize);
+              const hIdx = Math.floor(i / halfSize);
+
+              // Team Check
+              if (info.team !== 'SOLO' && info.team !== 'BYE') {
+                const qKey = info.team + '_' + qIdx;
+                const hKey = info.team + '_' + hIdx;
+                const bKey = info.team + '_' + bIdx;
+
+                teamQuarterCounts[qKey] = (teamQuarterCounts[qKey] || 0) + 1;
+                teamHalfCounts[hKey] = (teamHalfCounts[hKey] || 0) + 1;
+                teamBlockCounts[bKey] = (teamBlockCounts[bKey] || 0) + 1;
+              }
+
+              // Region Check
+              if (isOpenTournament && info.region !== 'NONE' && info.region !== 'BYE') {
+                const qKey = info.region + '_' + qIdx;
+                const hKey = info.region + '_' + hIdx;
+                const bKey = info.region + '_' + bIdx;
+
+                regionQuarterCounts[qKey] = (regionQuarterCounts[qKey] || 0) + 1;
+                regionHalfCounts[hKey] = (regionHalfCounts[hKey] || 0) + 1;
+                regionBlockCounts[bKey] = (regionBlockCounts[bKey] || 0) + 1;
+              }
+            }
+
+            // Add team penalties
+            for (const key in teamBlockCounts) {
+              if (teamBlockCounts[key] > 1) {
+                score += (teamBlockCounts[key] - 1) * 1000;
+              }
+            }
+            for (const key in teamQuarterCounts) {
+              if (teamQuarterCounts[key] > 1) {
+                score += (teamQuarterCounts[key] - 1) * 300;
+              }
+            }
+            for (const key in teamHalfCounts) {
+              if (teamHalfCounts[key] > 1) {
+                score += (teamHalfCounts[key] - 1) * 100;
+              }
+            }
+
+            // Add region penalties (lower weight than team)
+            if (isOpenTournament) {
+              for (const key in regionBlockCounts) {
+                if (regionBlockCounts[key] > 1) {
+                  score += (regionBlockCounts[key] - 1) * 500;
+                }
+              }
+              for (const key in regionQuarterCounts) {
+                if (regionQuarterCounts[key] > 1) {
+                  score += (regionQuarterCounts[key] - 1) * 150;
+                }
+              }
+              for (const key in regionHalfCounts) {
+                if (regionHalfCounts[key] > 1) {
+                  score += (regionHalfCounts[key] - 1) * 50;
+                }
+              }
+            }
+
             if (score === 0) { bestShuffle = [...shuffled]; bestScore = 0; break; }
             if (score < bestScore) { bestShuffle = [...shuffled]; bestScore = score; }
           }
