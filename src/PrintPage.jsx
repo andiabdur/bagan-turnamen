@@ -184,7 +184,7 @@ function FinalColumn({ match, roundIdx, totalR, isPool, bracketH, centerW }) {
   const winner = match?.winner;
 
   return (
-    <div style={{ width:centerW, flexShrink:0, display:'flex', flexDirection:'column' }}>
+    <div style={{ width:centerW, flexShrink:0, display:'flex', flexDirection:'column', height: bracketH }}>
       <div style={{ height:LABEL_H, display:'flex', alignItems:'center', justifyContent:'center', borderBottom:`2px solid #f59e0b` }}>
         <span style={{ fontSize:7, fontWeight:900, color:'#92400e', textTransform:'uppercase', letterSpacing:'0.12em' }}>
           {label}
@@ -288,12 +288,20 @@ export default function PrintPage() {
     ? sideRounds * COL_W * 2 + CENTER_W
     : totalRounds * COL_W + 200;
 
-  const naturalH = r1Count * SLOT_H + LABEL_H + 16;
+  const baseNaturalH = r1Count * SLOT_H + LABEL_H + 16;
 
-  // Scale to fit print area — never scale up
+  // Scale to fit print area — allow scale up to 1.25x
   const scaleX    = PRINT_W / naturalW;
-  const scaleY    = PRINT_H / naturalH;
-  const scale     = Math.min(1, scaleX, scaleY);
+  const scaleY    = PRINT_H / baseNaturalH;
+  const scale     = Math.min(1.25, scaleX, scaleY);
+
+  // Dynamic slot height
+  let slotH = SLOT_H;
+  if (scaleX < scaleY || scale === 1.25) {
+    slotH = Math.min(180, Math.max(SLOT_H, (PRINT_H / scale - LABEL_H - 16) / r1Count));
+  }
+
+  const naturalH = r1Count * slotH + LABEL_H + 16;
 
   // Scaled outer-wrapper dimensions — this is what the page layout "sees"
   // Using these for the wrapper forces the browser to allocate exactly this much space,
@@ -302,7 +310,6 @@ export default function PrintPage() {
   const scaledH = Math.ceil(naturalH * scale);
 
   // ── Helpers for actual rendered sizes ────────────────────────────────────
-  const slotH  = SLOT_H;   // match slot height at natural scale
   const colW   = COL_W;    // column width at natural scale
   const ctrW   = CENTER_W; // center column width
 
@@ -385,13 +392,13 @@ export default function PrintPage() {
         */}
         <div style={{
           width: scaledW,
-          height: scaledH,
+          height: PRINT_H,
           overflow: 'hidden',
           position: 'relative',
         }}>
           <div style={{
             position: 'absolute',
-            top: 0,
+            top: Math.max(0, (PRINT_H - scaledH) / 2),
             left: 0,
             width: naturalW,
             transformOrigin: 'top left',
