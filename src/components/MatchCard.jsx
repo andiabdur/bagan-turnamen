@@ -98,65 +98,84 @@ export default function MatchCard({
             const isWinner = match.winner === playerName && playerName;
             const isHighlighted = highlightedSlot === slot;
             const isDisqualified = slot === 1 ? match.player1Disqualified : match.player2Disqualified;
+            const hasPoints = (prelimPointsSystem === 'all' || 
+                              ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
+
             return (
               <div key={slot} className={cn(
-                "p-3.5 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300 flex-1",
+                "p-0 flex items-center justify-between border-b-2 last:border-0 transition-all duration-300 flex-1 self-stretch",
                 isHighlighted ? "bg-emerald-500 text-white" : 
                 isDisqualified ? "bg-red-500 text-white" : 
                 isWinner ? "bg-brand-600 text-white" : "bg-white"
               )}>
-                <button onClick={() => onSetWinner(match.id, playerName)} disabled={!isReferee || !playerName} className="flex-1 flex items-center gap-4 text-left min-w-0">
+                {/* Left Section: Name & Edit Control */}
+                <div className="p-3.5 flex-1 flex items-center min-w-0">
+                  <button 
+                    onClick={() => onSetWinner(match.id, playerName)} 
+                    disabled={!isReferee || !playerName} 
+                    className="flex-1 flex items-center gap-4 text-left min-w-0"
+                  >
+                    <div className={cn(
+                      "w-2.5 h-2.5 rounded-full shrink-0",
+                      isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : 
+                      isDisqualified ? "bg-white shadow-[0_0_10px_white]" : 
+                      isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
+                    )}/>
+                    <span className={cn(
+                      "text-[13px] font-black truncate leading-none",
+                      !playerName ? "text-slate-300 italic" : (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-slate-800"
+                    )}>
+                      {playerName || 'TBA'} {isDisqualified && <span className="text-[10px] font-black bg-white/20 px-1.5 py-0.5 rounded ml-2">DIS</span>}
+                    </span>
+                    {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
+                  </button>
+                  {isReferee && playerName && (
+                    <button 
+                      onClick={() => onEditName(slot, playerName)} 
+                      className={cn(
+                        "p-1.5 rounded-lg transition-colors ml-2 shrink-0", 
+                        (isHighlighted || isDisqualified || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:bg-slate-100 hover:text-brand-600 opacity-0 group-hover:opacity-100"
+                      )}
+                    >
+                      <Settings size={14}/>
+                    </button>
+                  )}
+                </div>
+
+                {/* Right Section: Score Box */}
+                {hasPoints && playerName && (
                   <div className={cn(
-                    "w-2.5 h-2.5 rounded-full shrink-0",
-                    isHighlighted ? "bg-white shadow-[0_0_10px_white] animate-pulse" : 
-                    isDisqualified ? "bg-white shadow-[0_0_10px_white]" : 
-                    isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
-                  )}/>
-                  <span className={cn(
-                    "text-[13px] font-black truncate leading-none",
-                    !playerName ? "text-slate-300 italic" : (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-slate-800"
+                    "w-16 border-l-2 flex items-center justify-center gap-1 self-stretch shrink-0 p-2",
+                    isHighlighted ? "border-emerald-400 bg-emerald-600/10" :
+                    isDisqualified ? "border-red-400 bg-red-600/10" :
+                    isWinner ? "border-brand-500 bg-brand-700/10" :
+                    "border-slate-100 bg-slate-50/50"
                   )}>
-                    {playerName || 'TBA'} {isDisqualified && <span className="text-[10px] font-black bg-white/20 px-1.5 py-0.5 rounded ml-2">DIS</span>}
-                  </span>
-                  {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
-                </button>
-                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                    {(prelimPointsSystem === 'all' || 
-                      ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1)) && playerName && (
-                     <>
-                       <span className={cn(
-                         "text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm border select-none shrink-0",
-                         isWinner 
-                           ? "bg-white/20 text-white border-white/30" 
-                           : isHighlighted || isDisqualified 
-                             ? "bg-white/20 text-white border-white/30" 
-                             : "bg-emerald-50 text-emerald-700 border-emerald-100"
-                       )}>
-                         {slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)} PTS
-                       </span>
-                       {isReferee && !isWinner && (slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)) > 0 && (
-                         <button 
-                           onClick={(e) => {
-                             e.stopPropagation();
-                             onSetWinner(match.id, playerName, true);
-                           }} 
-                           className={cn(
-                             "p-1 rounded transition-all border shrink-0 active:scale-90",
-                             isHighlighted || isDisqualified 
-                               ? "text-white hover:bg-white/20 border-white/20" 
-                               : "text-red-500 hover:bg-red-50 border-slate-100 hover:border-red-100"
-                           )}
-                           title="Kurangi 1 Poin"
-                         >
-                           <Minus size={10} className="stroke-[3]"/>
-                         </button>
-                       )}
-                     </>
-                   )}
-                   {isReferee && playerName && (
-                     <button onClick={() => onEditName(slot, playerName)} className={cn("p-1.5 rounded-lg transition-colors", (isHighlighted || isDisqualified || isWinner) ? "text-white/40 hover:text-white" : "text-slate-300 hover:text-brand-600 opacity-0 group-hover:opacity-100")}><Settings size={14}/></button>
-                   )}
-                 </div>
+                    <span className={cn(
+                      "text-[10px] font-black select-none",
+                      (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-slate-700"
+                    )}>
+                      {slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)} PTS
+                    </span>
+                    {isReferee && !isWinner && (slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0)) > 0 && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSetWinner(match.id, playerName, true);
+                        }} 
+                        className={cn(
+                          "p-0.5 rounded transition-all border shrink-0 active:scale-90",
+                          (isHighlighted || isDisqualified || isWinner) 
+                            ? "text-white hover:bg-white/20 border-white/20" 
+                            : "text-red-500 hover:bg-red-50 border-slate-200"
+                        )}
+                        title="Kurangi 1 Poin"
+                      >
+                        <Minus size={10} className="stroke-[3]"/>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
