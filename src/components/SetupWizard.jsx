@@ -364,25 +364,34 @@ export default function SetupWizard({
               </p>
             </div>
             <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Poin Penyisihan (R1)</label>
-              <div className="grid grid-cols-2 gap-2">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Sistem Poin Pertandingan</label>
+              <div className="flex flex-col gap-1.5">
                 <button 
-                  onClick={() => setPrelimPointsSystem(false)}
+                  onClick={() => setPrelimPointsSystem('normal')}
                   className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
-                    !prelimPointsSystem ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
+                    (prelimPointsSystem === 'normal' || prelimPointsSystem === false) ? "bg-brand-600 border-brand-600 text-white shadow-md" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                   )}
                 >
-                  NORMAL (1 NYAWA)
+                  NORMAL (1x MENANG)
                 </button>
                 <button 
-                  onClick={() => setPrelimPointsSystem(true)}
+                  onClick={() => setPrelimPointsSystem('prelim')}
                   className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
-                    prelimPointsSystem ? "bg-gradient-to-r from-emerald-500 to-teal-600 border-transparent text-white shadow-lg shadow-emerald-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
+                    (prelimPointsSystem === 'prelim' || prelimPointsSystem === true) ? "bg-gradient-to-r from-emerald-500 to-teal-600 border-transparent text-white shadow-md shadow-emerald-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                   )}
                 >
-                  DULUAN 2 POIN
+                  DULUAN 2 POIN (BABAK 1)
+                </button>
+                <button 
+                  onClick={() => setPrelimPointsSystem('all')}
+                  className={cn(
+                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
+                    prelimPointsSystem === 'all' ? "bg-gradient-to-r from-amber-500 to-orange-600 border-transparent text-white shadow-md shadow-amber-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                  )}
+                >
+                  DULUAN 2 POIN (SEMUA BABAK)
                 </button>
               </div>
             </div>

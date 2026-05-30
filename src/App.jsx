@@ -1047,8 +1047,9 @@ export default function App() {
     const match = poolData.matches.find(m => m.id === matchId);
     if (!match) return;
 
-    // Check if prelimPointsSystem is active and this is Round 1
-    const isPrelimPoints = tournamentData.prelimPointsSystem && match.round === 1;
+    const isPrelimPoints =
+      tournamentData.prelimPointsSystem === 'all' ||
+      ((tournamentData.prelimPointsSystem === 'prelim' || tournamentData.prelimPointsSystem === true) && match.round === 1);
 
     if (isPrelimPoints) {
       const isPlayer1 = match.player1 === winnerName;

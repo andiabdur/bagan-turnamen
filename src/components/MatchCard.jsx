@@ -121,7 +121,8 @@ export default function MatchCard({
                   {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
                 </button>
                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                   {prelimPointsSystem && match.round === 1 && playerName && (
+                    {(prelimPointsSystem === 'all' || 
+                      ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1)) && playerName && (
                      <>
                        <span className={cn(
                          "text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm border select-none shrink-0",
