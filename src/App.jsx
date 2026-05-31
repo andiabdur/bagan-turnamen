@@ -1062,7 +1062,9 @@ export default function App() {
       } else {
         // Increment points
         if (currentPoints === 0) {
-          await executeSetPoints(matchId, winnerName, 1, null);
+          if (window.confirm(`Apakah Anda yakin ingin menambah 1 poin untuk ${winnerName}?`)) {
+            await executeSetPoints(matchId, winnerName, 1, null);
+          }
         } else if (currentPoints === 1) {
           // Confirm reaching score 2 and winning
           if (window.confirm(`Apakah Anda yakin ${winnerName} mendapatkan poin ke-2, memenangkan pertandingan, dan lolos ke babak berikutnya?`)) {
