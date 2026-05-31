@@ -239,52 +239,59 @@ export default function MatchCard({
 
       {/* Modal detail nama lengkap */}
       {showDetail && (
-        <div 
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in"
-          onClick={() => setShowDetail(false)}
-        >
+        <>
           <style>{`
             @keyframes fadeIn {
               from { opacity: 0; }
               to { opacity: 1; }
             }
             @keyframes scaleUp {
-              from { transform: scale(0.95); opacity: 0; }
-              to { transform: scale(1); opacity: 1; }
+              from { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+              to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
             }
             .animate-fade-in {
-              animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              animation: fadeIn 0.15s ease-out forwards;
             }
             .animate-scale-up {
-              animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+              animation: scaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             }
           `}</style>
+          
+          {/* Backdrop overlay to catch click outside */}
           <div 
-            className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden flex flex-col gap-5 animate-scale-up"
+            className="fixed inset-0 z-[200] bg-slate-950/20 backdrop-blur-[1.5px] animate-fade-in"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDetail(false);
+            }}
+          />
+
+          <div 
+            className="absolute left-1/2 top-1/2 w-[290px] bg-white border border-slate-100 rounded-2xl shadow-2xl p-4 z-[210] flex flex-col gap-3.5 animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Background blur decorative blobs */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl -z-10" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -z-10" />
+            {/* Background decorative gradient glow */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/10 rounded-full blur-xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl -z-10" />
 
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
               <div>
-                <span className="text-[9px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                <span className="text-[8px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-wider">
                   {match.label ? match.label : `Match ${match.id.replace('fm', 'F').replace('m','')}`}
                 </span>
-                <h3 className="text-base font-black text-slate-800 mt-1">Detail Pertandingan</h3>
+                <h3 className="text-sm font-black text-slate-800 mt-0.5">Detail Pertandingan</h3>
               </div>
               <button 
                 onClick={() => setShowDetail(false)}
-                className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center font-bold transition-all duration-200"
+                className="w-6 h-6 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center font-bold text-xs transition-all duration-200"
               >
                 ✕
               </button>
             </div>
 
             {/* Players */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2.5">
               {[1, 2].map(slot => {
                 const playerName = slot === 1 ? match.player1 : match.player2;
                 const isWinner = match.winner === playerName && playerName;
@@ -297,39 +304,39 @@ export default function MatchCard({
                   <div 
                     key={slot} 
                     className={cn(
-                      "p-4 rounded-2xl border-2 flex items-center justify-between gap-4 transition-all duration-300",
+                      "p-3 rounded-xl border-2 flex items-center justify-between gap-3 transition-all duration-300",
                       isDisqualified ? "border-red-200 bg-red-50" :
                       isWinner ? "border-brand-200 bg-brand-50/50" :
                       "border-slate-100 bg-slate-50/30"
                     )}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
                       <div className={cn(
-                        "w-3 h-3 rounded-full shrink-0 border-2",
+                        "w-2.5 h-2.5 rounded-full shrink-0 border-2",
                         isDisqualified ? "bg-red-500 border-red-300" : 
                         isWinner ? "bg-brand-600 border-brand-400" : "bg-slate-200 border-slate-300"
                       )}/>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">PESERTA {slot}</span>
-                        <span className="text-[13px] font-black text-slate-800 break-words mt-0.5 leading-snug">
+                        <span className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">PESERTA {slot}</span>
+                        <span className="text-[12px] font-black text-slate-800 break-words mt-0.5 leading-tight">
                           {playerName || 'TBA'}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       {isDisqualified && (
-                        <span className="text-[8px] font-black bg-red-500 text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                        <span className="text-[7px] font-black bg-red-500 text-white px-1.5 py-0.5 rounded uppercase tracking-wider">
                           DIS
                         </span>
                       )}
                       {isWinner && (
-                        <span className="text-[8px] font-black bg-brand-600 text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                        <span className="text-[7px] font-black bg-brand-600 text-white px-1.5 py-0.5 rounded uppercase tracking-wider">
                           🏆 MENANG
                         </span>
                       )}
                       {hasPoints && playerName && (
-                        <div className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg font-black text-[10px]">
+                        <div className="bg-slate-100 border border-slate-200 text-slate-700 px-1.5 py-0.5 rounded-md font-black text-[9px]">
                           {points} PTS
                         </div>
                       )}
@@ -340,19 +347,19 @@ export default function MatchCard({
             </div>
 
             {/* Timer Status */}
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Clock size={14} className="text-slate-400" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Pertandingan</span>
+            <div className="bg-slate-50 border border-slate-100 rounded-lg p-2.5 flex justify-between items-center">
+              <div className="flex items-center gap-1.5">
+                <Clock size={12} className="text-slate-400" />
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-wider">Status Pertandingan</span>
               </div>
-              <div className="font-mono text-xs font-black text-slate-600 uppercase tracking-wide">
+              <div className="font-mono text-[10px] font-black text-slate-600 uppercase tracking-wide">
                 {isCall ? (isTimeOut ? "PANGGILAN HABIS" : `PANGGILAN (${formatTime(remainingTime)})`) : 
                  isPlaying ? `BERTANDING (${formatTime(elapsed)})` :
                  isPrep ? `PERSIAPAN (${formatTime(elapsed)})` : "BELUM DIMULAI"}
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
