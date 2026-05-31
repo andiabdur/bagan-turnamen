@@ -8,7 +8,8 @@ import {
   Square, 
   Settings, 
   Check,
-  Minus
+  Minus,
+  Eye
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -29,6 +30,16 @@ export default function MatchCard({
 }) {
   const isReferee = role === 'referee';
   const [elapsed, setElapsed] = useState(0);
+  const [showDetail, setShowDetail] = useState(false);
+
+  useEffect(() => {
+    if (!showDetail) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowDetail(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDetail]);
 
   useEffect(() => {
     let interval;
@@ -64,6 +75,16 @@ export default function MatchCard({
           <p className="text-[7px] font-black text-white uppercase tracking-widest">
             {match.label ? match.label : `Match ${match.id.replace('fm', 'F').replace('m','')}`}
           </p>
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDetail(true);
+            }}
+            className="text-slate-400 hover:text-emerald-400 transition-colors p-0.5 shrink-0 focus:outline-none"
+            title="Lihat detail nama lengkap"
+          >
+            <Eye size={9} className="stroke-[3]" />
+          </button>
          {isPlaying && <span className="flex h-2 w-2 relative"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>}
          {isPrep && <span className="flex h-2 w-2 relative"><span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span></span>}
          {isCall && <span className={cn("flex h-2 w-2 relative", isTimeOut ? "animate-bounce" : "animate-pulse")}><span className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", isTimeOut ? "bg-red-400" : "bg-blue-400")}></span><span className={cn("relative inline-flex rounded-full h-2 w-2", isTimeOut ? "bg-red-500" : "bg-blue-500")}></span></span>}
@@ -121,10 +142,13 @@ export default function MatchCard({
                       isDisqualified ? "bg-white shadow-[0_0_10px_white]" : 
                       isWinner ? "bg-white shadow-[0_0_10px_white]" : "bg-slate-200"
                     )}/>
-                    <span className={cn(
-                      "text-[13px] font-black truncate leading-none",
-                      !playerName ? "text-slate-300 italic" : (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-slate-800"
-                    )}>
+                    <span 
+                      className={cn(
+                        "text-[13px] font-black truncate leading-none",
+                        !playerName ? "text-slate-300 italic" : (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-slate-800"
+                      )}
+                      title={playerName || 'TBA'}
+                    >
                       {playerName || 'TBA'} {isDisqualified && <span className="text-[10px] font-black bg-white/20 px-1.5 py-0.5 rounded ml-2">DIS</span>}
                     </span>
                     {isHighlighted && <span className="ml-auto text-[9px] font-black bg-white/20 px-2 py-0.5 rounded-full shrink-0">DITEMUKAN</span>}
@@ -212,6 +236,124 @@ export default function MatchCard({
           </div>
         )}
       </div>
+
+      {/* Modal detail nama lengkap */}
+      {showDetail && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-fade-in"
+          onClick={() => setShowDetail(false)}
+        >
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes scaleUp {
+              from { transform: scale(0.95); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+            .animate-fade-in {
+              animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+            .animate-scale-up {
+              animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+          `}</style>
+          <div 
+            className="bg-white border border-slate-100 rounded-3xl w-full max-w-md shadow-2xl p-6 relative overflow-hidden flex flex-col gap-5 animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Background blur decorative blobs */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -z-10" />
+
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-[9px] font-black text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-wider">
+                  {match.label ? match.label : `Match ${match.id.replace('fm', 'F').replace('m','')}`}
+                </span>
+                <h3 className="text-base font-black text-slate-800 mt-1">Detail Pertandingan</h3>
+              </div>
+              <button 
+                onClick={() => setShowDetail(false)}
+                className="w-7 h-7 rounded-full bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center font-bold transition-all duration-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Players */}
+            <div className="flex flex-col gap-3">
+              {[1, 2].map(slot => {
+                const playerName = slot === 1 ? match.player1 : match.player2;
+                const isWinner = match.winner === playerName && playerName;
+                const isDisqualified = slot === 1 ? match.player1Disqualified : match.player2Disqualified;
+                const hasPoints = (prelimPointsSystem === 'all' || 
+                                  ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
+                const points = slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0);
+
+                return (
+                  <div 
+                    key={slot} 
+                    className={cn(
+                      "p-4 rounded-2xl border-2 flex items-center justify-between gap-4 transition-all duration-300",
+                      isDisqualified ? "border-red-200 bg-red-50" :
+                      isWinner ? "border-brand-200 bg-brand-50/50" :
+                      "border-slate-100 bg-slate-50/30"
+                    )}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full shrink-0 border-2",
+                        isDisqualified ? "bg-red-500 border-red-300" : 
+                        isWinner ? "bg-brand-600 border-brand-400" : "bg-slate-200 border-slate-300"
+                      )}/>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">PESERTA {slot}</span>
+                        <span className="text-[13px] font-black text-slate-800 break-words mt-0.5 leading-snug">
+                          {playerName || 'TBA'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {isDisqualified && (
+                        <span className="text-[8px] font-black bg-red-500 text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                          DIS
+                        </span>
+                      )}
+                      {isWinner && (
+                        <span className="text-[8px] font-black bg-brand-600 text-white px-2 py-0.5 rounded uppercase tracking-wider">
+                          🏆 MENANG
+                        </span>
+                      )}
+                      {hasPoints && playerName && (
+                        <div className="bg-slate-100 border border-slate-200 text-slate-700 px-2 py-1 rounded-lg font-black text-[10px]">
+                          {points} PTS
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Timer Status */}
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status Pertandingan</span>
+              </div>
+              <div className="font-mono text-xs font-black text-slate-600 uppercase tracking-wide">
+                {isCall ? (isTimeOut ? "PANGGILAN HABIS" : `PANGGILAN (${formatTime(remainingTime)})`) : 
+                 isPlaying ? `BERTANDING (${formatTime(elapsed)})` :
+                 isPrep ? `PERSIAPAN (${formatTime(elapsed)})` : "BELUM DIMULAI"}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
