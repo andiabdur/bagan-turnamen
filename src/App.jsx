@@ -2695,13 +2695,32 @@ export default function App() {
                         </div>
                       </div>
                       
-                      <button 
-                        onClick={() => handleDeleteArchive(archive.id, archive.title)}
-                        className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all border border-red-100 hover:border-red-200 active:scale-95 shrink-0"
-                        title="Hapus Arsip"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            setViewingArchive(archive);
+                            setShowArchiveManagement(false);
+                            if (archive.pools) {
+                              if (archive.pools['Final']) {
+                                setActivePool('Final');
+                              } else if (Object.keys(archive.pools).length > 0) {
+                                const sortedPools = Object.keys(archive.pools).sort();
+                                setActivePool(sortedPools[0]);
+                              }
+                            }
+                          }}
+                          className="bg-brand-50 hover:bg-brand-100 text-brand-600 font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all border border-brand-100 active:scale-95 shrink-0"
+                        >
+                          Lihat / Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteArchive(archive.id, archive.title)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all border border-red-100 hover:border-red-200 active:scale-95 shrink-0"
+                          title="Hapus Arsip"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   );
                 })
