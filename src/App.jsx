@@ -1533,8 +1533,18 @@ export default function App() {
       organizer: tournamentData.organizer || tournamentOrganizer,
       logo: tournamentData.logo || null,
       doubleLife: tournamentData.doubleLife || false,
+      prelimPointsSystem: tournamentData.prelimPointsSystem !== undefined ? tournamentData.prelimPointsSystem : prelimPointsSystem,
+      isOpenTournament: tournamentData.isOpenTournament !== undefined ? tournamentData.isOpenTournament : isOpenTournament,
+      finalFormat: tournamentData.finalFormat !== undefined ? tournamentData.finalFormat : finalFormat,
+      imgbbApiKey: tournamentData.imgbbApiKey !== undefined ? tournamentData.imgbbApiKey : (imgbbApiKey || null),
+      useCustomFinalists: tournamentData.useCustomFinalists || false,
+      customFinalistsCount: tournamentData.customFinalistsCount || 4,
+      customFinalists: tournamentData.customFinalists || [],
+      podiumPhotos: tournamentData.podiumPhotos || {},
+      documentationPhoto: tournamentData.documentationPhoto || null,
       pools: tournamentData.pools || {},
-      archivedAt: new Date().toISOString()
+      archivedAt: new Date().toISOString(),
+      isArchived: true
     };
     
     try {
