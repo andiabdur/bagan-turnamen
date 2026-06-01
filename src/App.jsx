@@ -1208,6 +1208,62 @@ export default function App() {
     }
   };
 
+  const handlePasteImage = async (e, target) => {
+    if (role !== 'referee') return;
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (!file) continue;
+
+        e.preventDefault();
+
+        if (target === 'archive_logo') {
+          setArchiveLogoFile(file);
+          alert("Gambar berhasil ditempel dari clipboard sebagai Logo Baru.");
+        } else if (target === 'j1' || target === 'j2' || target === 'j3' || target === 'j4') {
+          const path = `winners/${currentTournament.id || 'live'}_podium_${target}_${Date.now()}.png`;
+          const url = await handleUploadImage(file, path);
+          if (url) {
+            const newData = JSON.parse(JSON.stringify(currentTournament));
+            if (!newData.podiumPhotos) newData.podiumPhotos = {};
+            newData.podiumPhotos[target] = url;
+            try {
+              const docRef = getTournamentDocRef();
+              await setDoc(docRef, newData);
+              if (viewingArchive) {
+                setViewingArchive(newData);
+              }
+              alert(`Foto Podium ${target.toUpperCase().replace('J', 'Juara ')} berhasil diperbarui dari clipboard.`);
+            } catch (err) {
+              showError("Gagal menyimpan foto podium.");
+            }
+          }
+        } else if (target === 'doc') {
+          const path = `winners/${currentTournament.id || 'live'}_doc_${Date.now()}.png`;
+          const url = await handleUploadImage(file, path);
+          if (url) {
+            const newData = JSON.parse(JSON.stringify(currentTournament));
+            newData.documentationPhoto = url;
+            try {
+              const docRef = getTournamentDocRef();
+              await setDoc(docRef, newData);
+              if (viewingArchive) {
+                setViewingArchive(newData);
+              }
+              alert("Foto dokumentasi berhasil diperbarui dari clipboard.");
+            } catch (err) {
+              showError("Gagal menyimpan foto dokumentasi.");
+            }
+          }
+        }
+        break;
+      }
+    }
+  };
+
   const handleOpenEditArchiveModal = () => {
     if (!viewingArchive) return;
     setEditArchiveTitle(viewingArchive.title || '');
@@ -1684,8 +1740,11 @@ export default function App() {
                 />
                 <div 
                   onClick={() => triggerPodiumPhotoUpload('j2')}
+                  tabIndex={role === 'referee' ? 0 : -1}
+                  onPaste={(e) => handlePasteImage(e, 'j2')}
+                  title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-300 shadow-md overflow-hidden bg-slate-50 flex items-center justify-center text-slate-500 relative transition-transform hover:scale-105",
+                    "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-300 shadow-md overflow-hidden bg-slate-50 flex items-center justify-center text-slate-500 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
@@ -1695,8 +1754,9 @@ export default function App() {
                     <User size={28} className="text-slate-300" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                      <Camera size={14} />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                      <Camera size={14} className="mb-0.5" />
+                      <span>Klik / Paste</span>
                     </div>
                   )}
                 </div>
@@ -1733,8 +1793,11 @@ export default function App() {
                 />
                 <div 
                   onClick={() => triggerPodiumPhotoUpload('j1')}
+                  tabIndex={role === 'referee' ? 0 : -1}
+                  onPaste={(e) => handlePasteImage(e, 'j1')}
+                  title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 shadow-lg overflow-hidden bg-yellow-50 flex items-center justify-center text-yellow-600 relative transition-transform hover:scale-105",
+                    "w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 shadow-lg overflow-hidden bg-yellow-50 flex items-center justify-center text-yellow-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
@@ -1744,8 +1807,9 @@ export default function App() {
                     <User size={36} className="text-yellow-400" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                      <Camera size={16} />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                      <Camera size={16} className="mb-0.5" />
+                      <span>Klik / Paste</span>
                     </div>
                   )}
                 </div>
@@ -1801,8 +1865,11 @@ export default function App() {
                   <div className="flex gap-1">
                     <div 
                       onClick={() => triggerPodiumPhotoUpload('j3')}
+                      tabIndex={role === 'referee' ? 0 : -1}
+                      onPaste={(e) => handlePasteImage(e, 'j3')}
+                      title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105",
+                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
@@ -1812,15 +1879,19 @@ export default function App() {
                         <User size={20} className="text-amber-500/50" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                          <Camera size={10} />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                          <Camera size={10} className="mb-0.5" />
+                          <span>Paste</span>
                         </div>
                       )}
                     </div>
                     <div 
                       onClick={() => triggerPodiumPhotoUpload('j4')}
+                      tabIndex={role === 'referee' ? 0 : -1}
+                      onPaste={(e) => handlePasteImage(e, 'j4')}
+                      title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105",
+                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
@@ -1830,8 +1901,9 @@ export default function App() {
                         <User size={20} className="text-amber-500/50" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                          <Camera size={10} />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                          <Camera size={10} className="mb-0.5" />
+                          <span>Paste</span>
                         </div>
                       )}
                     </div>
@@ -1839,8 +1911,11 @@ export default function App() {
                 ) : (
                   <div 
                     onClick={() => triggerPodiumPhotoUpload('j3')}
+                    tabIndex={role === 'referee' ? 0 : -1}
+                    onPaste={(e) => handlePasteImage(e, 'j3')}
+                    title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                     className={cn(
-                      "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105",
+                      "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
                       role === 'referee' && "cursor-pointer group"
                     )}
                   >
@@ -1850,8 +1925,9 @@ export default function App() {
                       <User size={28} className="text-amber-500/50" />
                     )}
                     {role === 'referee' && (
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                        <Camera size={14} />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                        <Camera size={14} className="mb-0.5" />
+                        <span>Klik / Paste</span>
                       </div>
                     )}
                   </div>
@@ -1929,13 +2005,20 @@ export default function App() {
     const docPhoto = currentTournament.documentationPhoto;
 
     return (
-      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
+      <div 
+        tabIndex={role === 'referee' ? 0 : -1}
+        onPaste={(e) => handlePasteImage(e, 'doc')}
+        title={role === 'referee' ? "Klik area ini lalu tekan Ctrl+V/Cmd+V untuk menempel gambar dari clipboard" : undefined}
+        className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up focus:outline-none focus:ring-4 focus:ring-brand-500/30"
+      >
         <div className="relative text-center mb-6">
           <span className="inline-block bg-slate-50 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-slate-200/50">
             📸 Dokumentasi Turnamen
           </span>
           <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Galeri Foto</h3>
-          <p className="text-xs text-slate-500 font-bold mt-1">Foto kenangan dari keseruan turnamen</p>
+          <p className="text-xs text-slate-500 font-bold mt-1">
+            Foto kenangan dari keseruan turnamen {role === 'referee' && "(Bisa Copy-Paste via Ctrl+V)"}
+          </p>
         </div>
 
         {docPhoto ? (
@@ -3221,7 +3304,7 @@ export default function App() {
               <p className="text-xs text-amber-100 font-bold mt-1">Ubah metadata untuk turnamen arsip ini</p>
             </div>
             
-            <form onSubmit={handleSaveArchiveEdit} className="p-6 space-y-4">
+            <form onSubmit={handleSaveArchiveEdit} onPaste={(e) => handlePasteImage(e, 'archive_logo')} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Judul Turnamen</label>
                 <input 
@@ -3272,7 +3355,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Logo Baru (Opsional)</label>
+                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Logo Baru (Opsional - Bisa Paste lewat Ctrl+V)</label>
                 <div className="flex items-center gap-4 mt-1">
                   {viewingArchive.logo && !archiveLogoFile && (
                     <img src={viewingArchive.logo} alt="Logo lama" className="w-12 h-12 object-contain rounded-xl border border-slate-200 p-1 bg-slate-50" />
