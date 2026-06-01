@@ -143,7 +143,31 @@ export default function App() {
       pool: poolId,
       name: currentTournament.pools[poolId].matches?.find(m => m.round === currentTournament.pools[poolId].totalRounds)?.winner || null
     }));
-  const allFinalistsReady = finalParticipants.every(p => p.name);
+
+  // Get all unique participant names from other pools for the custom finalists datalist
+  const uniqueParticipants = (() => {
+    const list = [];
+    const seen = new Set();
+    Object.keys(currentTournament.pools || {}).forEach(poolId => {
+      if (poolId === 'Final') return;
+      const matches = currentTournament.pools[poolId].matches || [];
+      matches.forEach(m => {
+        if (m.player1 && !m.player1.startsWith('BYE_') && !seen.has(m.player1)) {
+          seen.add(m.player1);
+          list.push({ name: m.player1, pool: poolId });
+        }
+        if (m.player2 && !m.player2.startsWith('BYE_') && !seen.has(m.player2)) {
+          seen.add(m.player2);
+          list.push({ name: m.player2, pool: poolId });
+        }
+      });
+    });
+    return list.sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
+  const allFinalistsReady = currentTournament.useCustomFinalists
+    ? (currentTournament.customFinalists || []).filter(name => name && name.trim() !== '').length >= 2
+    : finalParticipants.every(p => p.name);
 
   // 2. EFFECTS
   useEffect(() => {
@@ -1533,11 +1557,54 @@ export default function App() {
     }
   };
 
+  // Helper to save custom finalist settings to Firebase
+  const updateCustomFinalistSettings = async (updates) => {
+    if (viewingArchive) return showError("Anda sedang berada di mode arsip (Read-Only).");
+    if (tournamentData.isArchived) return showError("Turnamen sudah diarsipkan.");
+    
+    try {
+      const newData = JSON.parse(JSON.stringify(tournamentData));
+      if (updates.useCustomFinalists !== undefined) {
+        newData.useCustomFinalists = updates.useCustomFinalists;
+      }
+      if (updates.customFinalistsCount !== undefined) {
+        newData.customFinalistsCount = updates.customFinalistsCount;
+        // Adjust customFinalists array size
+        const currentList = newData.customFinalists || [];
+        const targetLen = updates.customFinalistsCount;
+        if (currentList.length < targetLen) {
+          while (currentList.length < targetLen) currentList.push('');
+        } else {
+          currentList.length = targetLen;
+        }
+        newData.customFinalists = currentList;
+      }
+      if (updates.customFinalists !== undefined) {
+        newData.customFinalists = updates.customFinalists;
+      }
+
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
+      await setDoc(docRef, newData);
+    } catch (err) {
+      showError("Gagal menyimpan pengaturan finalis kustom.");
+    }
+  };
+
   // Build/sync final bracket from pool winners
   const syncFinalBracket = async () => {
-    const winners = finalParticipants.map(p => p.name);
-    if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
-    if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
+    const useCustom = tournamentData.useCustomFinalists;
+    const customList = tournamentData.customFinalists || [];
+    
+    const winners = useCustom 
+      ? customList.filter(name => name && name.trim() !== '') 
+      : finalParticipants.map(p => p.name);
+
+    if (useCustom) {
+      if (winners.length < 2) return showError('Minimal harus mengisi 2 nama finalis.');
+    } else {
+      if (winners.length < 2) return showError('Minimal harus ada 2 pool untuk membuat Final.');
+      if (winners.some(name => !name)) return showError('Semua juara pool harus sudah ditentukan!');
+    }
     
     if (tournamentData.pools?.Final) {
       if (!window.confirm("PERINGATAN: Menyusun ulang finalis akan menghapus bagan final saat ini beserta seluruh skor/pemenang yang sudah tercatat. Lanjutkan?")) return;
@@ -2212,13 +2279,23 @@ export default function App() {
 
             {/* Finalists Status */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8 max-w-3xl mx-auto">
-              {finalParticipants.map((p) => (
-                <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
-                  <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
-                  <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-300 italic')}>{ p.name || 'Belum Ada'}</p>
-                  {p.name && <div className="mt-2 w-2 h-2 bg-emerald-500 rounded-full mx-auto"></div>}
-                </div>
-              ))}
+              {currentTournament.useCustomFinalists ? (
+                (currentTournament.customFinalists || Array(currentTournament.customFinalistsCount || 4).fill('')).map((name, idx) => (
+                  <div key={idx} className={cn("rounded-2xl p-5 border-2 text-center shadow-sm", name ? 'bg-white border-yellow-200' : 'bg-slate-50 border-slate-200')}>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Finalis #{idx + 1}</p>
+                    <p className={cn("text-sm font-black", name ? 'text-slate-800' : 'text-slate-350 italic')}>{ name || 'TBA'}</p>
+                    {name && <div className="mt-2 w-2 h-2 bg-yellow-500 rounded-full mx-auto"></div>}
+                  </div>
+                ))
+              ) : (
+                finalParticipants.map((p) => (
+                  <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center shadow-sm", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
+                    <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-350 italic')}>{ p.name || 'Belum Ada'}</p>
+                    {p.name && <div className="mt-2 w-2 h-2 bg-emerald-500 rounded-full mx-auto"></div>}
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Champions Podium */}
@@ -2228,9 +2305,91 @@ export default function App() {
             {role === 'referee' && (
               <div className="bg-slate-100/80 border-2 border-slate-200/50 p-6 rounded-3xl mb-8 max-w-3xl mx-auto shadow-sm">
                 <div className="flex flex-col gap-6">
+                  {/* Finalists Data Source Configuration */}
+                  <div className="border-b border-slate-200/50 pb-5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Sumber Data Finalis</label>
+                    <div className="flex gap-2 bg-slate-200/40 p-1 rounded-xl mb-4">
+                      <button 
+                        onClick={() => updateCustomFinalistSettings({ useCustomFinalists: false })} 
+                        className={cn(
+                          "flex-1 py-2 px-4 rounded-lg text-xs font-black transition-all", 
+                          !tournamentData.useCustomFinalists 
+                            ? "bg-white text-slate-850 shadow-sm" 
+                            : "text-slate-500 hover:text-slate-700"
+                        )}
+                      >
+                        Otomatis (Juara Pool)
+                      </button>
+                      <button 
+                        onClick={() => updateCustomFinalistSettings({ useCustomFinalists: true })} 
+                        className={cn(
+                          "flex-1 py-2 px-4 rounded-lg text-xs font-black transition-all", 
+                          tournamentData.useCustomFinalists 
+                            ? "bg-white text-slate-850 shadow-sm" 
+                            : "text-slate-500 hover:text-slate-700"
+                        )}
+                      >
+                        Kustom (Pilih Manual)
+                      </button>
+                    </div>
+
+                    {tournamentData.useCustomFinalists && (
+                      <div className="bg-white border border-slate-200/60 p-5 rounded-2xl flex flex-col gap-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daftar Finalis Kustom</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-bold text-slate-450 uppercase">Jumlah Slot:</span>
+                            <select 
+                              value={tournamentData.customFinalistsCount || 4} 
+                              onChange={(e) => updateCustomFinalistSettings({ customFinalistsCount: parseInt(e.target.value) })}
+                              className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-brand-500"
+                            >
+                              {[2, 4, 8, 16].map(num => (
+                                <option key={num} value={num}>{num} Pemain</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                          {Array.from({ length: tournamentData.customFinalistsCount || 4 }).map((_, idx) => {
+                            const name = (tournamentData.customFinalists || [])[idx] || '';
+                            return (
+                              <div key={idx} className="flex flex-col gap-1.5">
+                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Slot Finalis #{idx + 1}</span>
+                                <input 
+                                  type="text"
+                                  list="all-participants-list"
+                                  value={name}
+                                  onChange={(e) => {
+                                    const newList = [...(tournamentData.customFinalists || [])];
+                                    while (newList.length <= idx) newList.push('');
+                                    newList[idx] = e.target.value;
+                                    setTournamentData(prev => ({
+                                      ...prev,
+                                      customFinalists: newList
+                                    }));
+                                  }}
+                                  onBlur={(e) => {
+                                    const newList = [...(tournamentData.customFinalists || [])];
+                                    while (newList.length <= idx) newList.push('');
+                                    newList[idx] = e.target.value;
+                                    updateCustomFinalistSettings({ customFinalists: newList });
+                                  }}
+                                  placeholder={`Ketik nama atau pilih dari bagan...`}
+                                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Format Selector */}
                   <div>
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
+                    <label className="text-[10px] font-black text-slate-555 uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
                     <div className="grid grid-cols-3 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
                       {[
                         { id: 'bracket', label: 'Gugur Tunggal' },
@@ -2496,6 +2655,13 @@ export default function App() {
       )}
 
       {errorMessage && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-4 animate-slide-up"><AlertCircle size={20} className="text-brand-400"/><span className="text-sm font-bold">{errorMessage}</span><button onClick={() => setErrorMessage('')} className="p-1 hover:bg-white/10 rounded-lg"><X size={16}/></button></div>}
+
+      {/* Datalist untuk autocomplete peserta kustom di Bagan Final */}
+      <datalist id="all-participants-list">
+        {uniqueParticipants.map(p => (
+          <option key={p.name} value={p.name}>{`Pool ${p.pool}: ${p.name}`}</option>
+        ))}
+      </datalist>
     </div>
   );
 }
