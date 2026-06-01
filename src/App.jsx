@@ -9,6 +9,7 @@ import {
   AlertCircle, 
   LayoutGrid, 
   UserPlus, 
+  Plus,
   Settings,
   X,
   ChevronRight,
@@ -141,6 +142,7 @@ export default function App() {
   const [isSavingArchive, setIsSavingArchive] = useState(false);
   const [imgbbApiKey, setImgbbApiKey] = useState('');
   const [editArchiveImgbbKey, setEditArchiveImgbbKey] = useState('');
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   const currentTournament = viewingArchive || tournamentData;
 
@@ -1176,7 +1178,10 @@ export default function App() {
     const url = await handleUploadImage(file, path);
     if (url) {
       const newData = JSON.parse(JSON.stringify(currentTournament));
-      newData.documentationPhoto = url;
+      const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
+      const newList = [...currentList, url];
+      newData.documentationPhotos = newList;
+      newData.documentationPhoto = newList[0] || null;
       
       try {
         const docRef = getTournamentDocRef();
@@ -1184,17 +1189,20 @@ export default function App() {
         if (viewingArchive) {
           setViewingArchive(newData);
         }
-        alert("Foto dokumentasi berhasil diunggah.");
+        alert("Foto dokumentasi berhasil ditambahkan ke galeri.");
       } catch (err) {
         showError("Gagal menyimpan foto dokumentasi.");
       }
     }
   };
 
-  const handleRemoveDocPhoto = async () => {
-    if (!window.confirm("Apakah Anda yakin ingin menghapus foto dokumentasi ini?")) return;
+  const handleRemoveDocPhoto = async (index) => {
+    if (!window.confirm("Apakah Anda yakin ingin menghapus foto dokumentasi ini dari galeri?")) return;
     const newData = JSON.parse(JSON.stringify(currentTournament));
-    newData.documentationPhoto = null;
+    const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
+    const newList = currentList.filter((_, idx) => idx !== index);
+    newData.documentationPhotos = newList;
+    newData.documentationPhoto = newList[0] || null;
     
     try {
       const docRef = getTournamentDocRef();
@@ -1202,7 +1210,7 @@ export default function App() {
       if (viewingArchive) {
         setViewingArchive(newData);
       }
-      alert("Foto dokumentasi berhasil dihapus.");
+      alert("Foto dokumentasi berhasil dihapus dari galeri.");
     } catch (err) {
       showError("Gagal menghapus foto dokumentasi.");
     }
@@ -1246,14 +1254,17 @@ export default function App() {
           const url = await handleUploadImage(file, path);
           if (url) {
             const newData = JSON.parse(JSON.stringify(currentTournament));
-            newData.documentationPhoto = url;
+            const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
+            const newList = [...currentList, url];
+            newData.documentationPhotos = newList;
+            newData.documentationPhoto = newList[0] || null;
             try {
               const docRef = getTournamentDocRef();
               await setDoc(docRef, newData);
               if (viewingArchive) {
                 setViewingArchive(newData);
               }
-              alert("Foto dokumentasi berhasil diperbarui dari clipboard.");
+              alert("Foto dokumentasi berhasil ditambahkan ke galeri dari clipboard.");
             } catch (err) {
               showError("Gagal menyimpan foto dokumentasi.");
             }
@@ -2002,7 +2013,8 @@ export default function App() {
   };
 
   const renderDocumentationSection = () => {
-    const docPhoto = currentTournament.documentationPhoto;
+    const photos = currentTournament.documentationPhotos || 
+                   (currentTournament.documentationPhoto ? [currentTournament.documentationPhoto] : []);
 
     return (
       <div 
@@ -2021,30 +2033,54 @@ export default function App() {
           </p>
         </div>
 
-        {docPhoto ? (
-          <div className="relative group rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-slate-50">
-            <img src={docPhoto} alt="Dokumentasi Turnamen" className="w-full h-auto max-h-[400px] object-cover" />
+        {photos.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {photos.map((photo, idx) => (
+              <div key={idx} className="relative group rounded-2xl overflow-hidden shadow-md border border-slate-100 bg-slate-50 aspect-video md:aspect-[4/3]">
+                <img 
+                  src={photo} 
+                  alt={`Dokumentasi ${idx + 1}`} 
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer" 
+                  onClick={() => setLightboxImage(photo)}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => setLightboxImage(photo)}
+                    className="bg-white hover:bg-slate-50 text-slate-800 p-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center"
+                    title="Perbesar Foto"
+                  >
+                    <Search size={16} className="text-slate-700 stroke-[3]" />
+                  </button>
+                  {role === 'referee' && (
+                    <button 
+                      onClick={() => handleRemoveDocPhoto(idx)}
+                      className="bg-red-650 hover:bg-red-750 text-white p-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center bg-red-600 animate-scale-in"
+                      title="Hapus Foto"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            
             {role === 'referee' && (
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-3">
+              <div 
+                onClick={() => document.getElementById('add-more-doc-photo-input').click()}
+                className="border-2 border-dashed border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 rounded-2xl p-4 text-center flex flex-col items-center justify-center bg-slate-50/50 cursor-pointer transition-all aspect-video md:aspect-[4/3] group"
+                title="Klik untuk menambahkan foto baru"
+              >
                 <input 
                   type="file" 
-                  id="replace-doc-photo-input" 
+                  id="add-more-doc-photo-input" 
                   className="hidden" 
                   accept="image/*"
                   onChange={handleDocPhotoChange}
                 />
-                <button 
-                  onClick={() => document.getElementById('replace-doc-photo-input').click()}
-                  className="bg-white hover:bg-slate-50 text-slate-800 font-black text-xs py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
-                >
-                  <Camera size={16} /> Ganti Foto
-                </button>
-                <button 
-                  onClick={handleRemoveDocPhoto}
-                  className="bg-red-600 hover:bg-red-700 text-white font-black text-xs py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
-                >
-                  <Trash2 size={16} /> Hapus Foto
-                </button>
+                <div className="p-3 bg-white rounded-full shadow border border-slate-100 text-slate-400 group-hover:text-brand-500 transition-colors">
+                  <Plus size={20} className="stroke-[3]" />
+                </div>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-2">Tambah Foto</p>
               </div>
             )}
           </div>
@@ -3391,6 +3427,22 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal untuk memperbesar foto galeri */}
+      {lightboxImage && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 animate-fade-in bg-slate-950/90 backdrop-blur-md" onClick={() => setLightboxImage(null)}>
+          <div className="relative max-w-4xl w-full h-auto max-h-[85vh] flex items-center justify-center animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-12 right-0 bg-white/10 hover:bg-white/20 text-white font-black w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 active:scale-90 text-lg"
+              title="Tutup"
+            >
+              ✕
+            </button>
+            <img src={lightboxImage} alt="Perbesar" className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10" />
           </div>
         </div>
       )}
