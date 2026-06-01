@@ -2502,12 +2502,28 @@ export default function App() {
             ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} {role === 'referee' ? '(EDITABLE)' : '(READ-ONLY)'}
           </span>
           <div className="flex items-center gap-2">
-            {role === 'referee' && (
+            {role === 'referee' ? (
               <button 
                 onClick={handleOpenEditArchiveModal} 
-                className="bg-white hover:bg-slate-50 text-slate-800 font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-slate-205 active:scale-95 shrink-0"
+                className="bg-white hover:bg-slate-50 text-slate-800 font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-slate-200 active:scale-95 shrink-0"
               >
                 EDIT DETAIL ARSIP
+              </button>
+            ) : (
+              <button 
+                onClick={() => {
+                  const pin = window.prompt("Masukkan Password Wasit untuk Mengedit Arsip:");
+                  if (pin === 'majalengkawani2026' || pin === 'Indo1234!') {
+                    setRole('referee');
+                    localStorage.setItem('tournament_role', 'referee');
+                    alert("Berhasil login sebagai Wasit! Sekarang Anda dapat mengedit arsip ini.");
+                  } else if (pin !== null) {
+                    alert("Password Wasit salah!");
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-blue-500 active:scale-95 shrink-0"
+              >
+                LOGIN WASIT UNTUK EDIT
               </button>
             )}
             <button 
@@ -2749,9 +2765,15 @@ export default function App() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-slate-50">
         {currentTournament.isArchived && (
-          <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30 animate-pulse">
-            <Archive size={16}/> Turnamen ini telah diarsipkan dan bersifat final (Read-Only)
-          </div>
+          role === 'referee' ? (
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30">
+              <Archive size={16}/> Turnamen ini telah diarsipkan (Mode Edit Wasit Aktif)
+            </div>
+          ) : (
+            <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30 animate-pulse">
+              <Archive size={16}/> Turnamen ini telah diarsipkan dan bersifat final (Read-Only)
+            </div>
+          )
         )}
 
         {/* ===== GLOBAL SEEDING SETUP ===== */}
