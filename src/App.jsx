@@ -1882,9 +1882,13 @@ export default function App() {
                       key={archive.id}
                       onClick={() => {
                         setViewingArchive(archive);
-                        if (archive.pools && Object.keys(archive.pools).length > 0) {
-                          const sortedPools = Object.keys(archive.pools).sort();
-                          setActivePool(sortedPools[0]);
+                        if (archive.pools) {
+                          if (archive.pools['Final']) {
+                            setActivePool('Final');
+                          } else if (Object.keys(archive.pools).length > 0) {
+                            const sortedPools = Object.keys(archive.pools).sort();
+                            setActivePool(sortedPools[0]);
+                          }
                         }
                       }}
                       className="w-full flex items-center justify-between bg-white border border-slate-100 hover:border-brand-300 p-4 rounded-2xl transition-all shadow-sm cursor-pointer group"
