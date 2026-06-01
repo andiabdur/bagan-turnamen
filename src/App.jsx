@@ -139,6 +139,8 @@ export default function App() {
   const [editArchiveDate, setEditArchiveDate] = useState('');
   const [archiveLogoFile, setArchiveLogoFile] = useState(null);
   const [isSavingArchive, setIsSavingArchive] = useState(false);
+  const [imgbbApiKey, setImgbbApiKey] = useState('');
+  const [editArchiveImgbbKey, setEditArchiveImgbbKey] = useState('');
 
   const currentTournament = viewingArchive || tournamentData;
 
@@ -216,6 +218,7 @@ export default function App() {
           if (data.prelimPointsSystem !== undefined) setPrelimPointsSystem(data.prelimPointsSystem);
           if (data.isOpenTournament !== undefined) setIsOpenTournament(data.isOpenTournament);
           if (data.finalFormat !== undefined) setFinalFormat(data.finalFormat);
+          if (data.imgbbApiKey !== undefined) setImgbbApiKey(data.imgbbApiKey);
         } else {
           setTournamentData({ pools: {} });
         }
@@ -1057,6 +1060,7 @@ export default function App() {
       newData.prelimPointsSystem = prelimPointsSystem;
       newData.isOpenTournament = isOpenTournament;
       newData.finalFormat = finalFormat;
+      newData.imgbbApiKey = imgbbApiKey;
 
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
@@ -1100,18 +1104,34 @@ export default function App() {
   };
 
   const handleUploadImage = async (file, path) => {
-    if (!storage) {
-      showError("Firebase Storage belum dikonfigurasi atau diaktifkan.");
+    const apiKey = import.meta.env.VITE_IMGBB_API_KEY || 
+      (viewingArchive ? editArchiveImgbbKey || viewingArchive.imgbbApiKey : imgbbApiKey || tournamentData.imgbbApiKey);
+    if (!apiKey) {
+      showError("Kunci API ImgBB belum dikonfigurasi. Silakan masukkan Kunci API ImgBB di Pengaturan.");
       return null;
     }
+    
+    const formData = new FormData();
+    formData.append('image', file);
+
     try {
-      const storageRef = ref(storage, path);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-      return downloadURL;
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return data.data.url;
+      } else {
+        console.error("ImgBB upload failed:", data);
+        showError("Gagal mengunggah gambar: " + (data.error?.message || "Kesalahan API ImgBB"));
+        return null;
+      }
     } catch (error) {
-      console.error("Error uploading image:", error);
-      showError("Gagal mengunggah gambar ke Firebase Storage.");
+      console.error("Error uploading image to ImgBB:", error);
+      showError("Gagal mengunggah gambar ke ImgBB.");
       return null;
     }
   };
@@ -1192,6 +1212,7 @@ export default function App() {
     if (!viewingArchive) return;
     setEditArchiveTitle(viewingArchive.title || '');
     setEditArchiveOrganizer(viewingArchive.organizer || '');
+    setEditArchiveImgbbKey(viewingArchive.imgbbApiKey || '');
     if (viewingArchive.archivedAt) {
       const d = new Date(viewingArchive.archivedAt);
       const yyyy = d.getFullYear();
@@ -1233,6 +1254,7 @@ export default function App() {
         organizer: editArchiveOrganizer,
         archivedAt: archivedAtIso,
         logo: logoUrl,
+        imgbbApiKey: editArchiveImgbbKey
       };
 
       const docRef = getTournamentDocRef();
@@ -2730,6 +2752,8 @@ export default function App() {
             setTournamentOrganizer={setTournamentOrganizer}
             hasExistingTournament={!!currentTournament.pools?.A}
             saveGlobalSettings={saveGlobalSettings}
+            imgbbApiKey={imgbbApiKey}
+            setImgbbApiKey={setImgbbApiKey}
           />
         ) : activePool === 'Final' ? (
           <div className="max-w-7xl mx-auto p-6 md:p-12 animate-slide-up">
@@ -3180,6 +3204,20 @@ export default function App() {
                   onChange={(e) => setEditArchiveDate(e.target.value)}
                   className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
                 />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Kunci API ImgBB (Wajib untuk Unggahan Gambar)</label>
+                <input 
+                  type="text" 
+                  value={editArchiveImgbbKey} 
+                  onChange={(e) => setEditArchiveImgbbKey(e.target.value)}
+                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                  placeholder="Masukkan API Key dari api.imgbb.com"
+                />
+                <p className="text-[9px] text-slate-450 mt-0.5 font-bold leading-normal">
+                  Dapatkan kunci API gratis di <a href="https://api.imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-700">api.imgbb.com</a>.
+                </p>
               </div>
 
               <div className="flex flex-col gap-1">
