@@ -434,28 +434,6 @@ export default function App() {
                 </div>
               </div>
             );
-          })()}  {activePool !== 'Final' && (() => {
-            const poolWinner = activeBracket?.matches?.find(m => m.round === activeBracket.totalRounds)?.winner;
-            if (!poolWinner) return null;
-            return (
-              <div className="flex flex-col ml-12">
-                <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
-                  <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
-                </div>
-                <div className="flex items-center" style={{ height: '180px' }}>
-                  <div className="relative group ml-4">
-                    <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
-                    <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
-                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
-                      <div>
-                        <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Juara Pool {activePool}</p>
-                        <p className="text-xl font-black text-slate-800 tracking-tight">{poolWinner}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
           })()}
         </div>
       </div>
@@ -3317,6 +3295,28 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Juara Pool — tampil di bawah setelah bracket selesai */}
+            {(() => {
+              const poolWinner = activeBracket?.matches?.find(m => m.round === activeBracket?.totalRounds)?.winner;
+              if (!poolWinner) return null;
+              return (
+                <div className="max-w-sm mx-auto px-4 pb-16 pt-8 animate-slide-up">
+                  <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition duration-700"></div>
+                    <div className="relative bg-white border-2 border-yellow-200 rounded-3xl px-6 py-5 shadow-xl flex items-center gap-5">
+                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-3.5 rounded-2xl text-white shadow-lg shrink-0">
+                        <Trophy size={26} className="drop-shadow-sm"/>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black text-yellow-600 uppercase tracking-widest mb-0.5">Juara Pool {activePool}</p>
+                        <p className="text-lg font-black text-slate-800 tracking-tight truncate">{poolWinner}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </main>
