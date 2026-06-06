@@ -13,6 +13,7 @@ import {
   Settings,
   X,
   ChevronRight,
+  ChevronLeft,
   ZoomIn,
   ZoomOut,
   Search,
@@ -140,7 +141,10 @@ export default function App() {
   const [editArchiveDate, setEditArchiveDate] = useState('');
   const [archiveLogoFile, setArchiveLogoFile] = useState(null);
   const [isSavingArchive, setIsSavingArchive] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [lightboxPhotos, setLightboxPhotos] = useState([]);
+  const [slideDir, setSlideDir] = useState(1);
+  const touchStartX = useRef(null);
 
   const currentTournament = viewingArchive || tournamentData;
 
@@ -245,6 +249,19 @@ export default function App() {
       unsubArchives();
     };
   }, [user]);
+
+  // Keyboard navigation for lightbox carousel
+  useEffect(() => {
+    if (lightboxIndex === null || lightboxPhotos.length === 0) return;
+    const total = lightboxPhotos.length;
+    const handleKey = (e) => {
+      if (e.key === 'ArrowRight') { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); }
+      else if (e.key === 'ArrowLeft') { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); }
+      else if (e.key === 'Escape') setLightboxIndex(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [lightboxIndex, lightboxPhotos]);
 
   // Update viewingArchive state if the archive in the list has changed
   useEffect(() => {
@@ -2015,15 +2032,15 @@ export default function App() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {photos.map((photo, idx) => (
               <div key={idx} className="relative group rounded-2xl overflow-hidden shadow-md border border-slate-100 bg-slate-50 aspect-video md:aspect-[4/3]">
-                <img 
-                  src={photo} 
-                  alt={`Dokumentasi ${idx + 1}`} 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer" 
-                  onClick={() => setLightboxImage(photo)}
+                <img
+                  src={photo}
+                  alt={`Dokumentasi ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
+                  onClick={() => { setLightboxPhotos(photos); setSlideDir(1); setLightboxIndex(idx); }}
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-2">
-                  <button 
-                    onClick={() => setLightboxImage(photo)}
+                  <button
+                    onClick={() => { setLightboxPhotos(photos); setSlideDir(1); setLightboxIndex(idx); }}
                     className="bg-white hover:bg-slate-50 text-slate-800 p-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center"
                     title="Perbesar Foto"
                   >
@@ -3393,21 +3410,95 @@ export default function App() {
         </div>
       )}
 
-      {/* Lightbox Modal untuk memperbesar foto galeri */}
-      {lightboxImage && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 animate-fade-in bg-slate-950/90 backdrop-blur-md" onClick={() => setLightboxImage(null)}>
-          <div className="relative max-w-4xl w-full h-auto max-h-[85vh] flex items-center justify-center animate-scale-in" onClick={(e) => e.stopPropagation()}>
-            <button 
-              onClick={() => setLightboxImage(null)}
-              className="absolute -top-12 right-0 bg-white/10 hover:bg-white/20 text-white font-black w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 border border-white/10 active:scale-90 text-lg"
-              title="Tutup"
-            >
-              ✕
-            </button>
-            <img src={lightboxImage} alt="Perbesar" className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10" />
+      {/* Carousel Lightbox */}
+      {lightboxIndex !== null && lightboxPhotos.length > 0 && (() => {
+        const total = lightboxPhotos.length;
+        const goNext = () => { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); };
+        const goPrev = () => { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); };
+        const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+        const handleTouchEnd = (e) => {
+          if (touchStartX.current === null) return;
+          const diff = touchStartX.current - e.changedTouches[0].clientX;
+          if (Math.abs(diff) > 44) diff > 0 ? goNext() : goPrev();
+          touchStartX.current = null;
+        };
+        return (
+          <div
+            className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-slate-950/96 backdrop-blur-md animate-fade-in select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Top bar */}
+            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-safe pt-4 z-10 pointer-events-none">
+              <span className="text-white/50 text-[11px] font-black tracking-widest tabular-nums bg-black/20 px-2.5 py-1 rounded-full pointer-events-none">
+                {lightboxIndex + 1} / {total}
+              </span>
+              <button
+                onClick={() => setLightboxIndex(null)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90 border border-white/10 pointer-events-auto"
+              >
+                <X size={17} />
+              </button>
+            </div>
+
+            {/* Prev button */}
+            {total > 1 && (
+              <button
+                onClick={goPrev}
+                className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-90 border border-white/10 shadow-lg"
+              >
+                <ChevronLeft size={22} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {/* Image */}
+            <div className="flex items-center justify-center w-full px-14 md:px-24 max-h-[80vh]">
+              <img
+                key={`lb-${lightboxIndex}-${slideDir}`}
+                src={lightboxPhotos[lightboxIndex]}
+                alt={`Foto ${lightboxIndex + 1}`}
+                className={cn(
+                  "max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl border border-white/8",
+                  slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
+                )}
+              />
+            </div>
+
+            {/* Next button */}
+            {total > 1 && (
+              <button
+                onClick={goNext}
+                className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-90 border border-white/10 shadow-lg"
+              >
+                <ChevronRight size={22} strokeWidth={2.5} />
+              </button>
+            )}
+
+            {/* Dot indicators (≤10 foto) */}
+            {total > 1 && total <= 10 && (
+              <div className="absolute bottom-6 flex items-center gap-1.5">
+                {lightboxPhotos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setSlideDir(i > lightboxIndex ? 1 : -1); setLightboxIndex(i); }}
+                    className={cn(
+                      "rounded-full transition-all duration-300",
+                      i === lightboxIndex ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/30 hover:bg-white/60"
+                    )}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Counter pill (>10 foto) */}
+            {total > 10 && (
+              <div className="absolute bottom-6 bg-white/10 border border-white/10 px-3 py-1 rounded-full">
+                <span className="text-white/60 text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Datalist untuk autocomplete peserta kustom di Bagan Final */}
       <datalist id="all-participants-list">
