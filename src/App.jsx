@@ -1113,7 +1113,8 @@ export default function App() {
       return downloadURL;
     } catch (error) {
       console.error("Error uploading image:", error);
-      showError("Gagal mengunggah gambar ke Firebase Storage.");
+      const code = error?.code || error?.message || 'unknown';
+      showError(`Gagal mengunggah gambar ke Firebase Storage. (${code})`);
       return null;
     }
   };
