@@ -145,6 +145,7 @@ export default function App() {
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
   const [slideDir, setSlideDir] = useState(1);
   const touchStartX = useRef(null);
+  const [galleryUploadProgress, setGalleryUploadProgress] = useState(null);
 
   const currentTournament = viewingArchive || tournamentData;
 
@@ -1118,6 +1119,26 @@ export default function App() {
     return doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
   };
 
+  const compressImage = (file, maxPx = 1920, quality = 0.78) => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+          else { width = Math.round(width * maxPx / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', quality);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
   const handleUploadImage = async (file, path) => {
     if (!storage) {
       showError("Firebase Storage belum dikonfigurasi atau diaktifkan.");
@@ -1139,10 +1160,9 @@ export default function App() {
   const handlePodiumPhotoChange = async (e, slot) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    // Upload image to firebase
-    const path = `winners/${currentTournament.id || 'live'}_podium_${slot}_${Date.now()}.png`;
-    const url = await handleUploadImage(file, path);
+    const compressed = await compressImage(file, 600, 0.82);
+    const path = `winners/${currentTournament.id || 'live'}_podium_${slot}_${Date.now()}.jpg`;
+    const url = await handleUploadImage(compressed, path);
     if (url) {
       // Save URL to currentTournament.podiumPhotos
       const newData = JSON.parse(JSON.stringify(currentTournament));
@@ -1169,25 +1189,33 @@ export default function App() {
   };
 
   const handleDocPhotoChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const path = `winners/${currentTournament.id || 'live'}_doc_${Date.now()}.png`;
-    const url = await handleUploadImage(file, path);
-    if (url) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    e.target.value = '';
+
+    setGalleryUploadProgress({ current: 0, total: files.length });
+    const newUrls = [];
+
+    for (let i = 0; i < files.length; i++) {
+      setGalleryUploadProgress({ current: i + 1, total: files.length });
+      const compressed = await compressImage(files[i], 1920, 0.78);
+      const path = `gallery/${currentTournament.id || 'live'}_doc_${Date.now()}_${i}.jpg`;
+      const url = await handleUploadImage(compressed, path);
+      if (url) newUrls.push(url);
+    }
+
+    setGalleryUploadProgress(null);
+
+    if (newUrls.length > 0) {
       const newData = JSON.parse(JSON.stringify(currentTournament));
       const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
-      const newList = [...currentList, url];
+      const newList = [...currentList, ...newUrls];
       newData.documentationPhotos = newList;
       newData.documentationPhoto = newList[0] || null;
-      
       try {
         const docRef = getTournamentDocRef();
         await setDoc(docRef, newData);
-        if (viewingArchive) {
-          setViewingArchive(newData);
-        }
-        alert("Foto dokumentasi berhasil ditambahkan ke galeri.");
+        if (viewingArchive) setViewingArchive(newData);
       } catch (err) {
         showError("Gagal menyimpan foto dokumentasi.");
       }
@@ -1230,8 +1258,9 @@ export default function App() {
           setArchiveLogoFile(file);
           alert("Gambar berhasil ditempel dari clipboard sebagai Logo Baru.");
         } else if (target === 'j1' || target === 'j2' || target === 'j3' || target === 'j4') {
-          const path = `winners/${currentTournament.id || 'live'}_podium_${target}_${Date.now()}.png`;
-          const url = await handleUploadImage(file, path);
+          const compressed = await compressImage(file, 600, 0.82);
+          const path = `winners/${currentTournament.id || 'live'}_podium_${target}_${Date.now()}.jpg`;
+          const url = await handleUploadImage(compressed, path);
           if (url) {
             const newData = JSON.parse(JSON.stringify(currentTournament));
             if (!newData.podiumPhotos) newData.podiumPhotos = {};
@@ -1248,8 +1277,9 @@ export default function App() {
             }
           }
         } else if (target === 'doc') {
-          const path = `winners/${currentTournament.id || 'live'}_doc_${Date.now()}.png`;
-          const url = await handleUploadImage(file, path);
+          const compressed = await compressImage(file, 1920, 0.78);
+          const path = `gallery/${currentTournament.id || 'live'}_doc_${Date.now()}.jpg`;
+          const url = await handleUploadImage(compressed, path);
           if (url) {
             const newData = JSON.parse(JSON.stringify(currentTournament));
             const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
@@ -2065,43 +2095,67 @@ export default function App() {
                 className="border-2 border-dashed border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 rounded-2xl p-4 text-center flex flex-col items-center justify-center bg-slate-50/50 cursor-pointer transition-all aspect-video md:aspect-[4/3] group"
                 title="Klik untuk menambahkan foto baru"
               >
-                <input 
-                  type="file" 
-                  id="add-more-doc-photo-input" 
-                  className="hidden" 
+                <input
+                  type="file"
+                  id="add-more-doc-photo-input"
+                  className="hidden"
                   accept="image/*"
+                  multiple
                   onChange={handleDocPhotoChange}
                 />
-                <div className="p-3 bg-white rounded-full shadow border border-slate-100 text-slate-400 group-hover:text-brand-500 transition-colors">
-                  <Plus size={20} className="stroke-[3]" />
-                </div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-2">Tambah Foto</p>
+                {galleryUploadProgress ? (
+                  <>
+                    <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-[10px] font-black text-brand-500 uppercase tracking-wider mt-2">
+                      {galleryUploadProgress.current}/{galleryUploadProgress.total}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-3 bg-white rounded-full shadow border border-slate-100 text-slate-400 group-hover:text-brand-500 transition-colors">
+                      <Plus size={20} className="stroke-[3]" />
+                    </div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-2">Tambah Foto</p>
+                  </>
+                )}
               </div>
             )}
           </div>
         ) : (
           <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-slate-50/50 min-h-[200px]">
-            <input 
-              type="file" 
-              id="upload-doc-photo-input" 
-              className="hidden" 
+            <input
+              type="file"
+              id="upload-doc-photo-input"
+              className="hidden"
               accept="image/*"
+              multiple
               onChange={handleDocPhotoChange}
             />
             {role === 'referee' ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="p-4 bg-white rounded-full shadow border border-slate-100 text-slate-400">
-                  <Camera size={32} />
-                </div>
-                <p className="text-xs text-slate-450 font-bold max-w-sm">
-                  Belum ada foto dokumentasi. Unggah foto penyerahan piala atau momen seru turnamen Anda.
-                </p>
-                <button 
-                  onClick={() => document.getElementById('upload-doc-photo-input').click()}
-                  className="mt-2 bg-slate-900 hover:bg-black text-white font-black text-xs py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
-                >
-                  + Unggah Foto Dokumentasi
-                </button>
+                {galleryUploadProgress ? (
+                  <>
+                    <div className="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs font-black text-brand-600">
+                      Mengupload {galleryUploadProgress.current}/{galleryUploadProgress.total} foto...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 bg-white rounded-full shadow border border-slate-100 text-slate-400">
+                      <Camera size={32} />
+                    </div>
+                    <p className="text-xs text-slate-450 font-bold max-w-sm">
+                      Belum ada foto dokumentasi. Unggah foto penyerahan piala atau momen seru turnamen Anda.
+                    </p>
+                    <button
+                      onClick={() => document.getElementById('upload-doc-photo-input').click()}
+                      className="mt-2 bg-slate-900 hover:bg-black text-white font-black text-xs py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                    >
+                      + Unggah Foto Dokumentasi
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2 text-slate-400">
