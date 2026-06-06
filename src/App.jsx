@@ -48,11 +48,12 @@ import {
   collection,
   deleteDoc
 } from 'firebase/firestore';
-import { 
-  getStorage, 
-  ref, 
-  uploadBytes, 
-  getDownloadURL 
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  uploadBytesResumable,
+  getDownloadURL
 } from 'firebase/storage';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -433,25 +434,29 @@ export default function App() {
                 </div>
               </div>
             );
-          })()}  {activePool !== 'Final' && (
-            <div className="flex flex-col ml-12">
-               <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
+          })()}  {activePool !== 'Final' && (() => {
+            const poolWinner = activeBracket?.matches?.find(m => m.round === activeBracket.totalRounds)?.winner;
+            if (!poolWinner) return null;
+            return (
+              <div className="flex flex-col ml-12">
+                <div className="h-12 flex items-center border-b-2 border-yellow-500 mb-10 mx-4">
                   <span className="text-[11px] font-black text-yellow-600 uppercase tracking-[0.2em]">JUARA POOL {activePool}</span>
-               </div>
-               <div className="flex items-center" style={{ height: '180px' }}>
+                </div>
+                <div className="flex items-center" style={{ height: '180px' }}>
                   <div className="relative group ml-4">
                     <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-yellow-500 rounded-3xl blur-xl opacity-30 group-hover:opacity-60 transition duration-1000 animate-pulse"></div>
                     <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 shadow-2xl flex items-center gap-6 min-w-[280px]">
                       <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg shadow-yellow-100"><Trophy size={32} className="drop-shadow-md"/></div>
                       <div>
-                        <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Winner</p>
-                        <p className="text-xl font-black text-slate-800 tracking-tight">{activeBracket.matches.find(m => m.round === activeBracket.totalRounds)?.winner || 'BELUM ADA'}</p>
+                        <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest mb-1">Juara Pool {activePool}</p>
+                        <p className="text-xl font-black text-slate-800 tracking-tight">{poolWinner}</p>
                       </div>
                     </div>
                   </div>
-               </div>
-            </div>
-          )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     );
@@ -1193,33 +1198,48 @@ export default function App() {
     if (!files.length) return;
     e.target.value = '';
 
-    setGalleryUploadProgress({ current: 0, total: files.length });
-    const newUrls = [];
+    const baseList = JSON.parse(JSON.stringify(
+      currentTournament.documentationPhotos ||
+      (currentTournament.documentationPhoto ? [currentTournament.documentationPhoto] : [])
+    ));
+    let runningList = [...baseList];
 
     for (let i = 0; i < files.length; i++) {
-      setGalleryUploadProgress({ current: i + 1, total: files.length });
+      setGalleryUploadProgress({ current: i + 1, total: files.length, percent: 0 });
+
       const compressed = await compressImage(files[i], 1920, 0.78);
-      const path = `gallery/${currentTournament.id || 'live'}_doc_${Date.now()}_${i}.jpg`;
-      const url = await handleUploadImage(compressed, path);
-      if (url) newUrls.push(url);
+      setGalleryUploadProgress({ current: i + 1, total: files.length, percent: 10 });
+
+      if (!storage) { showError("Firebase Storage belum dikonfigurasi."); break; }
+
+      const url = await new Promise((resolve) => {
+        const storageRef = ref(storage, `gallery/${currentTournament.id || 'live'}_doc_${Date.now()}_${i}.jpg`);
+        const task = uploadBytesResumable(storageRef, compressed);
+        task.on('state_changed',
+          (snap) => {
+            const pct = 10 + Math.round((snap.bytesTransferred / snap.totalBytes) * 90);
+            setGalleryUploadProgress({ current: i + 1, total: files.length, percent: pct });
+          },
+          (err) => { console.error(err); resolve(null); },
+          async () => { resolve(await getDownloadURL(task.snapshot.ref)); }
+        );
+      });
+
+      if (url) {
+        runningList = [...runningList, url];
+        const newData = JSON.parse(JSON.stringify(currentTournament));
+        newData.documentationPhotos = runningList;
+        newData.documentationPhoto = runningList[0] || null;
+        try {
+          await setDoc(getTournamentDocRef(), newData);
+          if (viewingArchive) setViewingArchive(newData);
+        } catch (err) {
+          showError("Gagal menyimpan foto dokumentasi.");
+        }
+      }
     }
 
     setGalleryUploadProgress(null);
-
-    if (newUrls.length > 0) {
-      const newData = JSON.parse(JSON.stringify(currentTournament));
-      const currentList = newData.documentationPhotos || (newData.documentationPhoto ? [newData.documentationPhoto] : []);
-      const newList = [...currentList, ...newUrls];
-      newData.documentationPhotos = newList;
-      newData.documentationPhoto = newList[0] || null;
-      try {
-        const docRef = getTournamentDocRef();
-        await setDoc(docRef, newData);
-        if (viewingArchive) setViewingArchive(newData);
-      } catch (err) {
-        showError("Gagal menyimpan foto dokumentasi.");
-      }
-    }
   };
 
   const handleRemoveDocPhoto = async (index) => {
@@ -1753,10 +1773,10 @@ export default function App() {
 
         <div className="relative text-center mb-10">
           <span className="inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-200/50">
-            🥇 Podium Pemenang 3D
+            🏆 Podium Kejuaraan
           </span>
           <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Podium Juara</h3>
-          <p className="text-xs text-slate-500 font-bold mt-1">Daftar pemenang turnamen dalam visual 3D</p>
+          <p className="text-xs text-slate-500 font-bold mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
         </div>
 
         {/* 3D Podium container */}
@@ -2054,7 +2074,7 @@ export default function App() {
           </span>
           <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Galeri Foto</h3>
           <p className="text-xs text-slate-500 font-bold mt-1">
-            Foto kenangan dari keseruan turnamen {role === 'referee' && "(Bisa Copy-Paste via Ctrl+V)"}
+            Foto kenangan dari keseruan turnamen
           </p>
         </div>
 
@@ -2104,12 +2124,18 @@ export default function App() {
                   onChange={handleDocPhotoChange}
                 />
                 {galleryUploadProgress ? (
-                  <>
-                    <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                    <p className="text-[10px] font-black text-brand-500 uppercase tracking-wider mt-2">
-                      {galleryUploadProgress.current}/{galleryUploadProgress.total}
+                  <div className="w-full px-2 flex flex-col items-center gap-2">
+                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-wider text-center">
+                      Foto {galleryUploadProgress.current}/{galleryUploadProgress.total}
                     </p>
-                  </>
+                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                        style={{ width: `${galleryUploadProgress.percent}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] font-black text-brand-500">{galleryUploadProgress.percent}%</p>
+                  </div>
                 ) : (
                   <>
                     <div className="p-3 bg-white rounded-full shadow border border-slate-100 text-slate-400 group-hover:text-brand-500 transition-colors">
@@ -2134,12 +2160,17 @@ export default function App() {
             {role === 'referee' ? (
               <div className="flex flex-col items-center gap-3">
                 {galleryUploadProgress ? (
-                  <>
-                    <div className="w-10 h-10 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-full max-w-[200px] flex flex-col items-center gap-2">
                     <p className="text-xs font-black text-brand-600">
-                      Mengupload {galleryUploadProgress.current}/{galleryUploadProgress.total} foto...
+                      Foto {galleryUploadProgress.current}/{galleryUploadProgress.total} · {galleryUploadProgress.percent}%
                     </p>
-                  </>
+                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                        style={{ width: `${galleryUploadProgress.percent}%` }}
+                      />
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className="p-4 bg-white rounded-full shadow border border-slate-100 text-slate-400">
