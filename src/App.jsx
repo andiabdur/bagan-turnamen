@@ -2996,6 +2996,12 @@ export default function App() {
               </div>
             </div>
 
+            {/* Champions Podium */}
+            {renderPodium()}
+
+            {/* Event Documentation */}
+            {renderDocumentationSection()}
+
             {/* Finalists Status */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8 max-w-3xl mx-auto">
               {currentTournament.useCustomFinalists ? (
@@ -3016,12 +3022,6 @@ export default function App() {
                 ))
               )}
             </div>
-
-            {/* Champions Podium */}
-            {renderPodium()}
-
-            {/* Event Documentation */}
-            {renderDocumentationSection()}
 
             {/* Referee Quick Setup Panel */}
             {role === 'referee' && (
