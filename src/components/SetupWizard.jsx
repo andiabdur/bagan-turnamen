@@ -40,9 +40,7 @@ export default function SetupWizard({
   tournamentOrganizer,
   setTournamentOrganizer,
   hasExistingTournament,
-  saveGlobalSettings,
-  imgbbApiKey,
-  setImgbbApiKey
+  saveGlobalSettings
 }) {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -246,20 +244,6 @@ export default function SetupWizard({
             </div>
           </div>
           
-          <div className="mb-6 bg-slate-50/50 p-4 border-2 border-slate-100 rounded-2xl">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kunci API ImgBB (Wajib untuk Unggahan Gambar)</label>
-            <input 
-              type="text" 
-              value={imgbbApiKey} 
-              onChange={(e) => setImgbbApiKey(e.target.value)} 
-              placeholder="Masukkan API Key dari api.imgbb.com" 
-              className="w-full bg-white border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all text-xs"
-            />
-            <p className="text-[9px] text-slate-450 mt-1.5 font-bold leading-normal">
-              Digunakan untuk menyimpan foto pemenang dan galeri foto turnamen secara 100% gratis tanpa kartu kredit. Daftar gratis di <a href="https://api.imgbb.com/" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline hover:text-brand-700">api.imgbb.com</a>.
-            </p>
-          </div>
-
           <div className="mb-6 bg-slate-50/50 p-4 border-2 border-slate-100 rounded-2xl">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Tipe Cakupan Turnamen (Seeding Mode)</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
