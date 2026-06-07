@@ -1631,6 +1631,7 @@ export default function App() {
       customFinalistsCount: tournamentData.customFinalistsCount || 4,
       customFinalists: tournamentData.customFinalists || [],
       podiumPhotos: tournamentData.podiumPhotos || {},
+      documentationPhotos: tournamentData.documentationPhotos || (tournamentData.documentationPhoto ? [tournamentData.documentationPhoto] : []),
       documentationPhoto: tournamentData.documentationPhoto || null,
       pools: tournamentData.pools || {},
       archivedAt: new Date().toISOString(),
