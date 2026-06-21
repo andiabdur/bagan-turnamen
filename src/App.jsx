@@ -669,26 +669,27 @@ export default function App() {
           // Ini menangani kasus 1 joki punya 2 slot — kedua slot tidak boleh di pool yang sama.
           if (a.sameNameInPool !== b.sameNameInPool) return a.sameNameInPool - b.sameNameInPool;
 
-          // Priority 0: Jangan masukkan tim yang sama ke half final yang sama!
+          // Priority 0: Jangan masukkan tim yang sama ke pool yang sama!
+          if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
+
+          // Priority 1: Jangan masukkan tim yang sama ke half final yang sama!
           if (a.teamSameHalfCount !== b.teamSameHalfCount) return a.teamSameHalfCount - b.teamSameHalfCount;
 
-          // Priority 1: Team conflicts (dalam pool yang sama)
-          if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
+          // Priority 2: Team conflicts (dalam pool yang sama)
           if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
           if (a.teamQuarterCount !== b.teamQuarterCount) return a.teamQuarterCount - b.teamQuarterCount;
           if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
 
-          // Priority 2: Region conflicts (if Open Tournament is active)
+          // Priority 3: Region conflicts (if Open Tournament is active)
           if (isOpenTournament) {
-            // Same-half region juga dipisah dulu
-            if (a.regionSameHalfCount !== b.regionSameHalfCount) return a.regionSameHalfCount - b.regionSameHalfCount;
             if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
+            if (a.regionSameHalfCount !== b.regionSameHalfCount) return a.regionSameHalfCount - b.regionSameHalfCount;
             if (a.regionHalfCount !== b.regionHalfCount) return a.regionHalfCount - b.regionHalfCount;
             if (a.regionQuarterCount !== b.regionQuarterCount) return a.regionQuarterCount - b.regionQuarterCount;
             if (a.regionBlockCount !== b.regionBlockCount) return a.regionBlockCount - b.regionBlockCount;
           }
 
-          // Priority 3: Size Balance
+          // Priority 4: Size Balance
           if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
           return a.totalBlockLength - b.totalBlockLength;
         });
@@ -2384,11 +2385,16 @@ export default function App() {
       // [A(0), B(1), C(2), D(3)] → [A(0), C(2), B(1), D(3)]
       // Untuk jumlah pool lebih dari 4, terapkan pola silang yang sama (0,2,1,3,4,6,5,7,...)
       const poolNames = [];
-      for (let i = 0; i < capacity; i += 4) {
-        poolNames.push(rawWinners[i] || `BYE_FINAL_${poolNames.length + 1}`);
-        poolNames.push(rawWinners[i + 2] || `BYE_FINAL_${poolNames.length + 1}`);
-        poolNames.push(rawWinners[i + 1] || `BYE_FINAL_${poolNames.length + 1}`);
-        poolNames.push(rawWinners[i + 3] || `BYE_FINAL_${poolNames.length + 1}`);
+      if (capacity === 2) {
+        poolNames.push(rawWinners[0]);
+        poolNames.push(rawWinners[1]);
+      } else {
+        for (let i = 0; i < capacity; i += 4) {
+          poolNames.push(rawWinners[i] || `BYE_FINAL_${poolNames.length + 1}`);
+          poolNames.push(rawWinners[i + 2] || `BYE_FINAL_${poolNames.length + 1}`);
+          poolNames.push(rawWinners[i + 1] || `BYE_FINAL_${poolNames.length + 1}`);
+          poolNames.push(rawWinners[i + 3] || `BYE_FINAL_${poolNames.length + 1}`);
+        }
       }
 
       let matches = [];

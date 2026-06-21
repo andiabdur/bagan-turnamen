@@ -1,0 +1,206 @@
+{
+  "communities": {
+    "0": [
+      "src_main",
+      "src_main_page",
+      "src_main_params",
+      "src_printpage",
+      "src_printpage_bracketcolumn",
+      "src_printpage_clr",
+      "src_printpage_finalcolumn",
+      "src_printpage_firebaseconfig",
+      "src_printpage_getfirebaseconfig",
+      "src_printpage_matchcard",
+      "src_printpage_printpage",
+      "src_printpage_roundlabel"
+    ],
+    "1": [
+      "components_matchcard",
+      "components_matchcard_cn",
+      "components_matchcard_matchcard",
+      "components_setupwizard",
+      "components_setupwizard_cn",
+      "components_setupwizard_setupwizard",
+      "src_app",
+      "src_app_app",
+      "src_app_cn",
+      "src_app_firebaseconfig",
+      "src_app_getfirebaseconfig"
+    ],
+    "2": [
+      "package",
+      "package_name",
+      "package_private",
+      "package_scripts",
+      "package_scripts_build",
+      "package_scripts_dev",
+      "package_scripts_lint",
+      "package_scripts_preview",
+      "package_type",
+      "package_version"
+    ],
+    "3": [
+      "package_dependencies",
+      "package_dependencies_autoprefixer",
+      "package_dependencies_clsx",
+      "package_dependencies_firebase",
+      "package_dependencies_lucide_react",
+      "package_dependencies_postcss",
+      "package_dependencies_react",
+      "package_dependencies_react_dom",
+      "package_dependencies_tailwind_merge",
+      "package_dependencies_tailwindcss"
+    ],
+    "4": [
+      "package_devdependencies",
+      "package_devdependencies_eslint",
+      "package_devdependencies_eslint_js",
+      "package_devdependencies_eslint_plugin_react_hooks",
+      "package_devdependencies_eslint_plugin_react_refresh",
+      "package_devdependencies_globals",
+      "package_devdependencies_types_react",
+      "package_devdependencies_types_react_dom",
+      "package_devdependencies_vite",
+      "package_devdependencies_vitejs_plugin_react"
+    ],
+    "5": [
+      "backup",
+      "backup_app",
+      "backup_auth",
+      "backup_db",
+      "backup_env",
+      "backup_envcontent",
+      "backup_envpath",
+      "backup_firebaseconfig",
+      "backup_runbackup"
+    ],
+    "6": [
+      "favicon_svg",
+      "hero_png",
+      "index_html",
+      "main_jsx",
+      "panduan_wasit_markdown",
+      "panduan_wasit_pdf",
+      "readme_readme"
+    ],
+    "7": [
+      "scripts_backup",
+      "scripts_backup_backup",
+      "scripts_backup_backupsubcollections",
+      "scripts_backup_db",
+      "scripts_backup_serviceaccount"
+    ],
+    "8": [
+      "vercel",
+      "vercel_rewrites"
+    ],
+    "9": [
+      "eslint_config"
+    ],
+    "10": [
+      "icons_svg"
+    ],
+    "11": [
+      "postcss_config"
+    ],
+    "12": [
+      "react_svg"
+    ],
+    "13": [
+      "tailwind_config"
+    ],
+    "14": [
+      "vite_config"
+    ],
+    "15": [
+      "vite_svg"
+    ]
+  },
+  "cohesion": {
+    "0": 0.21212121212121213,
+    "1": 0.2727272727272727,
+    "2": 0.2,
+    "3": 0.2,
+    "4": 0.2,
+    "5": 0.2222222222222222,
+    "6": 0.2857142857142857,
+    "7": 0.5,
+    "8": 1.0,
+    "9": 1.0,
+    "10": 1.0,
+    "11": 1.0,
+    "12": 1.0,
+    "13": 1.0,
+    "14": 1.0,
+    "15": 1.0
+  },
+  "gods": [
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "degree": 5
+    },
+    {
+      "id": "src_app_app",
+      "label": "App()",
+      "degree": 3
+    },
+    {
+      "id": "src_printpage_roundlabel",
+      "label": "roundLabel()",
+      "degree": 3
+    },
+    {
+      "id": "components_matchcard_matchcard",
+      "label": "MatchCard()",
+      "degree": 3
+    },
+    {
+      "id": "components_setupwizard_setupwizard",
+      "label": "SetupWizard()",
+      "degree": 3
+    },
+    {
+      "id": "scripts_backup_backupsubcollections",
+      "label": "backupSubcollections()",
+      "degree": 2
+    },
+    {
+      "id": "scripts_backup_backup",
+      "label": "backup()",
+      "degree": 2
+    },
+    {
+      "id": "src_app_cn",
+      "label": "cn()",
+      "degree": 2
+    },
+    {
+      "id": "src_printpage_bracketcolumn",
+      "label": "BracketColumn()",
+      "degree": 2
+    },
+    {
+      "id": "src_printpage_finalcolumn",
+      "label": "FinalColumn()",
+      "degree": 2
+    }
+  ],
+  "surprises": [
+    {
+      "source": "Panduan Operasional Wasit (MD)",
+      "target": "Panduan Operasional Wasit (PDF)",
+      "source_files": [
+        "panduan_wasit.md",
+        "panduan_wasit.pdf"
+      ],
+      "confidence": "INFERRED",
+      "relation": "semantically_similar_to",
+      "why": "inferred connection - not explicitly stated in source; crosses file types (doc \u2194 paper); connects across different repos/directories; semantically similar concepts with no structural link"
+    }
+  ],
+  "tokens": {
+    "input": 26988,
+    "output": 945
+  }
+}
