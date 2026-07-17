@@ -448,7 +448,7 @@ export default function App() {
 
   const handleLoginReferee = (e) => {
     e.preventDefault();
-    if (e.target.pin.value === 'majalengkawani2026' || e.target.pin.value === 'Indo1234!') {
+    if (e.target.pin.value === 'tempur2026') {
       setRole('referee');
       localStorage.setItem('tournament_role', 'referee');
       setIsMenuOpen(false);
@@ -2697,7 +2697,7 @@ export default function App() {
               <button 
                 onClick={() => {
                   const pin = window.prompt("Masukkan Password Wasit untuk Mengedit Arsip:");
-                  if (pin === 'majalengkawani2026' || pin === 'Indo1234!') {
+                  if (pin === 'tempur2026') {
                     setRole('referee');
                     localStorage.setItem('tournament_role', 'referee');
                     alert("Berhasil login sebagai Wasit! Sekarang Anda dapat mengedit arsip ini.");
