@@ -31,7 +31,8 @@ import {
   Award,
   Printer,
   Camera,
-  User
+  User,
+  Key
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -148,6 +149,13 @@ export default function App() {
   const touchStartX = useRef(null);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState(null);
 
+  // App Settings (for referee password / version)
+  const [appSettings, setAppSettings] = useState({ refereePin: 'tempur2026', pinVersion: 1 });
+  const [sessionPinVersion, setSessionPinVersion] = useState(() => {
+    const v = localStorage.getItem('tournament_pin_version');
+    return v ? parseInt(v) : 1;
+  });
+
   const currentTournament = viewingArchive || tournamentData;
 
   const poolsList = [
@@ -246,11 +254,39 @@ export default function App() {
       console.error("Gagal memuat riwayat arsip:", err);
     });
 
+    // Listen to App Settings for Session / Password Versioning
+    const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'app_settings');
+    const unsubSettings = onSnapshot(settingsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setAppSettings(snapshot.data());
+      } else {
+        // First run initialization
+        const defaultSettings = { refereePin: 'tempur2026', pinVersion: 1 };
+        setDoc(settingsRef, defaultSettings).catch(console.error);
+        setAppSettings(defaultSettings);
+      }
+    });
+
     return () => {
       unsub();
       unsubArchives();
+      unsubSettings();
     };
   }, [user]);
+
+  // Handle force logout if password version increments in database
+  useEffect(() => {
+    if (role === 'referee') {
+      if (appSettings.pinVersion > sessionPinVersion) {
+        // Password has been changed by someone else
+        setRole(null);
+        localStorage.removeItem('tournament_role');
+        localStorage.removeItem('tournament_pin_version');
+        setErrorMessage('Sesi berakhir: Password wasit telah diubah oleh admin lain. Silakan login kembali.');
+        setTimeout(() => setErrorMessage(''), 8000);
+      }
+    }
+  }, [appSettings.pinVersion, sessionPinVersion, role]);
 
   // Keyboard navigation for lightbox carousel
   useEffect(() => {
@@ -448,18 +484,57 @@ export default function App() {
 
   const handleLoginReferee = (e) => {
     e.preventDefault();
-    if (e.target.pin.value === 'tempur2026') {
+    if (e.target.pin.value === appSettings.refereePin) {
       setRole('referee');
       localStorage.setItem('tournament_role', 'referee');
+      localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+      setSessionPinVersion(appSettings.pinVersion);
       setIsMenuOpen(false);
     } else {
       showError('Password Wasit salah!');
     }
   };
 
+  const handleChangePassword = async () => {
+    setIsMenuOpen(false);
+    const oldPin = window.prompt("Keamanan: Masukkan password wasit saat ini:");
+    if (!oldPin) return;
+
+    if (oldPin !== appSettings.refereePin) {
+      alert("Password saat ini salah! Batal mengubah password.");
+      return;
+    }
+
+    const newPin = window.prompt("Masukkan password wasit BARU:");
+    if (!newPin || newPin.trim() === '') {
+      alert("Password baru tidak boleh kosong!");
+      return;
+    }
+
+    try {
+      const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'app_settings');
+      const nextVersion = appSettings.pinVersion + 1;
+
+      // Update our local session version first so we don't get kicked out by our own change
+      setSessionPinVersion(nextVersion);
+      localStorage.setItem('tournament_pin_version', nextVersion.toString());
+
+      await setDoc(settingsRef, {
+        refereePin: newPin.trim(),
+        pinVersion: nextVersion
+      }, { merge: true });
+
+      alert("Password wasit berhasil diubah! Anggota wasit di perangkat lain yang sedang aktif harus login ulang.");
+    } catch (err) {
+      console.error("Gagal mengganti password:", err);
+      alert("Terjadi kesalahan saat mengganti password.");
+    }
+  };
+
   const logout = () => {
     setRole(null);
     localStorage.removeItem('tournament_role');
+    localStorage.removeItem('tournament_pin_version');
     setIsMenuOpen(false);
   };
 
@@ -2697,9 +2772,11 @@ export default function App() {
               <button 
                 onClick={() => {
                   const pin = window.prompt("Masukkan Password Wasit untuk Mengedit Arsip:");
-                  if (pin === 'tempur2026') {
+                  if (pin === appSettings.refereePin) {
                     setRole('referee');
                     localStorage.setItem('tournament_role', 'referee');
+                    localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+                    setSessionPinVersion(appSettings.pinVersion);
                     alert("Berhasil login sebagai Wasit! Sekarang Anda dapat mengedit arsip ini.");
                   } else if (pin !== null) {
                     alert("Password Wasit salah!");
@@ -2783,9 +2860,12 @@ export default function App() {
                     </button>
                   </>
                 )}
+                <button onClick={handleChangePassword} className="w-full text-left px-4 py-3 text-indigo-600 text-sm font-bold flex items-center gap-3 hover:bg-indigo-50 border-t border-slate-50 mt-1 pt-2">
+                  <Key size={14}/> Ganti Password Wasit
+                </button>
               </>
             )}
-            <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50"><LogOut size={14}/> Keluar Sistem</button>
+            <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50"><LogOut size={14}/> Keluar Sistem</button>
           </div>
         )}
       </header>
