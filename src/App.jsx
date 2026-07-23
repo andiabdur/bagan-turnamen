@@ -710,7 +710,7 @@ export default function App() {
 
     let poolIds = [];
     let poolsMap = {};
-    let globalPlayerInfo = {};
+    let playerInfoMap = {};
     
     if (useLocalPool) {
       const openResult = buildPoolsMap(rawNamesOpen, 65);
@@ -720,12 +720,12 @@ export default function App() {
       
       poolIds = [...openResult.pIds, ...localResult.pIds];
       poolsMap = { ...openResult.mapObj, ...localResult.mapObj };
-      globalPlayerInfo = { ...openResult.playerInfoMap, ...localResult.playerInfoMap };
+      playerInfoMap = { ...openResult.playerInfoMap, ...localResult.playerInfoMap };
     } else {
       const result = buildPoolsMap(rawNamesOpen, 65);
       poolIds = result.pIds;
       poolsMap = result.mapObj;
-      globalPlayerInfo = result.playerInfoMap;
+      playerInfoMap = result.playerInfoMap;
     }
 
     const newData = { 
