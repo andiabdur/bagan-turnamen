@@ -115,6 +115,8 @@ export default function App() {
   const [bracketSize, setBracketSize] = useState('32'); // '16', '32', '64', 'auto'
   const [finalFormat, setFinalFormat] = useState('roundrobin'); // 'roundrobin', 'bracket'
   const [bulkInput, setBulkInput] = useState('');
+  const [useLocalPool, setUseLocalPool] = useState(false);
+  const [bulkInputLocal, setBulkInputLocal] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null); // { matchId, playerSlot, currentName }
   const [bracketZoom, setBracketZoom] = useState(1);
@@ -546,244 +548,185 @@ export default function App() {
 
 
   const generateGlobalBracket = async () => {
-    let rawNames = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
-    if (rawNames.length === 0) return showError("Daftar nama tidak boleh kosong.");
+    let rawNamesOpen = bulkInput.split('\n').map(n => n.trim()).filter(n => n !== '');
+    let rawNamesLocal = (bulkInputLocal || '').split('\n').map(n => n.trim()).filter(n => n !== '');
     
-    // 1. Determine Capacity & Pool Count
+    if (rawNamesOpen.length === 0) return showError("Daftar nama (Open) tidak boleh kosong.");
+    if (useLocalPool && rawNamesLocal.length === 0) return showError("Daftar nama (Lokal) tidak boleh kosong saat jalur lokal aktif.");
+    
     let capacity = parseInt(bracketSize);
-    if (bracketSize === 'auto') {
-      if (rawNames.length <= 16) capacity = 16;
-      else if (rawNames.length <= 32) capacity = 32;
-      else if (rawNames.length <= 64) capacity = 64;
-      else capacity = 32; // Default back to split 32 for large tournaments
-    }
-
-    const numPools = Math.max(1, Math.ceil(rawNames.length / capacity));
-    const totalSlots = numPools * capacity;
-    const poolIds = Array.from({ length: numPools }, (_, i) => String.fromCharCode(65 + i)); // A, B, C...
-
-    // Fill with BYEs if needed
-    let counter = 1;
-    const fullNames = [...rawNames];
-    while (fullNames.length < totalSlots) fullNames.push(`BYE_${counter++}`);
-
-    // 2. Identifikasi Tim & Daerah berdasarkan Mode Turnamen
-    const players = fullNames.map((raw, idx) => {
-      if (raw.startsWith('BYE_')) {
-        return { team: 'BYE', region: 'BYE', name: raw, isBye: true };
+    
+    const buildPoolsMap = (namesList, startCharCode) => {
+      let cap = capacity;
+      if (bracketSize === 'auto') {
+        if (namesList.length <= 16) cap = 16;
+        else if (namesList.length <= 32) cap = 32;
+        else if (namesList.length <= 64) cap = 64;
+        else cap = 32;
       }
       
-      if (isOpenTournament) {
-        // Open tournament mode: parse [Daerah-Tim] Nama Peserta
-        const match = raw.match(/^\[(.*?)-(.*?)\]\s*(.*)$/);
-        if (match) {
-          return { 
-            region: match[1].trim().toLowerCase(), 
-            team: match[2].trim().toLowerCase(), 
-            name: raw, 
-            isBye: false 
-          };
-        }
-        
-        // Fallback if missing dash: e.g. [Majalengka] Andi
-        const fallbackMatch = raw.match(/^\[(.*?)\]\s*(.*)$/);
-        if (fallbackMatch) {
-          return { 
-            region: fallbackMatch[1].trim().toLowerCase(), 
-            team: `SOLO_${idx}`, 
-            name: raw, 
-            isBye: false 
-          };
-        }
-        
-        // Fully solo
-        return { region: `SOLO_REG_${idx}`, team: `SOLO_${idx}`, name: raw, isBye: false };
-      } else {
-        // Normal tournament mode: parse [Tim] Nama Peserta
-        const match = raw.match(/^\[(.*?)\]\s*(.*)$/);
-        if (match) {
-          return { 
-            region: 'NONE', 
-            team: match[1].trim().toLowerCase(), 
-            name: raw, 
-            isBye: false 
-          };
-        }
-        return { region: 'NONE', team: `SOLO_${idx}`, name: raw, isBye: false };
+      const pCount = Math.max(1, Math.ceil(namesList.length / cap));
+      let pIds = Array.from({ length: pCount }, (_, i) => String.fromCharCode(startCharCode + i));
+      
+      const fullNames = [...namesList];
+      let counter = 1;
+      while (fullNames.length < pCount * cap) {
+        fullNames.push(`BYE_${Date.now()}_${counter++}`);
       }
-    });
 
-    const playerInfoMap = {};
-    players.forEach(p => {
-      playerInfoMap[p.name] = p;
-    });
-
-    // 3. Kelompokkan berdasarkan tim untuk menentukan urutan distribusi
-    const teamGroups = {};
-    players.forEach(p => {
-      if (!teamGroups[p.team]) teamGroups[p.team] = [];
-      teamGroups[p.team].push(p.name);
-    });
-
-    const sortedTeams = Object.keys(teamGroups)
-      .filter(t => t !== 'BYE')
-      .sort((a, b) => teamGroups[b].length - teamGroups[a].length);
-
-    // 4. Siapkan Pools (Masing-masing dibagi 8 Sub-Blok untuk persebaran)
-    const poolsMap = {};
-    poolIds.forEach(id => {
-      poolsMap[id] = Array.from({ length: 8 }, () => []);
-    });
-
-    const getTeamPoolMembers = (poolId, teamId) => 
-      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.team === teamId);
-    
-    const getRegionPoolMembers = (poolId, regionId) => 
-      poolsMap[poolId].flat().filter(name => playerInfoMap[name]?.region === regionId);
-
-    // 5. Distribusi Cerdas Lintas Pool & Lintas Kuarter (Menghindari Bentrok Tim & Daerah)
-    //
-    // Definisi "Final Half" berdasarkan skema silang bagan:
-    //   - 2 pool : A vs B (final langsung, tak ada masalah half)
-    //   - 3 pool : A+C satu half, B sendiri
-    //   - 4 pool : A+C = half-0, B+D = half-1 (semifinal: A vs C, B vs D)
-    //
-    // Aturan: Anggota tim yang sama HARUS di half yang berbeda
-    // sehingga mereka hanya bisa bertemu di Grand Final, bukan di Semifinal.
-    const getFinalHalf = (poolId) => {
-      const idx = poolIds.indexOf(poolId); // 0=A,1=B,2=C,3=D,...
-      if (poolIds.length <= 2) return idx;        // setiap pool adalah half sendiri
-      if (poolIds.length === 3) return idx === 1 ? 1 : 0; // B sendiri, A+C sama
-      // 4+ pools: gunakan pola silang — pool 0 & 2 (A,C) = half-0, pool 1 & 3 (B,D) = half-1, dst.
-      return idx % 2; // pool ke-0,2,4... = half-0; pool ke-1,3,5... = half-1
-    };
-
-    const getTeamSameHalfCount = (poolId, teamId) => {
-      let count = 0;
-      const candidateHalf = getFinalHalf(poolId);
-      poolIds.forEach(pid => {
-        if (pid === poolId) return; // pool sendiri sudah dihitung di teamPoolCount
-        if (getFinalHalf(pid) === candidateHalf) {
-          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.team === teamId).length;
-        }
-      });
-      return count;
-    };
-
-    const getRegionSameHalfCount = (poolId, regionId) => {
-      if (regionId === 'NONE') return 0;
-      let count = 0;
-      const candidateHalf = getFinalHalf(poolId);
-      poolIds.forEach(pid => {
-        if (pid === poolId) return;
-        if (getFinalHalf(pid) === candidateHalf) {
-          count += poolsMap[pid].flat().filter(name => playerInfoMap[name]?.region === regionId).length;
-        }
-      });
-      return count;
-    };
-
-    for (const team of sortedTeams) {
-      for (const member of teamGroups[team]) {
-        const pInfo = playerInfoMap[member];
-        const teamId = pInfo.team;
-        const regionId = pInfo.region;
-
-        let validOptions = [];
-        poolIds.forEach(poolId => {
-          poolsMap[poolId].forEach((block, bIdx) => {
-            if (block.length < (capacity / 8)) validOptions.push({ poolId, bIdx, block });
-          });
-        });
-
-        validOptions.forEach(opt => {
-          const poolFlat = poolsMap[opt.poolId].flat();
-
-          // *** PRIORITAS ABSOLUT: Nama identik dilarang masuk pool yang sama ***
-          // Jika [MJL-KOTA ANGIN]1 sudah ada di pool ini (meskipun di block lain),
-          // pool ini mendapat skor sangat tinggi sehingga selalu dihindari.
-          opt.sameNameInPool = poolFlat.filter(n => n === member).length;
-
-          const qIdx = Math.floor(opt.bIdx / 2);
-          const quarterBlocks = [poolsMap[opt.poolId][qIdx * 2], poolsMap[opt.poolId][qIdx * 2 + 1]];
-          const quarterMembersTeam = quarterBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
-          const quarterMembersRegion = quarterBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
-
-          const hIdx = Math.floor(opt.bIdx / 4);
-          const halfBlocks = [
-            poolsMap[opt.poolId][hIdx * 4], poolsMap[opt.poolId][hIdx * 4 + 1], 
-            poolsMap[opt.poolId][hIdx * 4 + 2], poolsMap[opt.poolId][hIdx * 4 + 3]
-          ];
-          const halfMembersTeam = halfBlocks.flat().filter(name => playerInfoMap[name]?.team === teamId);
-          const halfMembersRegion = halfBlocks.flat().filter(name => playerInfoMap[name]?.region === regionId);
-
-          // Team conflicts (within same pool)
-          opt.teamPoolCount = getTeamPoolMembers(opt.poolId, teamId).length;
-          opt.teamHalfCount = halfMembersTeam.length;
-          opt.teamQuarterCount = quarterMembersTeam.length;
-          opt.teamBlockCount = opt.block.filter(name => playerInfoMap[name]?.team === teamId).length;
-
-          // Same-Half Conflict across pools (Final bracket awareness)
-          opt.teamSameHalfCount = getTeamSameHalfCount(opt.poolId, teamId);
-
-          // Region conflicts (Only if isOpenTournament is active)
-          opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(opt.poolId, regionId).length : 0;
-          opt.regionHalfCount = regionId !== 'NONE' ? halfMembersRegion.length : 0;
-          opt.regionQuarterCount = regionId !== 'NONE' ? quarterMembersRegion.length : 0;
-          opt.regionBlockCount = regionId !== 'NONE' ? opt.block.filter(name => playerInfoMap[name]?.region === regionId).length : 0;
-
-          // Same-Half Region conflict
-          opt.regionSameHalfCount = isOpenTournament ? getRegionSameHalfCount(opt.poolId, regionId) : 0;
-          
-          opt.totalPoolLength = poolFlat.length;
-          opt.totalBlockLength = opt.block.length;
-        });
-
-        validOptions.sort((a, b) => {
-          // Prioritas ABSOLUT (-1): Nama yang PERSIS SAMA harus masuk pool yang BERBEDA.
-          // Ini menangani kasus 1 joki punya 2 slot — kedua slot tidak boleh di pool yang sama.
-          if (a.sameNameInPool !== b.sameNameInPool) return a.sameNameInPool - b.sameNameInPool;
-
-          // Priority 0: Jangan masukkan tim yang sama ke pool yang sama!
-          if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
-
-          // Priority 1: Jangan masukkan tim yang sama ke half final yang sama!
-          if (a.teamSameHalfCount !== b.teamSameHalfCount) return a.teamSameHalfCount - b.teamSameHalfCount;
-
-          // Priority 2: Team conflicts (dalam pool yang sama)
-          if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
-          if (a.teamQuarterCount !== b.teamQuarterCount) return a.teamQuarterCount - b.teamQuarterCount;
-          if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
-
-          // Priority 3: Region conflicts (if Open Tournament is active)
-          if (isOpenTournament) {
-            if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
-            if (a.regionSameHalfCount !== b.regionSameHalfCount) return a.regionSameHalfCount - b.regionSameHalfCount;
-            if (a.regionHalfCount !== b.regionHalfCount) return a.regionHalfCount - b.regionHalfCount;
-            if (a.regionQuarterCount !== b.regionQuarterCount) return a.regionQuarterCount - b.regionQuarterCount;
-            if (a.regionBlockCount !== b.regionBlockCount) return a.regionBlockCount - b.regionBlockCount;
+      const playerInfoMap = {};
+      const teamGroups = {};
+      const regionGroups = {};
+      
+      fullNames.forEach((raw, idx) => {
+        let team = 'NONE';
+        let region = 'NONE';
+        let name = raw;
+        
+        if (raw.startsWith('BYE_')) {
+          team = 'BYE';
+          name = raw;
+        } else {
+          const match = raw.match(/^\[(.*?)-(.*?)\]\s*(.*)$/);
+          if (match) {
+            region = match[1].trim();
+            team = match[2].trim();
+            name = match[3].trim();
+          } else {
+            const fallbackMatch = raw.match(/^\[(.*?)\].*?\s*(.*)$/);
+            if (fallbackMatch && !raw.includes('-')) {
+               team = fallbackMatch[1].trim();
+               name = raw.substring(raw.indexOf(']') + 1).trim();
+            } else {
+               const m2 = raw.match(/^\[(.*?)\]\s*(.*)$/);
+               if (m2) {
+                   team = m2[1].trim();
+                   name = m2[2].trim();
+               }
+            }
           }
-
-          // Priority 4: Size Balance
-          if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
-          return a.totalBlockLength - b.totalBlockLength;
-        });
-
-        const chosen = validOptions[0];
-        poolsMap[chosen.poolId][chosen.bIdx].push(member);
-      }
-    }
-
-    // Fill BYEs into remaining spots
-    const byePlayers = teamGroups['BYE'] || [];
-    let byeIdx = 0;
-    poolIds.forEach(pId => {
-      poolsMap[pId].forEach(block => {
-        while (block.length < (capacity / 8) && byeIdx < byePlayers.length) {
-          block.push(byePlayers[byeIdx++]);
+        }
+        
+        playerInfoMap[raw] = { team, region, name, originalName: raw, isBye: raw.startsWith('BYE_') };
+        if (!teamGroups[team]) teamGroups[team] = [];
+        teamGroups[team].push(raw);
+        if (region !== 'NONE') {
+          if (!regionGroups[region]) regionGroups[region] = [];
+          regionGroups[region].push(raw);
         }
       });
-    });
+      
+      const mapObj = {};
+      pIds.forEach(p => {
+        mapObj[p] = Array.from({ length: cap / 2 }, () => []);
+      });
+
+      const getTeamPoolMembers = (map, pId, teamId) => {
+        let res = [];
+        for (let b of map[pId]) res.push(...b);
+        return res.filter(n => playerInfoMap[n]?.team === teamId);
+      };
+      
+      const getRegionPoolMembers = (map, pId, regionId) => {
+        let res = [];
+        for (let b of map[pId]) res.push(...b);
+        return res.filter(n => playerInfoMap[n]?.region === regionId);
+      };
+      
+      const getFinalHalf = (poolId) => {
+        const idxx = pIds.indexOf(poolId);
+        if (pIds.length === 3) return idxx === 1 ? 1 : 0;
+        return idxx % 2;
+      };
+      
+      const getTeamHalfCount = (map, poolId, teamId) => {
+        let count = 0;
+        const candidateHalf = getFinalHalf(poolId);
+        for (const pid of pIds) {
+          if (pid === poolId) continue;
+          if (getFinalHalf(pid) === candidateHalf) {
+            count += getTeamPoolMembers(map, pid, teamId).length;
+          }
+        }
+        return count;
+      };
+
+      const sortedTeams = Object.keys(teamGroups)
+        .filter(t => t !== 'BYE')
+        .sort((a, b) => teamGroups[b].length - teamGroups[a].length);
+        
+      for (const team of sortedTeams) {
+        for (const member of teamGroups[team]) {
+          const regionId = playerInfoMap[member].region;
+          let validOptions = [];
+          
+          for (const pid of pIds) {
+            for (let bIdx = 0; bIdx < mapObj[pid].length; bIdx++) {
+              if (mapObj[pid][bIdx].length < 2) {
+                validOptions.push({ poolId: pid, bIdx });
+              }
+            }
+          }
+          
+          validOptions.forEach(opt => {
+            const teamId = playerInfoMap[member].team;
+            opt.teamPoolCount = getTeamPoolMembers(mapObj, opt.poolId, teamId).length;
+            opt.teamHalfCount = getTeamHalfCount(mapObj, opt.poolId, teamId);
+            opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(mapObj, opt.poolId, regionId).length : 0;
+            opt.teamBlockCount = mapObj[opt.poolId][opt.bIdx].filter(n => playerInfoMap[n]?.team === teamId).length;
+            
+            let pFlat = [];
+            for (let b of mapObj[opt.poolId]) pFlat.push(...b);
+            opt.totalPoolLength = pFlat.length;
+            opt.totalBlockLength = mapObj[opt.poolId][opt.bIdx].length;
+          });
+          
+          validOptions.sort((a, b) => {
+            if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
+            if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
+            if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
+            if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
+            if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
+            return a.totalBlockLength - b.totalBlockLength;
+          });
+          
+          const chosen = validOptions[0];
+          mapObj[chosen.poolId][chosen.bIdx].push(member);
+        }
+      }
+      
+      const byePlayers = teamGroups['BYE'] || [];
+      let byeIdx = 0;
+      pIds.forEach(pId => {
+        mapObj[pId].forEach(block => {
+          while (block.length < 2 && byeIdx < byePlayers.length) {
+            block.push(byePlayers[byeIdx++]);
+          }
+        });
+      });
+      
+      return { mapObj, pIds, playerInfoMap };
+    };
+
+    let poolIds = [];
+    let poolsMap = {};
+    let globalPlayerInfo = {};
+    
+    if (useLocalPool) {
+      const openResult = buildPoolsMap(rawNamesOpen, 65);
+      const openPoolCount = openResult.pIds.length;
+      const nextCharCode = 65 + openPoolCount;
+      const localResult = buildPoolsMap(rawNamesLocal, nextCharCode);
+      
+      poolIds = [...openResult.pIds, ...localResult.pIds];
+      poolsMap = { ...openResult.mapObj, ...localResult.mapObj };
+      globalPlayerInfo = { ...openResult.playerInfoMap, ...localResult.playerInfoMap };
+    } else {
+      const result = buildPoolsMap(rawNamesOpen, 65);
+      poolIds = result.pIds;
+      poolsMap = result.mapObj;
+      globalPlayerInfo = result.playerInfoMap;
+    }
 
     const newData = { 
       pools: {},
@@ -3059,6 +3002,10 @@ export default function App() {
             setLogoBase64={setLogoBase64}
             bulkInput={bulkInput}
             setBulkInput={setBulkInput}
+            useLocalPool={useLocalPool}
+            setUseLocalPool={setUseLocalPool}
+            bulkInputLocal={bulkInputLocal}
+            setBulkInputLocal={setBulkInputLocal}
             generateGlobalBracket={generateGlobalBracket}
             role={role}
             tournamentTitle={tournamentTitle}

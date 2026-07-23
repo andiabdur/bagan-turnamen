@@ -33,6 +33,11 @@ export default function SetupWizard({
   setLogoBase64,
   bulkInput,
   setBulkInput,
+  useLocalPool,
+  setUseLocalPool,
+  bulkInputLocal,
+  setBulkInputLocal,
+
   generateGlobalBracket,
   role,
   tournamentTitle,
@@ -398,18 +403,59 @@ export default function SetupWizard({
           </div>
 
           <div className="relative">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Daftar Peserta ({bulkInput.split('\n').filter(n => n.trim()).length} Orang)</label>
-            <textarea 
-              value={bulkInput} 
-              onChange={(e) => setBulkInput(e.target.value)} 
-              placeholder={isOpenTournament 
-                ? "[Majalengka-Senyap] Daim\n[Majalengka-Senyap] Andi\n[Cirebon-Kincir] Joko\nPeserta Solo Tanpa Tim"
-                : "[Senyap] Daim\n[Senyap] Andi\n[Majalengka] Joko\nPeserta Solo Tanpa Tim"
+            <div className="flex justify-between items-center mb-3">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                {useLocalPool ? 'Daftar Peserta (Jalur Open)' : 'Daftar Peserta'} ({(bulkInput || '').split('\n').filter(n => n.trim()).length} Orang)
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={useLocalPool}
+                  onChange={(e) => setUseLocalPool(e.target.checked)}
+                  className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
+                />
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-brand-600 transition-colors">
+                  Aktifkan Jalur Pool Lokal
+                </span>
+              </label>
+            </div>
+
+            <textarea
+              value={bulkInput}
+              onChange={(e) => setBulkInput(e.target.value)}
+              placeholder={isOpenTournament
+                ? "[Cirebon-Kincir] Joko\n[Bandung-Terbang] Aceng\nPeserta Open Tanpa Tim"
+                : "[Senyap] Daim\n[LabaLaba] Ucup\nPeserta Solo Tanpa Tim"
               }
-              rows={10} 
-              className="w-full bg-white border-2 border-slate-200 p-6 rounded-2xl mb-6 font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner" 
+              rows={useLocalPool ? 7 : 10}
+              className={`w-full bg-white border-2 border-slate-200 p-6 rounded-2xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner ${!useLocalPool ? "mb-6" : ""}`}
             />
           </div>
+
+          {useLocalPool && (
+            <div className="relative mb-6 mt-4">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Peserta Pool Lokal Khusus ({(bulkInputLocal || '').split('\n').filter(n => n.trim()).length} Orang)
+                </label>
+                <div className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                  Akan diisi mulai dari Pool akhir
+                </div>
+              </div>
+              <textarea
+                value={bulkInputLocal}
+                onChange={(e) => setBulkInputLocal(e.target.value)}
+                placeholder={isOpenTournament
+                  ? "[Majalengka-Senyap] Daim\n[Majalengka-Angin] Maman\nOrang Majalengka Asli"
+                  : "[Senyap-Lokal] Daim\n[Lokal] Aceng\nPeserta Khusus Tuan Rumah"
+                }
+                rows={7}
+                className="w-full bg-emerald-50/30 border-2 border-emerald-200 p-6 rounded-2xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none resize-y transition-all shadow-inner"
+              />
+            </div>
+          )}
 
           {hasExistingTournament ? (
             <div className="flex flex-col md:flex-row gap-3">
