@@ -32,7 +32,9 @@ import {
   Printer,
   Camera,
   User,
-  Key
+  Key,
+  ArrowLeft,
+  Edit3
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -535,6 +537,7 @@ export default function App() {
 
   const logout = () => {
     setRole(null);
+    setViewingArchive(null);
     localStorage.removeItem('tournament_role');
     localStorage.removeItem('tournament_pin_version');
     setIsMenuOpen(false);
@@ -2770,18 +2773,21 @@ export default function App() {
     <div className="min-h-screen bg-white flex flex-col text-black font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Sticky Archive Indicator Banner */}
       {viewingArchive && (
-        <div className="bg-safety-orange text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3 px-4 flex items-center justify-between shadow-brutal-sm z-[45] animate-slide-down shrink-0 border-b-[3px] border-black">
-          <span className="flex items-center gap-2">
-            <Archive size={14} className="animate-pulse text-white" />
-            ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} {role === 'referee' ? '(EDITABLE)' : '(READ-ONLY)'}
-          </span>
+        <div className="bg-safety-orange border-b-[3px] border-black px-3 md:px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-brutal-sm z-[45] animate-slide-down shrink-0">
           <div className="flex items-center gap-2">
+            <span className="bg-black text-white text-[10px] md:text-[11px] font-black uppercase px-2.5 py-1 border border-black shadow-brutal-sm flex items-center gap-1.5 shrink-0">
+              <Archive size={12} className="text-safety-orange" />
+              MODE ARSIP {role === 'referee' ? '(WASIT)' : '(PENONTON)'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
             {role === 'referee' ? (
               <button 
                 onClick={handleOpenEditArchiveModal} 
-                className="bg-white hover:bg-surface-variant text-black font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none shrink-0 uppercase"
+                className="bg-white hover:bg-surface-variant text-black font-black text-[10px] md:text-xs py-1.5 px-3 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase flex items-center gap-1.5"
               >
-                EDIT DETAIL ARSIP
+                <Edit3 size={12} className="stroke-[2.5]" />
+                <span>Edit Detail Arsip</span>
               </button>
             ) : (
               <button 
@@ -2797,16 +2803,23 @@ export default function App() {
                     alert("Password Wasit salah!");
                   }
                 }} 
-                className="bg-black hover:bg-brutal-blue text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none shrink-0 uppercase"
+                className="bg-white hover:bg-surface-variant text-black font-black text-[10px] md:text-xs py-1.5 px-3 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase flex items-center gap-1.5"
               >
-                LOGIN WASIT UNTUK EDIT
+                <Key size={12} className="stroke-[2.5]" />
+                <span>Login Wasit</span>
               </button>
             )}
             <button 
-              onClick={() => setViewingArchive(null)} 
-              className="bg-black hover:bg-surface-variant text-white hover:text-black font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase"
+              onClick={() => {
+                setViewingArchive(null);
+                if (!role || role === 'spectator') {
+                  setRole(null);
+                }
+              }} 
+              className="bg-black hover:bg-brutal-blue text-white font-black text-[10px] md:text-xs py-1.5 px-3 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase flex items-center gap-1.5"
             >
-              KEMBALI KE BERANDA
+              <ArrowLeft size={12} className="stroke-[2.5]" />
+              <span>Kembali</span>
             </button>
           </div>
         </div>
@@ -2863,29 +2876,76 @@ export default function App() {
         </div>
         
         {isMenuOpen && (
-          <div className="absolute right-4 top-16 w-60 bg-white shadow-brutal border-[3px] border-black py-2 z-50 animate-scale-in">
+          <div className="absolute right-4 top-16 w-64 bg-white shadow-brutal border-[3px] border-black py-2 z-50 animate-scale-in">
             <div className="px-4 py-2 border-b-2 border-black mb-1 bg-surface-variant">
-               <p className="text-[9px] font-black text-black uppercase tracking-wider">Akses: {role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}</p>
+               <p className="text-[9px] font-black text-black uppercase tracking-wider">
+                 {viewingArchive ? `Arsip: ${role === 'referee' ? 'Mode Wasit' : 'Mode Penonton'}` : `Akses: ${role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}`}
+               </p>
             </div>
-            {role === 'referee' && (
+            
+            {viewingArchive ? (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><Shuffle size={14}/> Buat Bagan Otomatis</button>
-                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase"><Trash2 size={14} className="text-warning-red"/> Kelola Arsip</button>
-                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
-                {Object.keys(tournamentData.pools || {}).length > 0 && (
+                {role === 'referee' ? (
                   <>
-                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Semua Bagan</button>
-                    <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
-                      <Archive size={14}/> Arsipkan Turnamen
+                    <button onClick={() => { handleOpenEditArchiveModal(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Edit3 size={14}/> Edit Detail Arsip
+                    </button>
+                    <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Archive size={14}/> Kelola Arsip Lainnya
+                    </button>
+                    <button onClick={() => { setViewingArchive(null); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
+                      <ArrowLeft size={14}/> Kembali ke Turnamen Aktif
+                    </button>
+                    <button onClick={() => { handleChangePassword(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
+                      <Key size={14}/> Ganti Password Wasit
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => { 
+                      setIsMenuOpen(false);
+                      const pin = window.prompt("Masukkan Password Wasit untuk Mengedit Arsip:");
+                      if (pin === appSettings.refereePin) {
+                        setRole('referee');
+                        localStorage.setItem('tournament_role', 'referee');
+                        localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+                        setSessionPinVersion(appSettings.pinVersion);
+                        alert("Berhasil login sebagai Wasit! Sekarang Anda dapat mengedit arsip ini.");
+                      } else if (pin !== null) {
+                        alert("Password Wasit salah!");
+                      }
+                    }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Key size={14}/> Login Wasit (Edit Arsip)
+                    </button>
+                    <button onClick={() => { setViewingArchive(null); setRole(null); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
+                      <ArrowLeft size={14}/> Kembali ke Beranda
                     </button>
                   </>
                 )}
-                <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
-                  <Key size={14}/> Ganti Password Wasit
-                </button>
               </>
+            ) : (
+              role === 'referee' && (
+                <>
+                  <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                  <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase"><Archive size={14}/> Kelola Arsip</button>
+                  {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                  {Object.keys(tournamentData.pools || {}).length > 0 && (
+                    <>
+                      <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                      <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
+                        <Archive size={14}/> Arsipkan Turnamen
+                      </button>
+                    </>
+                  )}
+                  <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
+                    <Key size={14}/> Ganti Password Wasit
+                  </button>
+                </>
+              )
             )}
-            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t-2 border-black transition-colors uppercase"><LogOut size={14}/> Keluar Sistem</button>
+            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-black hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 border-t-2 border-black transition-colors uppercase">
+              <LogOut size={14}/> Keluar Sistem
+            </button>
           </div>
         )}
       </header>
@@ -3064,7 +3124,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto bg-white">
-        {currentTournament.isArchived && (
+        {currentTournament.isArchived && !viewingArchive && (
           role === 'referee' ? (
             <div className="bg-success-green text-black font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 border-b-[3px] border-black shadow-brutal-sm relative z-30">
               <Archive size={16}/> Turnamen ini telah diarsipkan (Mode Edit Wasit Aktif)
