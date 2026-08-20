@@ -35,7 +35,15 @@ import {
   Key,
   ArrowLeft,
   Edit3,
-  Eye
+  Eye,
+  Calendar,
+  MapPin,
+  Phone,
+  ExternalLink,
+  FileText,
+  CheckCircle2,
+  Image,
+  Sparkles
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -154,6 +162,33 @@ export default function App() {
   const touchStartX = useRef(null);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState(null);
 
+  // Upcoming Events State
+  const [eventsList, setEventsList] = useState([]);
+  const [showEventsHub, setShowEventsHub] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventFormModal, setShowEventFormModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [eventPosterFile, setEventPosterFile] = useState(null);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [eventDetailTab, setEventDetailTab] = useState('info'); // 'info' | 'poster' | 'rules' | 'participants'
+  const [eventParticipantSearch, setEventParticipantSearch] = useState('');
+  const [eventFilterStatus, setEventFilterStatus] = useState('all'); // 'all' | 'open' | 'upcoming' | 'closed'
+
+  // Event form fields state
+  const [eventFormTitle, setEventFormTitle] = useState('');
+  const [eventFormOrganizer, setEventFormOrganizer] = useState('');
+  const [eventFormCategory, setEventFormCategory] = useState('');
+  const [eventFormDate, setEventFormDate] = useState('');
+  const [eventFormTime, setEventFormTime] = useState('');
+  const [eventFormLocation, setEventFormLocation] = useState('');
+  const [eventFormPrizePool, setEventFormPrizePool] = useState('');
+  const [eventFormRegistrationFee, setEventFormRegistrationFee] = useState('');
+  const [eventFormContactPerson, setEventFormContactPerson] = useState('');
+  const [eventFormStatus, setEventFormStatus] = useState('open'); // 'open' | 'upcoming' | 'closed'
+  const [eventFormPosterUrl, setEventFormPosterUrl] = useState('');
+  const [eventFormRules, setEventFormRules] = useState('');
+  const [eventFormParticipantsText, setEventFormParticipantsText] = useState('');
+
   // App Settings (for referee password / version)
   const [appSettings, setAppSettings] = useState({ refereePin: 'tempur2026', pinVersion: 1 });
   const [sessionPinVersion, setSessionPinVersion] = useState(() => {
@@ -259,6 +294,18 @@ export default function App() {
       console.error("Gagal memuat riwayat arsip:", err);
     });
 
+    const eventsCol = collection(db, 'artifacts', appId, 'public', 'data', 'tournament', 'upcoming_events', 'items');
+    const unsubEvents = onSnapshot(eventsCol, (snapshot) => {
+      const list = [];
+      snapshot.forEach(doc => {
+        list.push(doc.data());
+      });
+      list.sort((a, b) => new Date(a.eventDate || a.createdAt) - new Date(b.eventDate || b.createdAt));
+      setEventsList(list);
+    }, (err) => {
+      console.error("Gagal memuat event mendatang:", err);
+    });
+
     // Listen to App Settings for Session / Password Versioning
     const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'app_settings');
     const unsubSettings = onSnapshot(settingsRef, (snapshot) => {
@@ -275,6 +322,7 @@ export default function App() {
     return () => {
       unsub();
       unsubArchives();
+      unsubEvents();
       unsubSettings();
     };
   }, [user]);
@@ -1347,6 +1395,9 @@ export default function App() {
         if (target === 'archive_logo') {
           setArchiveLogoFile(file);
           alert("Gambar berhasil ditempel dari clipboard sebagai Logo Baru.");
+        } else if (target === 'event_poster') {
+          setEventPosterFile(file);
+          alert("Pamflet event berhasil ditempel dari clipboard!");
         } else if (target === 'j1' || target === 'j2' || target === 'j3' || target === 'j4') {
           const compressed = await compressImage(file, 600, 0.82);
           const path = `winners/${currentTournament.id || 'live'}_podium_${target}_${Date.now()}.jpg`;
@@ -1390,6 +1441,127 @@ export default function App() {
         }
         break;
       }
+    }
+  };
+
+  // ----------------------------------------------------
+  // UPCOMING EVENTS CRUD HANDLERS
+  // ----------------------------------------------------
+  const handleOpenAddEvent = () => {
+    setEditingEvent(null);
+    setEventFormTitle('');
+    setEventFormOrganizer(tournamentOrganizer || 'PELANGI Majalengka');
+    setEventFormCategory('Aduan Standar 54/58 (Open Nasional)');
+    setEventFormDate('');
+    setEventFormTime('08:00 WIB - Selesai');
+    setEventFormLocation('Lapang Sirkuit Gelora Majalengka, Jawa Barat');
+    setEventFormPrizePool('Rp 25.000.000 + Piala Bergilir & Piagam');
+    setEventFormRegistrationFee('Rp 150.000 / Peserta');
+    setEventFormContactPerson('081234567890 (Panitia)');
+    setEventFormStatus('open');
+    setEventFormPosterUrl('');
+    setEventFormRules(`1. Layangan aduan ukuran standar 54/58 cm.
+2. Benang gelasan bebas (tidak boleh mengandung kawat/metal).
+3. Peserta wajib hadir 30 menit sebelum jadwal pertandingan.
+4. Sistem gugur (Single Elimination / Double Elimination).
+5. Keputusan wasit bersifat mutlak dan tidak dapat diganggu gugat.`);
+    setEventFormParticipantsText('');
+    setEventPosterFile(null);
+    setShowEventFormModal(true);
+  };
+
+  const handleOpenEditEvent = (evt) => {
+    setEditingEvent(evt);
+    setEventFormTitle(evt.title || '');
+    setEventFormOrganizer(evt.organizer || '');
+    setEventFormCategory(evt.category || '');
+    setEventFormDate(evt.eventDate || '');
+    setEventFormTime(evt.eventTime || '');
+    setEventFormLocation(evt.location || '');
+    setEventFormPrizePool(evt.prizePool || '');
+    setEventFormRegistrationFee(evt.registrationFee || '');
+    setEventFormContactPerson(evt.contactPerson || '');
+    setEventFormStatus(evt.status || 'open');
+    setEventFormPosterUrl(evt.posterUrl || '');
+    setEventFormRules(evt.rules || '');
+    setEventFormParticipantsText(Array.isArray(evt.participants) ? evt.participants.join('\n') : (evt.participants || ''));
+    setEventPosterFile(null);
+    setShowEventFormModal(true);
+  };
+
+  const handleSaveEvent = async (e) => {
+    e.preventDefault();
+    if (role !== 'referee') return;
+    if (!eventFormTitle.trim()) return showError("Judul event tidak boleh kosong.");
+
+    setIsSavingEvent(true);
+    try {
+      let finalPosterUrl = eventFormPosterUrl;
+      if (eventPosterFile) {
+        const compressed = await compressImage(eventPosterFile, 1200, 0.85);
+        const path = `events/poster_${Date.now()}_${eventPosterFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const url = await handleUploadImage(compressed, path);
+        if (url) {
+          finalPosterUrl = url;
+        }
+      }
+
+      const participantsList = eventFormParticipantsText
+        .split('\n')
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+
+      const eventId = editingEvent?.id || ('event_' + Date.now());
+      const eventDoc = {
+        id: eventId,
+        title: eventFormTitle.trim(),
+        organizer: eventFormOrganizer.trim(),
+        category: eventFormCategory.trim(),
+        eventDate: eventFormDate.trim(),
+        eventTime: eventFormTime.trim(),
+        location: eventFormLocation.trim(),
+        prizePool: eventFormPrizePool.trim(),
+        registrationFee: eventFormRegistrationFee.trim(),
+        contactPerson: eventFormContactPerson.trim(),
+        status: eventFormStatus,
+        posterUrl: finalPosterUrl || null,
+        rules: eventFormRules.trim(),
+        participants: participantsList,
+        updatedAt: new Date().toISOString(),
+        createdAt: editingEvent?.createdAt || new Date().toISOString()
+      };
+
+      const eventRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'upcoming_events', 'items', eventId);
+      await setDoc(eventRef, eventDoc);
+
+      if (selectedEvent && selectedEvent.id === eventId) {
+        setSelectedEvent(eventDoc);
+      }
+
+      setShowEventFormModal(false);
+      setIsSavingEvent(false);
+      alert("Event berhasil disimpan!");
+    } catch (err) {
+      console.error("Gagal menyimpan event:", err);
+      showError("Gagal menyimpan event.");
+      setIsSavingEvent(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId, title) => {
+    if (role !== 'referee') return;
+    if (!window.confirm(`Hapus event "${title}" secara permanen?`)) return;
+
+    try {
+      const eventRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'upcoming_events', 'items', eventId);
+      await deleteDoc(eventRef);
+      if (selectedEvent?.id === eventId) {
+        setSelectedEvent(null);
+      }
+      alert("Event berhasil dihapus.");
+    } catch (err) {
+      console.error("Gagal menghapus event:", err);
+      showError("Gagal menghapus event.");
     }
   };
 
@@ -2657,6 +2829,838 @@ export default function App() {
     setTimeout(() => setSearchResult(null), 3500);
   };
 
+  // ----------------------------------------------------
+  // EVENT MODAL RENDERERS (USABLE IN LANDING & APP VIEWS)
+  // ----------------------------------------------------
+  const renderEventsHubModal = () => {
+    if (!showEventsHub) return null;
+    const filteredEvents = eventsList.filter(e => eventFilterStatus === 'all' || e.status === eventFilterStatus);
+
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowEventsHub(false)}></div>
+        <div className="relative bg-white w-full max-w-2xl p-4 sm:p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[90vh]">
+          {/* Header */}
+          <div className="flex justify-between items-start border-b-[3px] border-black pb-4 mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="bg-safety-orange text-white text-[9px] font-black px-2 py-0.5 border border-black uppercase tracking-widest">
+                  Agenda & Turnamen
+                </span>
+                {eventsList.length > 0 && (
+                  <span className="bg-black text-white text-[9px] font-black px-2 py-0.5 uppercase tracking-wider">
+                    {eventsList.length} Event
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black text-black mt-1 flex items-center gap-2 tracking-tight uppercase">
+                <Calendar className="text-black stroke-[2.5]" size={24}/> Event Mendatang
+              </h3>
+              <p className="text-[10px] sm:text-xs font-bold text-slate-600 uppercase tracking-wider mt-0.5">
+                Jadwal, Pamflet, Peraturan & Daftar Peserta Turnamen Layangan
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowEventsHub(false)}
+              className="w-8 h-8 bg-white border-2 border-black text-black flex items-center justify-center font-black transition-all hover:bg-black hover:text-white active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm shrink-0"
+            >
+              <X size={16} className="stroke-[3]" />
+            </button>
+          </div>
+
+          {/* Action Bar (Filter & Add Button) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+            {/* Status Filter */}
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: 'all', label: 'Semua' },
+                { id: 'open', label: 'Pendaftaran Buka' },
+                { id: 'upcoming', label: 'Segera Hadir' },
+                { id: 'closed', label: 'Ditutup' }
+              ].map(filter => (
+                <button
+                  key={filter.id}
+                  onClick={() => setEventFilterStatus(filter.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider border-2 border-black transition-all shrink-0 active:translate-x-0.5 active:translate-y-0.5",
+                    eventFilterStatus === filter.id
+                      ? "bg-black text-white shadow-brutal-sm"
+                      : "bg-white text-black hover:bg-surface-variant"
+                  )}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Panitia / Wasit Add Event Button */}
+            {role === 'referee' && (
+              <button
+                onClick={handleOpenAddEvent}
+                className="bg-success-green hover:bg-green-400 text-black px-4 py-2 font-black text-xs uppercase tracking-wider border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <Plus size={16} className="stroke-[3]" />
+                <span>Tambah Event</span>
+              </button>
+            )}
+          </div>
+
+          {/* Events List */}
+          <div className="space-y-4 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin flex-1">
+            {filteredEvents.length === 0 ? (
+              <div className="text-center py-16 border-2 border-dashed border-black/30 bg-surface-variant/50 p-6">
+                <Calendar size={36} className="text-slate-400 mx-auto mb-2 stroke-[1.5]" />
+                <p className="text-black font-black uppercase text-xs sm:text-sm">Belum ada event mendatang yang terdaftar.</p>
+                {role === 'referee' ? (
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Klik tombol "+ Tambah Event" untuk mempublikasikan event baru.</p>
+                ) : (
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Pantau terus halaman ini untuk update turnamen berikutnya!</p>
+                )}
+              </div>
+            ) : (
+              filteredEvents.map((evt) => {
+                const participantsCount = Array.isArray(evt.participants) ? evt.participants.length : 0;
+                const statusColors = {
+                  open: 'bg-success-green text-black',
+                  upcoming: 'bg-brutal-blue text-white',
+                  closed: 'bg-warning-red text-white'
+                };
+                const statusLabels = {
+                  open: 'Pendaftaran Dibuka',
+                  upcoming: 'Segera Hadir',
+                  closed: 'Pendaftaran Ditutup'
+                };
+
+                return (
+                  <div 
+                    key={evt.id} 
+                    className="bg-white border-[3px] border-black p-4 sm:p-5 shadow-brutal transition-all hover:-translate-y-0.5 flex flex-col md:flex-row gap-4 items-start"
+                  >
+                    {/* Poster Thumbnail or Icon */}
+                    {evt.posterUrl ? (
+                      <div 
+                        onClick={() => {
+                          setSelectedEvent(evt);
+                          setEventDetailTab('poster');
+                        }}
+                        className="w-full md:w-36 h-36 bg-surface-variant border-2 border-black overflow-hidden shrink-0 shadow-brutal-sm cursor-pointer group relative"
+                        title="Klik untuk lihat poster"
+                      >
+                        <img src={evt.posterUrl} alt="Pamflet" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <Eye size={20} className="stroke-[2.5]" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full md:w-36 h-28 md:h-36 bg-surface-variant border-2 border-black flex flex-col items-center justify-center text-black shrink-0 shadow-brutal-sm p-3 text-center">
+                        <Calendar size={28} className="stroke-[2.5] text-brutal-blue mb-1" />
+                        <span className="text-[9px] font-black uppercase text-slate-500">Pamflet Belum Diunggah</span>
+                      </div>
+                    )}
+
+                    {/* Event Details */}
+                    <div className="flex-1 min-w-0 w-full flex flex-col justify-between self-stretch">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className={cn(
+                            "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border border-black shadow-brutal-sm",
+                            statusColors[evt.status] || 'bg-black text-white'
+                          )}>
+                            {statusLabels[evt.status] || evt.status}
+                          </span>
+                          {evt.category && (
+                            <span className="text-[9px] font-black uppercase tracking-wider bg-surface-variant text-black px-2 py-0.5 border border-black">
+                              {evt.category}
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="text-sm sm:text-base font-black text-black uppercase tracking-tight leading-snug">
+                          {evt.title}
+                        </h4>
+
+                        <p className="text-[10px] font-black text-brutal-blue uppercase tracking-wider mt-0.5">
+                          Penyelenggara: {evt.organizer}
+                        </p>
+
+                        {/* Info grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 pt-3 border-t-2 border-black/20 text-[10px] font-bold text-black uppercase">
+                          {evt.eventDate && (
+                            <div className="flex items-center gap-1.5">
+                              <Calendar size={13} className="text-black shrink-0 stroke-[2.5]" />
+                              <span className="truncate">
+                                {new Date(evt.eventDate).toLocaleDateString('id-ID', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                                {evt.eventTime ? ` • ${evt.eventTime}` : ''}
+                              </span>
+                            </div>
+                          )}
+                          {evt.location && (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin size={13} className="text-black shrink-0 stroke-[2.5]" />
+                              <span className="truncate">{evt.location}</span>
+                            </div>
+                          )}
+                          {evt.prizePool && (
+                            <div className="flex items-center gap-1.5">
+                              <Trophy size={13} className="text-warning-red shrink-0 stroke-[2.5]" />
+                              <span className="truncate">Hadiah: <strong>{evt.prizePool}</strong></span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <Users size={13} className="text-black shrink-0 stroke-[2.5]" />
+                            <span>{participantsCount} Peserta Terdaftar</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t-2 border-black/20">
+                        <button
+                          onClick={() => {
+                            setSelectedEvent(evt);
+                            setEventDetailTab('info');
+                          }}
+                          className="flex-1 bg-black hover:bg-brutal-blue text-white font-black text-[10px] sm:text-xs uppercase tracking-wider py-2.5 px-4 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5"
+                        >
+                          <Eye size={14} className="stroke-[2.5]" />
+                          <span>Lihat Detail, Pamflet & Peserta</span>
+                        </button>
+
+                        {role === 'referee' && (
+                          <>
+                            <button
+                              onClick={() => handleOpenEditEvent(evt)}
+                              className="bg-white hover:bg-surface-variant text-black p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center shrink-0"
+                              title="Edit Event"
+                            >
+                              <Edit3 size={15} className="stroke-[2.5]" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteEvent(evt.id, evt.title)}
+                              className="bg-warning-red hover:bg-red-700 text-white p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center shrink-0"
+                              title="Hapus Event"
+                            >
+                              <Trash2 size={15} className="stroke-[2.5]" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer Close */}
+          <div className="mt-4 pt-4 border-t-[3px] border-black flex justify-end">
+            <button onClick={() => setShowEventsHub(false)} className="w-full sm:w-auto bg-black hover:bg-brutal-blue text-white px-6 py-2.5 font-black transition-all shadow-brutal border-2 border-black active:translate-x-0.5 active:translate-y-0.5 text-xs uppercase tracking-wider text-center">
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEventDetailModal = () => {
+    if (!selectedEvent) return null;
+
+    return (
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedEvent(null)}></div>
+        <div className="relative bg-white w-full max-w-2xl p-4 sm:p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[92vh]">
+          {/* Header */}
+          <div className="flex justify-between items-start border-b-[3px] border-black pb-3 mb-3">
+            <div className="min-w-0 flex-1 pr-2">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className={cn(
+                  "text-[9px] font-black uppercase tracking-wider px-2 py-0.5 border border-black",
+                  selectedEvent.status === 'open' ? 'bg-success-green text-black' :
+                  selectedEvent.status === 'upcoming' ? 'bg-brutal-blue text-white' : 'bg-warning-red text-white'
+                )}>
+                  {selectedEvent.status === 'open' ? 'Pendaftaran Dibuka' : selectedEvent.status === 'upcoming' ? 'Segera Hadir' : 'Pendaftaran Ditutup'}
+                </span>
+                {selectedEvent.category && (
+                  <span className="text-[9px] font-black uppercase tracking-wider bg-surface-variant text-black px-2 py-0.5 border border-black">
+                    {selectedEvent.category}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-base sm:text-xl font-black text-black uppercase tracking-tight leading-snug">
+                {selectedEvent.title}
+              </h3>
+              <p className="text-[10px] font-black text-slate-600 uppercase tracking-wider mt-0.5">
+                Penyelenggara: {selectedEvent.organizer}
+              </p>
+            </div>
+            <button 
+              onClick={() => setSelectedEvent(null)}
+              className="w-8 h-8 bg-white border-2 border-black text-black flex items-center justify-center font-black transition-all hover:bg-black hover:text-white active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm shrink-0"
+            >
+              <X size={16} className="stroke-[3]" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1.5 border-b-2 border-black pb-2 mb-4 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'info', label: 'Informasi', icon: FileText },
+              { id: 'poster', label: 'Pamflet', icon: Image },
+              { id: 'rules', label: 'Peraturan', icon: CheckCircle2 },
+              { id: 'participants', label: `Peserta (${selectedEvent.participants?.length || 0})`, icon: Users }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setEventDetailTab(tab.id)}
+                  className={cn(
+                    "px-3 py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-wider border-2 border-black transition-all flex items-center gap-1.5 shrink-0 active:translate-x-0.5 active:translate-y-0.5",
+                    eventDetailTab === tab.id
+                      ? "bg-black text-white shadow-brutal-sm"
+                      : "bg-white text-black hover:bg-surface-variant"
+                  )}
+                >
+                  <Icon size={13} className="stroke-[2.5]" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin space-y-4">
+            {/* Tab 1: Informasi */}
+            {eventDetailTab === 'info' && (
+              <div className="space-y-4">
+                {/* Quick Hero Banner */}
+                {selectedEvent.posterUrl && (
+                  <div 
+                    onClick={() => {
+                      setLightboxPhotos([selectedEvent.posterUrl]);
+                      setLightboxIndex(0);
+                    }}
+                    className="w-full h-44 sm:h-56 bg-black border-2 border-black overflow-hidden shadow-brutal-sm cursor-pointer relative group"
+                  >
+                    <img src={selectedEvent.posterUrl} alt="Pamflet" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[9px] font-black px-2 py-1 border border-white uppercase flex items-center gap-1">
+                      <ZoomIn size={12} /> Klik untuk Perbesar Pamflet
+                    </div>
+                  </div>
+                )}
+
+                {/* Grid of Key Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-surface-variant border-2 border-black p-3 shadow-brutal-sm">
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
+                      <Calendar size={11} className="stroke-[3] text-black" /> Tanggal & Waktu
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-black uppercase">
+                      {selectedEvent.eventDate ? new Date(selectedEvent.eventDate).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'TBA'}
+                    </p>
+                    <p className="text-[10px] font-bold text-slate-700 uppercase mt-0.5">{selectedEvent.eventTime || '08:00 WIB - Selesai'}</p>
+                  </div>
+
+                  <div className="bg-surface-variant border-2 border-black p-3 shadow-brutal-sm">
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
+                      <MapPin size={11} className="stroke-[3] text-black" /> Lokasi / Venue
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-black uppercase">
+                      {selectedEvent.location || 'Lokasi Pertandingan'}
+                    </p>
+                  </div>
+
+                  <div className="bg-surface-variant border-2 border-black p-3 shadow-brutal-sm">
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
+                      <Trophy size={11} className="stroke-[3] text-warning-red" /> Total Hadiah (Prize Pool)
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-black uppercase">
+                      {selectedEvent.prizePool || 'Hadiah Menarik + Tropi'}
+                    </p>
+                  </div>
+
+                  <div className="bg-surface-variant border-2 border-black p-3 shadow-brutal-sm">
+                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1 mb-1">
+                      <Award size={11} className="stroke-[3] text-black" /> Biaya Pendaftaran (HTM)
+                    </span>
+                    <p className="text-xs sm:text-sm font-black text-black uppercase">
+                      {selectedEvent.registrationFee || 'Gratis / Sesuai Ketentuan'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* WhatsApp Contact Box */}
+                {selectedEvent.contactPerson && (
+                  <div className="bg-success-green/10 border-2 border-black p-3.5 shadow-brutal-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-success-green text-black border-2 border-black flex items-center justify-center shrink-0 shadow-brutal-sm">
+                        <Phone size={18} className="stroke-[2.5]" />
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Narahubung / Pendaftaran</span>
+                        <p className="text-xs sm:text-sm font-black text-black uppercase">{selectedEvent.contactPerson}</p>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const rawPhone = selectedEvent.contactPerson.replace(/[^0-9]/g, '');
+                      const cleanPhone = rawPhone.startsWith('0') ? '62' + rawPhone.slice(1) : rawPhone;
+                      if (!cleanPhone) return null;
+                      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Halo Panitia, saya ingin menanyakan / mendaftar untuk event: ${selectedEvent.title}`)}`;
+                      return (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-success-green hover:bg-green-400 text-black font-black text-xs uppercase tracking-wider py-2.5 px-4 border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5 shrink-0"
+                        >
+                          <span>Chat WhatsApp</span>
+                          <ExternalLink size={13} className="stroke-[3]" />
+                        </a>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Pamflet Poster */}
+            {eventDetailTab === 'poster' && (
+              <div className="space-y-3">
+                {selectedEvent.posterUrl ? (
+                  <div className="flex flex-col items-center">
+                    <div 
+                      onClick={() => {
+                        setLightboxPhotos([selectedEvent.posterUrl]);
+                        setLightboxIndex(0);
+                      }}
+                      className="w-full max-w-md bg-black border-2 border-black overflow-hidden shadow-brutal cursor-pointer group relative"
+                      title="Klik untuk melihat fullscreen"
+                    >
+                      <img src={selectedEvent.posterUrl} alt="Pamflet Event" className="w-full h-auto object-contain" />
+                      <div className="p-2 bg-black text-white text-center text-[10px] font-black uppercase flex items-center justify-center gap-1">
+                        <ZoomIn size={13} /> Klik untuk Melihat Layar Penuh
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 border-2 border-dashed border-black/30 p-6 bg-surface-variant">
+                    <Image size={32} className="text-slate-400 mx-auto mb-2" />
+                    <p className="text-black font-bold uppercase text-xs">Belum ada gambar pamflet untuk event ini.</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 3: Peraturan */}
+            {eventDetailTab === 'rules' && (
+              <div className="bg-surface-variant border-2 border-black p-4 sm:p-5 shadow-brutal-sm space-y-3">
+                <h4 className="text-xs sm:text-sm font-black text-black uppercase tracking-wider flex items-center gap-2 border-b-2 border-black/20 pb-2">
+                  <CheckCircle2 size={16} className="text-brutal-blue stroke-[2.5]" /> Peraturan & Tata Tertib Pertandingan
+                </h4>
+                {selectedEvent.rules ? (
+                  <div className="text-xs font-bold text-black leading-relaxed whitespace-pre-line">
+                    {selectedEvent.rules}
+                  </div>
+                ) : (
+                  <p className="text-slate-500 font-bold uppercase text-[10px]">Belum ada peraturan spesifik yang dicantumkan.</p>
+                )}
+              </div>
+            )}
+
+            {/* Tab 4: Peserta Terdaftar */}
+            {eventDetailTab === 'participants' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black text-black uppercase tracking-wider">
+                    Total Peserta: {selectedEvent.participants?.length || 0} Terdaftar
+                  </span>
+                  <div className="relative w-48 sm:w-56">
+                    <input
+                      type="text"
+                      value={eventParticipantSearch}
+                      onChange={(e) => setEventParticipantSearch(e.target.value)}
+                      placeholder="Cari nama peserta..."
+                      className="w-full bg-white border-2 border-black px-2.5 py-1.5 text-xs font-bold text-black outline-none"
+                    />
+                  </div>
+                </div>
+
+                {(!selectedEvent.participants || selectedEvent.participants.length === 0) ? (
+                  <div className="text-center py-10 border-2 border-dashed border-black/30 bg-surface-variant p-4">
+                    <Users size={28} className="text-slate-400 mx-auto mb-1" />
+                    <p className="text-black font-bold uppercase text-xs">Belum ada peserta yang terdaftar.</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Daftar sekarang melalui kontak panitia di atas!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                    {selectedEvent.participants
+                      .filter(p => !eventParticipantSearch || p.toLowerCase().includes(eventParticipantSearch.toLowerCase()))
+                      .map((name, idx) => (
+                        <div key={idx} className="bg-white border-2 border-black p-2.5 flex items-center gap-2.5 shadow-brutal-sm">
+                          <span className="w-6 h-6 bg-black text-white text-[10px] font-black flex items-center justify-center shrink-0 border border-black">
+                            {idx + 1}
+                          </span>
+                          <span className="font-black text-xs text-black uppercase truncate">{name}</span>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="mt-4 pt-3 border-t-[3px] border-black flex flex-wrap items-center justify-between gap-2">
+            {role === 'referee' ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    handleOpenEditEvent(selectedEvent);
+                  }}
+                  className="bg-white hover:bg-surface-variant text-black px-3.5 py-2 font-black text-xs uppercase tracking-wider border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center gap-1.5"
+                >
+                  <Edit3 size={14} className="stroke-[2.5]" />
+                  <span>Edit Event</span>
+                </button>
+                <button
+                  onClick={() => handleDeleteEvent(selectedEvent.id, selectedEvent.title)}
+                  className="bg-warning-red hover:bg-red-700 text-white px-3.5 py-2 font-black text-xs uppercase tracking-wider border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} className="stroke-[2.5]" />
+                  <span>Hapus</span>
+                </button>
+              </div>
+            ) : <div />}
+
+            <button 
+              onClick={() => setSelectedEvent(null)} 
+              className="bg-black hover:bg-brutal-blue text-white px-6 py-2 font-black transition-all shadow-brutal border-2 border-black active:translate-x-0.5 active:translate-y-0.5 text-xs uppercase tracking-wider"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEventFormModal = () => {
+    if (!showEventFormModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+        <div className="bg-white max-w-xl w-full shadow-brutal border-[3px] border-black overflow-hidden animate-scale-in flex flex-col max-h-[92vh]">
+          <div className="bg-black p-4 sm:p-5 text-white border-b-[3px] border-black flex justify-between items-center">
+            <div>
+              <h3 className="text-base sm:text-lg font-black uppercase tracking-wide flex items-center gap-2">
+                <Calendar size={20} /> {editingEvent ? 'Edit Event Mendatang' : 'Tambah Event Mendatang Baru'}
+              </h3>
+              <p className="text-[10px] sm:text-xs text-slate-300 font-bold uppercase mt-0.5">
+                Publikasikan turnamen baru untuk penonton dan calon peserta
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowEventFormModal(false)}
+              className="w-7 h-7 bg-white text-black border-2 border-black flex items-center justify-center font-black hover:bg-slate-200"
+            >
+              <X size={15} className="stroke-[3]" />
+            </button>
+          </div>
+
+          <form 
+            onSubmit={handleSaveEvent} 
+            onPaste={(e) => handlePasteImage(e, 'event_poster')} 
+            className="p-4 sm:p-6 space-y-3.5 overflow-y-auto flex-1 scrollbar-thin"
+          >
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black text-black uppercase tracking-widest">Judul Event / Turnamen *</label>
+              <input 
+                type="text" 
+                required
+                value={eventFormTitle} 
+                onChange={(e) => setEventFormTitle(e.target.value)}
+                className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                placeholder="Contoh: TURNAMEN LAYANGAN PIALA BUPATI 2026"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Penyelenggara</label>
+                <input 
+                  type="text" 
+                  value={eventFormOrganizer} 
+                  onChange={(e) => setEventFormOrganizer(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                  placeholder="Contoh: PELANGI Majalengka"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Kategori Turnamen</label>
+                <input 
+                  type="text" 
+                  value={eventFormCategory} 
+                  onChange={(e) => setEventFormCategory(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                  placeholder="Contoh: Aduan 54/58 (Open Nasional)"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Tanggal Pelaksanaan</label>
+                <input 
+                  type="date" 
+                  value={eventFormDate} 
+                  onChange={(e) => setEventFormDate(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Waktu / Jam</label>
+                <input 
+                  type="text" 
+                  value={eventFormTime} 
+                  onChange={(e) => setEventFormTime(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                  placeholder="08:00 WIB - Selesai"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Status Pendaftaran</label>
+                <select
+                  value={eventFormStatus}
+                  onChange={(e) => setEventFormStatus(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                >
+                  <option value="open">Pendaftaran Dibuka</option>
+                  <option value="upcoming">Segera Hadir</option>
+                  <option value="closed">Pendaftaran Ditutup</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black text-black uppercase tracking-widest">Lokasi / Venue</label>
+              <input 
+                type="text" 
+                value={eventFormLocation} 
+                onChange={(e) => setEventFormLocation(e.target.value)}
+                className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                placeholder="Contoh: Lapang Sirkuit Gelora Majalengka"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Total Hadiah (Prize Pool)</label>
+                <input 
+                  type="text" 
+                  value={eventFormPrizePool} 
+                  onChange={(e) => setEventFormPrizePool(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                  placeholder="Rp 25.000.000 + Piala"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Biaya Pendaftaran (HTM)</label>
+                <input 
+                  type="text" 
+                  value={eventFormRegistrationFee} 
+                  onChange={(e) => setEventFormRegistrationFee(e.target.value)}
+                  className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                  placeholder="Rp 150.000 / Peserta"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black text-black uppercase tracking-widest">Kontak Narahubung / WhatsApp</label>
+              <input 
+                type="text" 
+                value={eventFormContactPerson} 
+                onChange={(e) => setEventFormContactPerson(e.target.value)}
+                className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
+                placeholder="081234567890 (Panitia Turnamen)"
+              />
+            </div>
+
+            {/* Poster Upload & Paste */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black text-black uppercase tracking-widest">
+                Pamflet Poster Event (Upload atau Paste via Ctrl+V)
+              </label>
+              <div className="flex items-center gap-3 mt-1">
+                {(eventPosterFile || eventFormPosterUrl) && (
+                  <img 
+                    src={eventPosterFile ? URL.createObjectURL(eventPosterFile) : eventFormPosterUrl} 
+                    alt="Preview" 
+                    className="w-14 h-14 object-cover border-2 border-black bg-white shrink-0 shadow-brutal-sm" 
+                  />
+                )}
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => setEventPosterFile(e.target.files[0])}
+                  className="block w-full text-xs text-black file:mr-3 file:py-2 file:px-3 file:border-2 file:border-black file:text-xs file:font-black file:bg-white file:text-black hover:file:bg-surface-variant cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Rules */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-black text-black uppercase tracking-widest">Peraturan & Tata Tertib Pertandingan</label>
+              <textarea 
+                rows={4}
+                value={eventFormRules} 
+                onChange={(e) => setEventFormRules(e.target.value)}
+                className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all font-mono"
+                placeholder="Ketik peraturan pertandingan..."
+              />
+            </div>
+
+            {/* Participants Text */}
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">
+                  Daftar Peserta Terdaftar (1 Nama per Baris)
+                </label>
+                <span className="text-[9px] font-black text-slate-500 uppercase">
+                  {eventFormParticipantsText.split('\n').filter(p => p.trim().length > 0).length} Peserta
+                </span>
+              </div>
+              <textarea 
+                rows={4}
+                value={eventFormParticipantsText} 
+                onChange={(e) => setEventFormParticipantsText(e.target.value)}
+                className="w-full bg-white border-2 border-black p-2.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all font-mono"
+                placeholder="Contoh:&#10;Bintang Kites - Majalengka&#10;Garuda Perkasa - Cirebon&#10;Naga Hitam Team - Bandung"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t-[3px] border-black">
+              <button 
+                type="button" 
+                onClick={() => setShowEventFormModal(false)}
+                className="flex-1 py-3 px-4 text-xs font-black border-2 border-black text-black bg-white hover:bg-surface-variant active:translate-x-0.5 active:translate-y-0.5 uppercase transition-all"
+                disabled={isSavingEvent}
+              >
+                BATAL
+              </button>
+              <button 
+                type="submit" 
+                className="flex-1 py-3 px-4 text-xs font-black bg-black text-white hover:bg-brutal-blue border-2 border-black active:translate-x-0.5 active:translate-y-0.5 transition-all shadow-brutal-sm flex items-center justify-center gap-2 uppercase tracking-wider"
+                disabled={isSavingEvent}
+              >
+                {isSavingEvent ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> MENYIMPAN...
+                  </>
+                ) : (editingEvent ? 'SIMPAN PERUBAHAN' : 'PUBLIKASIKAN EVENT')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const renderCarouselLightbox = () => {
+    if (lightboxIndex === null || lightboxPhotos.length === 0) return null;
+    const total = lightboxPhotos.length;
+    const goNext = () => { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); };
+    const goPrev = () => { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); };
+    const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+    const handleTouchEnd = (e) => {
+      if (touchStartX.current === null) return;
+      const diff = touchStartX.current - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 44) diff > 0 ? goNext() : goPrev();
+      touchStartX.current = null;
+    };
+    return (
+      <div
+        className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Top bar */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-safe pt-4 z-10 pointer-events-none">
+          <span className="text-white text-[11px] font-black tracking-widest tabular-nums bg-black border border-white px-2.5 py-1 pointer-events-none">
+            {lightboxIndex + 1} / {total}
+          </span>
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="w-9 h-9 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 pointer-events-auto"
+          >
+            <X size={17} className="stroke-[3]" />
+          </button>
+        </div>
+
+        {/* Prev button */}
+        {total > 1 && (
+          <button
+            onClick={goPrev}
+            className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
+          >
+            <ChevronLeft size={22} strokeWidth={3} />
+          </button>
+        )}
+
+        {/* Image */}
+        <div className="flex items-center justify-center w-full px-14 md:px-24 max-h-[80vh]">
+          <img
+            key={`lb-${lightboxIndex}-${slideDir}`}
+            src={lightboxPhotos[lightboxIndex]}
+            alt={`Foto ${lightboxIndex + 1}`}
+            className={cn(
+              "max-w-full max-h-[78vh] object-contain border-[3px] border-white shadow-2xl",
+              slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
+            )}
+          />
+        </div>
+
+        {/* Next button */}
+        {total > 1 && (
+          <button
+            onClick={goNext}
+            className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
+          >
+            <ChevronRight size={22} strokeWidth={3} />
+          </button>
+        )}
+
+        {/* Dot indicators (≤10 foto) */}
+        {total > 1 && total <= 10 && (
+          <div className="absolute bottom-6 flex items-center gap-1.5">
+            {lightboxPhotos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => { setSlideDir(i > lightboxIndex ? 1 : -1); setLightboxIndex(i); }}
+                className={cn(
+                  "transition-all duration-200 border border-black",
+                  i === lightboxIndex ? "w-5 h-2.5 bg-brutal-blue" : "w-2.5 h-2.5 bg-white hover:bg-slate-300"
+                )}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Counter pill (>10 foto) */}
+        {total > 10 && (
+          <div className="absolute bottom-6 bg-black border border-white px-3 py-1">
+            <span className="text-white text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   // 4. CONDITIONAL RENDERING
   if (!hasConfig) {
@@ -2717,6 +3721,31 @@ export default function App() {
               </div>
               <ChevronRight className="w-5 h-5 text-black group-hover:translate-x-1 transition-transform stroke-[3]"/>
             </button>
+
+            {/* Event Mendatang Action Button */}
+            <button 
+              onClick={() => setShowEventsHub(true)} 
+              className="w-full flex items-center justify-between bg-safety-orange hover:bg-orange-600 text-white border-[3px] border-black p-4 transition-all group shadow-brutal active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+            >
+              <div className="flex items-center gap-3.5 text-left">
+                <div className="bg-black text-white p-2.5 border-2 border-black shadow-brutal-sm shrink-0">
+                  <Calendar className="w-5 h-5"/>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-black text-white text-xs sm:text-sm uppercase">Event Mendatang</h3>
+                    {eventsList.length > 0 && (
+                      <span className="bg-black text-white text-[8px] font-black px-1.5 py-0.2 uppercase border border-black">
+                        {eventsList.length} Event
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[9px] sm:text-[10px] text-white/90 font-bold uppercase tracking-wider mt-0.5">Pamflet, Jadwal, Peserta & Aturan</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform stroke-[3]"/>
+            </button>
+
             <form onSubmit={handleLoginReferee} className="space-y-3 pt-2 border-t-[3px] border-black">
               <label className="text-[10px] font-black text-black uppercase tracking-wider block">Login Wasit / Panitia</label>
               <div className="relative">
@@ -2799,6 +3828,12 @@ export default function App() {
              © Copyright by Senyap
            </p>
         </div>
+
+        {/* Modals on Landing Page */}
+        {renderEventsHubModal()}
+        {renderEventDetailModal()}
+        {renderEventFormModal()}
+        {renderCarouselLightbox()}
       </div>
     );
   }
@@ -2913,6 +3948,22 @@ export default function App() {
               <span className="sm:hidden">Wasit</span>
             </button>
           )}
+
+          {/* Event Mendatang Header Button */}
+          <button
+            onClick={() => setShowEventsHub(true)}
+            className="px-2.5 py-1.5 bg-safety-orange hover:bg-orange-600 text-white font-black text-[10px] md:text-xs border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 uppercase flex items-center gap-1.5 shrink-0"
+            title="Event Mendatang"
+          >
+            <Calendar size={13} className="stroke-[2.5]" />
+            <span className="hidden sm:inline">Event</span>
+            {eventsList.length > 0 && (
+              <span className="bg-black text-white text-[8px] font-black px-1 py-0.2 border border-black">
+                {eventsList.length}
+              </span>
+            )}
+          </button>
+
           {/* Search button in header - only when bracket is active */}
           {activeBracket && activePool !== 'Final' && (
             <button
@@ -2954,6 +4005,9 @@ export default function App() {
                     <button onClick={() => { handleOpenEditArchiveModal(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Edit3 size={14}/> Edit Detail Arsip
                     </button>
+                    <button onClick={() => { setShowEventsHub(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Calendar size={14}/> Event Mendatang
+                    </button>
                     <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Archive size={14}/> Kelola Arsip Lainnya
                     </button>
@@ -2984,6 +4038,9 @@ export default function App() {
                     }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Key size={14}/> Login Wasit (Edit Arsip)
                     </button>
+                    <button onClick={() => { setShowEventsHub(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Calendar size={14}/> Event Mendatang
+                    </button>
                     <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Archive size={14}/> Lihat Arsip Lainnya
                     </button>
@@ -3001,6 +4058,9 @@ export default function App() {
                 <>
                   <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
                     <Shuffle size={14}/> Buat Bagan Otomatis
+                  </button>
+                  <button onClick={() => { setShowEventsHub(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Calendar size={14}/> Event Mendatang
                   </button>
                   <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase">
                     <Archive size={14}/> Kelola Arsip Turnamen
@@ -3043,6 +4103,9 @@ export default function App() {
                     }
                   }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
                     <Key size={14}/> Login Wasit (Akses Penuh)
+                  </button>
+                  <button onClick={() => { setShowEventsHub(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Calendar size={14}/> Event Mendatang
                   </button>
                   <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
                     <Archive size={14}/> Riwayat Arsip Turnamen
@@ -3846,98 +4909,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Carousel Lightbox */}
-      {lightboxIndex !== null && lightboxPhotos.length > 0 && (() => {
-        const total = lightboxPhotos.length;
-        const goNext = () => { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); };
-        const goPrev = () => { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); };
-        const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-        const handleTouchEnd = (e) => {
-          if (touchStartX.current === null) return;
-          const diff = touchStartX.current - e.changedTouches[0].clientX;
-          if (Math.abs(diff) > 44) diff > 0 ? goNext() : goPrev();
-          touchStartX.current = null;
-        };
-        return (
-          <div
-            className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
-          >
-            {/* Top bar */}
-            <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-safe pt-4 z-10 pointer-events-none">
-              <span className="text-white text-[11px] font-black tracking-widest tabular-nums bg-black border border-white px-2.5 py-1 pointer-events-none">
-                {lightboxIndex + 1} / {total}
-              </span>
-              <button
-                onClick={() => setLightboxIndex(null)}
-                className="w-9 h-9 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 pointer-events-auto"
-              >
-                <X size={17} className="stroke-[3]" />
-              </button>
-            </div>
-
-            {/* Prev button */}
-            {total > 1 && (
-              <button
-                onClick={goPrev}
-                className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
-              >
-                <ChevronLeft size={22} strokeWidth={3} />
-              </button>
-            )}
-
-            {/* Image */}
-            <div className="flex items-center justify-center w-full px-14 md:px-24 max-h-[80vh]">
-              <img
-                key={`lb-${lightboxIndex}-${slideDir}`}
-                src={lightboxPhotos[lightboxIndex]}
-                alt={`Foto ${lightboxIndex + 1}`}
-                className={cn(
-                  "max-w-full max-h-[78vh] object-contain border-[3px] border-white shadow-2xl",
-                  slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
-                )}
-              />
-            </div>
-
-            {/* Next button */}
-            {total > 1 && (
-              <button
-                onClick={goNext}
-                className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
-              >
-                <ChevronRight size={22} strokeWidth={3} />
-              </button>
-            )}
-
-            {/* Dot indicators (≤10 foto) */}
-            {total > 1 && total <= 10 && (
-              <div className="absolute bottom-6 flex items-center gap-1.5">
-                {lightboxPhotos.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { setSlideDir(i > lightboxIndex ? 1 : -1); setLightboxIndex(i); }}
-                    className={cn(
-                      "transition-all duration-200 border border-black",
-                      i === lightboxIndex ? "w-5 h-2.5 bg-brutal-blue" : "w-2.5 h-2.5 bg-white hover:bg-slate-300"
-                    )}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* Counter pill (>10 foto) */}
-            {total > 10 && (
-              <div className="absolute bottom-6 bg-black border border-white px-3 py-1">
-                <span className="text-white text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      {/* Modals for Main View */}
+      {renderEventsHubModal()}
+      {renderEventDetailModal()}
+      {renderEventFormModal()}
+      {renderCarouselLightbox()}
 
       {/* Mobile Bottom Navigation Bar (Brutalist) */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 h-[72px] md:hidden z-50 border-t-[3px] border-black bg-white">
+      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-2 py-2 h-[72px] md:hidden z-50 border-t-[3px] border-black bg-white">
         <button
           onClick={() => {
             if (activePool === 'Final') {
@@ -3947,14 +4926,14 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={cn(
-            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
+            "flex flex-col items-center justify-center p-1.5 transition-all duration-75 uppercase",
             activePool !== 'Final' && !viewingArchive
-              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
               : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <Play size={18} className="stroke-[3]" />
-          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Live</span>
+          <Play size={17} className="stroke-[3]" />
+          <span className="font-black text-[10px] uppercase tracking-wider mt-0.5">Live</span>
         </button>
 
         <button
@@ -3963,14 +4942,24 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={cn(
-            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
+            "flex flex-col items-center justify-center p-1.5 transition-all duration-75 uppercase",
             activePool === 'Final' && !viewingArchive
-              ? "bg-safety-orange text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              ? "bg-safety-orange text-white border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
               : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <Trophy size={18} className="stroke-[3]" />
-          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Finals</span>
+          <Trophy size={17} className="stroke-[3]" />
+          <span className="font-black text-[10px] uppercase tracking-wider mt-0.5">Finals</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setShowEventsHub(true);
+          }}
+          className="flex flex-col items-center justify-center p-1.5 text-black hover:bg-surface-variant transition-all duration-75 uppercase active:translate-x-0 active:translate-y-0 active:shadow-none"
+        >
+          <Calendar size={17} className="stroke-[3] text-safety-orange" />
+          <span className="font-black text-[10px] uppercase tracking-wider mt-0.5">Events</span>
         </button>
 
         <button
@@ -3978,14 +4967,14 @@ export default function App() {
             setShowArchiveManagement(true);
           }}
           className={cn(
-            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
+            "flex flex-col items-center justify-center p-1.5 transition-all duration-75 uppercase",
             viewingArchive
-              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
               : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <Archive size={18} className="stroke-[3]" />
-          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">History</span>
+          <Archive size={17} className="stroke-[3]" />
+          <span className="font-black text-[10px] uppercase tracking-wider mt-0.5">History</span>
         </button>
 
         <button
@@ -3996,10 +4985,10 @@ export default function App() {
               el?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
           }}
-          className="flex flex-col items-center justify-center text-black p-2 hover:bg-surface-variant transition-all duration-75 uppercase active:translate-x-0 active:translate-y-0 active:shadow-none"
+          className="flex flex-col items-center justify-center text-black p-1.5 hover:bg-surface-variant transition-all duration-75 uppercase active:translate-x-0 active:translate-y-0 active:shadow-none"
         >
-          <Camera size={18} className="stroke-[3]" />
-          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Media</span>
+          <Camera size={17} className="stroke-[3]" />
+          <span className="font-black text-[10px] uppercase tracking-wider mt-0.5">Media</span>
         </button>
       </nav>
 
