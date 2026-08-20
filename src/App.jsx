@@ -2858,6 +2858,29 @@ export default function App() {
               <span className="w-2 h-2 bg-success-green border border-black rounded-full animate-pulse"></span> ONLINE
             </p>
           </div>
+          {/* Quick Referee Login button for Spectator in Header */}
+          {role !== 'referee' && !viewingArchive && (
+            <button
+              onClick={() => {
+                const pin = window.prompt("Masukkan Password Wasit:");
+                if (pin === appSettings.refereePin) {
+                  setRole('referee');
+                  localStorage.setItem('tournament_role', 'referee');
+                  localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+                  setSessionPinVersion(appSettings.pinVersion);
+                  alert("Berhasil login sebagai Wasit!");
+                } else if (pin !== null) {
+                  alert("Password Wasit salah!");
+                }
+              }}
+              className="px-2.5 py-1.5 bg-black text-white hover:bg-brutal-blue font-black text-[10px] md:text-xs border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 uppercase flex items-center gap-1.5 shrink-0"
+              title="Login Wasit"
+            >
+              <Key size={12} className="stroke-[2.5]" />
+              <span className="hidden sm:inline">Login Wasit</span>
+              <span className="sm:hidden">Wasit</span>
+            </button>
+          )}
           {/* Search button in header - only when bracket is active */}
           {activeBracket && activePool !== 'Final' && (
             <button
@@ -2879,10 +2902,17 @@ export default function App() {
         
         {isMenuOpen && (
           <div className="absolute right-4 top-16 w-64 bg-white shadow-brutal border-[3px] border-black py-2 z-50 animate-scale-in">
-            <div className="px-4 py-2 border-b-2 border-black mb-1 bg-surface-variant">
+            <div className="px-4 py-2 border-b-2 border-black mb-1 bg-surface-variant flex items-center justify-between">
                <p className="text-[9px] font-black text-black uppercase tracking-wider">
-                 {viewingArchive ? `Arsip: ${role === 'referee' ? 'Mode Wasit' : 'Mode Penonton'}` : `Akses: ${role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}`}
+                 {viewingArchive 
+                   ? `Arsip: ${role === 'referee' ? 'Mode Wasit' : 'Mode Penonton'}` 
+                   : `Akses: ${role === 'referee' ? 'Wasit / Panitia' : 'Mode Penonton'}`}
                </p>
+               {role === 'referee' ? (
+                 <span className="bg-black text-white text-[8px] font-black px-1.5 py-0.5 uppercase">Wasit</span>
+               ) : (
+                 <span className="bg-white text-black text-[8px] font-black px-1.5 py-0.5 border border-black uppercase">Publik</span>
+               )}
             </div>
             
             {viewingArchive ? (
@@ -2894,6 +2924,9 @@ export default function App() {
                     </button>
                     <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Archive size={14}/> Kelola Arsip Lainnya
+                    </button>
+                    <button onClick={() => { handlePrintPDF(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Printer size={14}/> Cetak Bagan Arsip (PDF)
                     </button>
                     <button onClick={() => { setViewingArchive(null); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
                       <ArrowLeft size={14}/> Kembali ke Turnamen Aktif
@@ -2919,21 +2952,40 @@ export default function App() {
                     }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
                       <Key size={14}/> Login Wasit (Edit Arsip)
                     </button>
-                    <button onClick={() => { setViewingArchive(null); setRole(null); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
-                      <ArrowLeft size={14}/> Kembali ke Beranda
+                    <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Archive size={14}/> Lihat Arsip Lainnya
+                    </button>
+                    <button onClick={() => { handlePrintPDF(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <Printer size={14}/> Cetak Bagan (PDF)
+                    </button>
+                    <button onClick={() => { setViewingArchive(null); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black transition-colors uppercase">
+                      <ArrowLeft size={14}/> Kembali ke Turnamen Aktif
                     </button>
                   </>
                 )}
               </>
             ) : (
-              role === 'referee' && (
+              role === 'referee' ? (
                 <>
-                  <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><Shuffle size={14}/> Buat Bagan Otomatis</button>
-                  <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase"><Archive size={14}/> Kelola Arsip</button>
-                  {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                  <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Shuffle size={14}/> Buat Bagan Otomatis
+                  </button>
+                  <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase">
+                    <Archive size={14}/> Kelola Arsip Turnamen
+                  </button>
+                  <button onClick={() => { handlePrintPDF(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Printer size={14}/> Cetak Bagan (PDF)
+                  </button>
+                  {activeBracket && (
+                    <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                      <RefreshCw size={14}/> Reset Bagan {activePool}
+                    </button>
+                  )}
                   {Object.keys(tournamentData.pools || {}).length > 0 && (
                     <>
-                      <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                      <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                        <RefreshCw size={14}/> Reset Semua Bagan
+                      </button>
                       <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
                         <Archive size={14}/> Arsipkan Turnamen
                       </button>
@@ -2941,6 +2993,33 @@ export default function App() {
                   )}
                   <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
                     <Key size={14}/> Ganti Password Wasit
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { 
+                    setIsMenuOpen(false);
+                    const pin = window.prompt("Masukkan Password Wasit:");
+                    if (pin === appSettings.refereePin) {
+                      setRole('referee');
+                      localStorage.setItem('tournament_role', 'referee');
+                      localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+                      setSessionPinVersion(appSettings.pinVersion);
+                      alert("Berhasil login sebagai Wasit!");
+                    } else if (pin !== null) {
+                      alert("Password Wasit salah!");
+                    }
+                  }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Key size={14}/> Login Wasit (Akses Penuh)
+                  </button>
+                  <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Archive size={14}/> Riwayat Arsip Turnamen
+                  </button>
+                  <button onClick={() => { handlePrintPDF(); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <Printer size={14}/> Cetak Bagan (PDF)
+                  </button>
+                  <button onClick={() => { window.location.reload(); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 transition-colors uppercase">
+                    <RefreshCw size={14}/> Segarkan Data (Live)
                   </button>
                 </>
               )
@@ -3049,9 +3128,11 @@ export default function App() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
           <div className="relative bg-white w-full max-w-lg p-4 sm:p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[90vh]">
             <h3 className="text-lg sm:text-xl font-black text-black mb-1 flex items-center gap-2 tracking-tight uppercase">
-              <Archive className="text-black stroke-[2.5]" size={20}/> Kelola Arsip Turnamen
+              <Archive className="text-black stroke-[2.5]" size={20}/> {role === 'referee' ? 'Kelola Arsip Turnamen' : 'Riwayat Arsip Turnamen'}
             </h3>
-            <p className="text-[10px] sm:text-xs font-bold text-black uppercase tracking-wider mb-4 sm:mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            <p className="text-[10px] sm:text-xs font-bold text-black uppercase tracking-wider mb-4 sm:mb-6">
+              {role === 'referee' ? 'Manajemen Riwayat Turnamen Wasit' : 'Daftar Turnamen & Hasil Rekam Jejak Masa Lalu'}
+            </p>
             
             <div className="space-y-3 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin flex-1">
               {archivesList.length === 0 ? (
@@ -3853,11 +3934,7 @@ export default function App() {
 
         <button
           onClick={() => {
-            if (role === 'referee') {
-              setShowArchiveManagement(true);
-            } else {
-              setIsMenuOpen(true);
-            }
+            setShowArchiveManagement(true);
           }}
           className={cn(
             "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
