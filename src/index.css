@@ -1,11 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Inter', sans-serif;
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    color: #020617;
+    background-color: #f8fafc;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -16,6 +19,20 @@ body {
   scrollbar-width: none;
 }
 
+/* Tactical outdoor contrast enhancements */
+.tactical-border {
+  border-width: 2px;
+  border-color: #020617;
+}
+
+.tactical-shadow {
+  box-shadow: 4px 4px 0px 0px #020617;
+}
+
+.tactical-shadow-sm {
+  box-shadow: 2px 2px 0px 0px #020617;
+}
+
 /* Connector lines for bracket */
 .connector-right::after {
   content: '';
@@ -23,5 +40,5 @@ body {
   top: 50%;
   right: -2rem;
   width: 2px;
-  @apply bg-gray-200;
+  @apply bg-slate-300;
 }

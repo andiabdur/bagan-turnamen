@@ -7,7 +7,10 @@ import {
   Check, 
   AlertCircle, 
   Trophy,
-  Save
+  Save,
+  Globe,
+  Users,
+  Zap
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -93,180 +96,202 @@ export default function SetupWizard({
 
   if (role !== 'referee') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
-        <Trophy size={80} className="text-slate-200 mb-6"/>
-        <h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan Belum Siap</h2>
-        <p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] p-12 text-center animate-fade-in">
+        <div className="w-20 h-20 bg-surface border-2 border-border-strong rounded-2xl shadow-tactical flex items-center justify-center mb-6">
+          <Trophy size={40} className="text-border-strong"/>
+        </div>
+        <h2 className="text-2xl font-black text-border-strong uppercase tracking-widest">Bagan Belum Siap</h2>
+        <p className="text-slate-600 font-bold mt-2">Menunggu wasit/panitia menginisialisasi turnamen.</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-8 animate-slide-up">
-      <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-        {/* Hero Header */}
-        <div className="bg-slate-800 p-8 text-white relative overflow-hidden flex items-center justify-between">
-          <div className="absolute top-0 right-0 p-4 opacity-10"><Shuffle size={120}/></div>
+    <div className="max-w-4xl mx-auto p-4 md:p-8 animate-slide-up">
+      <div className="bg-surface rounded-2xl shadow-tactical border-2 border-border-strong overflow-hidden">
+        {/* Tactical Header */}
+        <div className="bg-border-strong p-6 md:p-8 text-white relative overflow-hidden flex items-center justify-between border-b-2 border-border-strong">
+          <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><Shuffle size={140}/></div>
           <div className="relative z-10">
-            <h2 className="text-2xl font-black leading-none mb-2">Smart Global Setup</h2>
-            <p className="text-slate-300 text-sm font-bold uppercase tracking-widest">Inisialisasi Turnamen Multi-Bagan</p>
+            <span className="text-[9px] font-black text-primary-container bg-white px-2.5 py-0.5 rounded uppercase tracking-widest">
+              Tournament Engine
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight mt-1">Smart Global Setup</h2>
+            <p className="text-slate-300 text-xs font-bold uppercase tracking-wider mt-0.5">Inisialisasi & Konfigurasi Multi-Bagan</p>
           </div>
           {showGlobalSetup && (
-            <button onClick={() => setShowGlobalSetup(false)} className="relative z-10 bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-colors">
+            <button 
+              onClick={() => setShowGlobalSetup(false)} 
+              className="relative z-10 bg-white/10 hover:bg-white/20 text-white p-2.5 rounded-xl border border-white/20 transition-all active:scale-95"
+            >
               <X size={20}/>
             </button>
           )}
         </div>
         
-        {/* Rules & Narrative */}
-        <div className="p-4 md:p-8 bg-slate-50 border-b border-slate-100">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="bg-brand-100 p-3 rounded-2xl text-brand-600 shrink-0">
+        {/* Narrative & Rules Banner */}
+        <div className="p-5 md:p-8 bg-surface-bright border-b-2 border-border-subtle space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-primary text-white p-3 rounded-xl border-2 border-border-strong shadow-tactical-sm shrink-0">
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-slate-800 mb-1.5 uppercase tracking-wide">Sistem Seeding Keadilan Mutlak</h3>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Ditenagai oleh algoritma <strong className="text-brand-600">Smart Global Distribution</strong> kelas turnamen E-Sports. Sistem membaca identitas tim peserta dan mendistribusikannya seadil mungkin secara matematis. Wasit tidak perlu lagi pusing mengatur letak slot secara manual!
+              <h3 className="font-black text-sm text-border-strong mb-1 uppercase tracking-wide">Sistem Seeding Keadilan Mutlak</h3>
+              <p className="text-xs text-on-surface-variant leading-relaxed font-semibold">
+                Ditenagai oleh algoritma <strong className="text-primary font-black">Smart Global Distribution</strong> kelas turnamen E-Sports. Sistem membaca identitas tim peserta dan mendistribusikannya seadil mungkin secara matematis untuk menghindari bentrok saudara di babak awal.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-              <div className="flex items-center gap-2 mb-2 text-brand-600">
-                <LayoutGrid size={16} />
-                <h4 className="font-black text-[10px] uppercase tracking-widest">Distribusi Lintas Pool</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-surface border-2 border-border-strong p-4 rounded-xl shadow-tactical-sm">
+              <div className="flex items-center gap-2 mb-2 text-primary">
+                <LayoutGrid size={16} className="stroke-[2.5]" />
+                <h4 className="font-black text-[11px] uppercase tracking-wider text-border-strong">Distribusi Lintas Pool</h4>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                Jika sebuah tim mendaftar 9 peserta, sistem otomatis membaginya rata: 3 di Bagan A, 3 di Bagan B, dan 3 di Bagan C.
+              <p className="text-[11px] text-on-surface-variant font-semibold leading-relaxed">
+                Jika sebuah tim mendaftar 9 peserta, sistem otomatis membaginya rata ke seluruh bagan yang tersedia.
               </p>
             </div>
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-              <div className="flex items-center gap-2 mb-2 text-emerald-600">
-                <Shield size={16} />
-                <h4 className="font-black text-[10px] uppercase tracking-widest">Anti Perang Saudara</h4>
+            <div className="bg-surface border-2 border-border-strong p-4 rounded-xl shadow-tactical-sm">
+              <div className="flex items-center gap-2 mb-2 text-status-success">
+                <Shield size={16} className="stroke-[2.5]" />
+                <h4 className="font-black text-[11px] uppercase tracking-wider text-border-strong">Anti Perang Saudara</h4>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                Di dalam satu bagan, anggota tim dipisah paksa ke Kuarter dan Half yang berbeda. <strong>Mustahil bentrok</strong> di babak 32, 16, hingga 8 Besar!
+              <p className="text-[11px] text-on-surface-variant font-semibold leading-relaxed">
+                Di dalam satu bagan, anggota tim dipisah ke kuarter berbeda. <strong>Mustahil bentrok</strong> di babak awal!
               </p>
             </div>
-            <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
-              <div className="flex items-center gap-2 mb-2 text-yellow-500">
-                <Shuffle size={16} />
-                <h4 className="font-black text-[10px] uppercase tracking-widest">Undian Acak Sempurna</h4>
+            <div className="bg-surface border-2 border-border-strong p-4 rounded-xl shadow-tactical-sm">
+              <div className="flex items-center gap-2 mb-2 text-status-warning">
+                <Shuffle size={16} className="stroke-[2.5]" />
+                <h4 className="font-black text-[11px] uppercase tracking-wider text-border-strong">Undian Acak Sempurna</h4>
               </div>
-              <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-                Setelah pemain tim diamankan tempatnya, peserta solo dan sisa slot kosong akan diundi murni dan di-shuffle oleh sistem.
+              <p className="text-[11px] text-on-surface-variant font-semibold leading-relaxed">
+                Pemain tim diamankan posisinya, lalu peserta solo dan slot kosong diundi secara acak berimbang.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-800 text-white shadow-lg p-5 rounded-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-2 opacity-5"><Check size={80}/></div>
-            <h4 className="font-black text-[11px] text-brand-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
-              <AlertCircle size={14}/> Aturan Format Input Wasit (Wajib):
+          <div className="bg-border-strong text-white shadow-tactical p-5 rounded-xl border-2 border-border-strong relative overflow-hidden">
+            <h4 className="font-black text-[11px] text-amber-400 uppercase tracking-widest mb-3 flex items-center gap-2 relative z-10">
+              <AlertCircle size={15}/> Format Input Nama Peserta (Wajib):
             </h4>
             <div className="flex flex-col md:flex-row gap-4 relative z-10">
               {isOpenTournament ? (
-                <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
-                  <span className="text-emerald-400">[Majalengka-Senyap]</span> Daim<br/>
-                  <span className="text-emerald-400">[Majalengka-Senyap]</span> Andi<br/>
-                  <span className="text-yellow-400">[Cirebon-Kincir]</span> Joko<br/>
+                <code className="bg-black/50 p-3.5 rounded-lg text-xs font-mono font-bold text-slate-200 border border-slate-700 leading-relaxed flex-1">
+                  <span className="text-emerald-400 font-black">[Majalengka-Senyap]</span> Daim<br/>
+                  <span className="text-emerald-400 font-black">[Majalengka-Senyap]</span> Andi<br/>
+                  <span className="text-amber-400 font-black">[Cirebon-Kincir]</span> Joko<br/>
                   <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
                 </code>
               ) : (
-                <code className="bg-slate-900/50 p-4 rounded-xl text-sm font-mono font-bold text-slate-300 border border-slate-700 leading-relaxed flex-1">
-                  <span className="text-emerald-400">[Senyap]</span> Daim<br/>
-                  <span className="text-emerald-400">[Senyap]</span> Andi<br/>
-                  <span className="text-yellow-400">[Majalengka]</span> Joko<br/>
+                <code className="bg-black/50 p-3.5 rounded-lg text-xs font-mono font-bold text-slate-200 border border-slate-700 leading-relaxed flex-1">
+                  <span className="text-emerald-400 font-black">[Senyap]</span> Daim<br/>
+                  <span className="text-emerald-400 font-black">[Senyap]</span> Andi<br/>
+                  <span className="text-amber-400 font-black">[Majalengka]</span> Joko<br/>
                   <span className="text-slate-400">Peserta Solo Tanpa Tim</span>
                 </code>
               )}
-              <div className="flex-1 flex flex-col justify-center">
-                <p className="text-[11px] font-bold text-slate-400 mb-2 leading-relaxed">
+              <div className="flex-1 flex flex-col justify-center text-slate-300">
+                <p className="text-xs font-bold mb-1.5 leading-relaxed">
                   {isOpenTournament ? (
-                    <span>Gunakan format <strong className="text-white">[Daerah-Tim]</strong> (contoh: <strong className="text-white">[Majalengka-Senyap]</strong>) untuk menandai daerah dan tim peserta sekaligus.</span>
+                    <span>Gunakan format <strong className="text-white">[Daerah-Tim]</strong> (contoh: <strong className="text-emerald-400">[Majalengka-Senyap]</strong>) untuk menandai asal daerah dan tim sekaligus.</span>
                   ) : (
-                    <span>Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal (contoh: <strong className="text-white">[Senyap]</strong>).</span>
+                    <span>Gunakan kurung siku <strong className="text-white">[]</strong> untuk menandai nama tim di awal (contoh: <strong className="text-emerald-400">[Senyap]</strong>).</span>
                   )}
                 </p>
-                <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                  Pastikan penulisan ejaan daerah dan tim <strong className="text-white">SAMA PERSIS</strong> agar sistem dapat menyebarkan mereka secara optimal untuk menghindari bentrok awal.
+                <p className="text-[11px] font-semibold text-slate-400 leading-relaxed">
+                  Pastikan penulisan ejaan nama tim <strong className="text-white">SAMA PERSIS</strong> agar sistem dapat menyebarkannya dengan optimal.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Input Area */}
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-center">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Judul Acara Turnamen</label>
-              <input 
-                type="text" 
-                value={tournamentTitle} 
-                onChange={(e) => setTournamentTitle(e.target.value)} 
-                placeholder="Contoh: Piala Bergilir Majalengka" 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
-              />
+        {/* Form Body */}
+        <div className="p-6 md:p-8 space-y-8">
+          {/* Step 1: Info Dasar */}
+          <div>
+            <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-4">
+              <h3 className="font-black text-xs uppercase tracking-widest text-border-strong flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-border-strong text-white text-[10px] flex items-center justify-center">1</span>
+                Informasi & Logo Turnamen
+              </h3>
             </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Panitia Penyelenggara</label>
-              <input 
-                type="text" 
-                value={tournamentOrganizer} 
-                onChange={(e) => setTournamentOrganizer(e.target.value)} 
-                placeholder="Contoh: Perkumulan Pelayang..." 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Logo Turnamen</label>
-              <div className="flex items-center gap-3">
-                {logoBase64 ? (
-                  <div className="relative group shrink-0">
-                    <img src={logoBase64} alt="Preview Logo" className="w-[52px] h-[52px] object-contain rounded-xl border border-slate-200 bg-slate-50 p-1" />
-                    <button 
-                      type="button" 
-                      onClick={() => setLogoBase64('')}
-                      className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full shadow-md transition-colors"
-                    >
-                      <X size={10}/>
-                    </button>
-                  </div>
-                ) : (
-                  <label className="w-[52px] h-[52px] border-2 border-dashed border-slate-200 hover:border-brand-400 rounded-xl flex flex-col items-center justify-center text-slate-400 hover:text-brand-500 cursor-pointer transition-colors bg-slate-50 shrink-0">
-                    <span className="text-[9px] font-black uppercase">Upload</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
-                  </label>
-                )}
-                <span className="text-[9px] font-bold text-slate-400 leading-tight">
-                  Upload logo PNG/JPG. Ukuran otomatis dikompres ringan.
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Judul Turnamen</label>
+                <input 
+                  type="text" 
+                  value={tournamentTitle} 
+                  onChange={(e) => setTournamentTitle(e.target.value)} 
+                  placeholder="Contoh: Piala Bergilir Majalengka" 
+                  className="w-full bg-surface border-2 border-border-strong p-3.5 rounded-xl font-bold text-xs text-border-strong focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Penyelenggara</label>
+                <input 
+                  type="text" 
+                  value={tournamentOrganizer} 
+                  onChange={(e) => setTournamentOrganizer(e.target.value)} 
+                  placeholder="Contoh: Perkumpulan Pelayang..." 
+                  className="w-full bg-surface border-2 border-border-strong p-3.5 rounded-xl font-bold text-xs text-border-strong focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Logo Turnamen</label>
+                <div className="flex items-center gap-3">
+                  {logoBase64 ? (
+                    <div className="relative group shrink-0">
+                      <img src={logoBase64} alt="Preview Logo" className="w-12 h-12 object-contain rounded-xl border-2 border-border-strong bg-surface p-1 shadow-sm" />
+                      <button 
+                        type="button" 
+                        onClick={() => setLogoBase64('')}
+                        className="absolute -top-1.5 -right-1.5 bg-status-live hover:bg-red-700 text-white p-1 rounded-full shadow transition-colors"
+                      >
+                        <X size={10}/>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="w-12 h-12 border-2 border-dashed border-border-strong hover:bg-slate-100 rounded-xl flex flex-col items-center justify-center text-border-strong cursor-pointer transition-colors bg-surface shrink-0">
+                      <span className="text-[8px] font-black uppercase">Upload</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                    </label>
+                  )}
+                  <span className="text-[10px] font-semibold text-on-surface-variant leading-tight">
+                    PNG/JPG otomatis dikompres ringan.
+                  </span>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="mb-6 bg-slate-50/50 p-4 border-2 border-slate-100 rounded-2xl">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Tipe Cakupan Turnamen (Seeding Mode)</label>
+          {/* Step 2: Cakupan Turnamen */}
+          <div>
+            <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-4">
+              <h3 className="font-black text-xs uppercase tracking-widest text-border-strong flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-border-strong text-white text-[10px] flex items-center justify-center">2</span>
+                Tipe Cakupan Turnamen (Scope)
+              </h3>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button 
                 type="button"
                 onClick={() => setIsOpenTournament(false)}
                 className={cn(
-                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3",
-                  !isOpenTournament ? "bg-white border-brand-600 shadow-md" : "bg-white border-slate-100 hover:border-slate-200"
+                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3.5",
+                  !isOpenTournament ? "bg-blue-50/50 border-primary shadow-tactical-sm" : "bg-surface border-border-subtle hover:border-slate-400"
                 )}
               >
-                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", !isOpenTournament ? "border-brand-600" : "border-slate-300")}>
-                  {!isOpenTournament && <div className="w-2 h-2 rounded-full bg-brand-600" />}
+                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", !isOpenTournament ? "border-primary bg-primary text-white" : "border-slate-300")}>
+                  {!isOpenTournament && <Check size={12} className="stroke-[3]" />}
                 </div>
                 <div>
-                  <h4 className={cn("text-xs font-black", !isOpenTournament ? "text-brand-700" : "text-slate-700")}>LOKAL / CLUB MATCH (DEFAULT)</h4>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Format Input: <code>[Tim] Nama</code></p>
-                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold leading-normal normal-case">Hanya memisahkan antar-anggota tim yang sama agar tidak langsung bertanding di Match 1 (e.g. <code>[Senyap] Daim</code>).</p>
+                  <h4 className={cn("text-xs font-black uppercase tracking-wider", !isOpenTournament ? "text-primary" : "text-border-strong")}>LOKAL / CLUB MATCH (DEFAULT)</h4>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Format: <code>[Tim] Nama</code></p>
+                  <p className="text-[11px] text-on-surface-variant mt-1 font-semibold leading-relaxed">Memisahkan anggota tim yang sama agar tidak langsung bertemu di ronde awal (e.g. <code>[Senyap] Daim</code>).</p>
                 </div>
               </button>
 
@@ -274,148 +299,161 @@ export default function SetupWizard({
                 type="button"
                 onClick={() => setIsOpenTournament(true)}
                 className={cn(
-                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3",
-                  isOpenTournament ? "bg-white border-emerald-600 shadow-md" : "bg-white border-slate-100 hover:border-slate-200"
+                  "p-4 rounded-xl font-bold transition-all border-2 text-left flex items-start gap-3.5",
+                  isOpenTournament ? "bg-emerald-50/50 border-status-success shadow-tactical-sm" : "bg-surface border-border-subtle hover:border-slate-400"
                 )}
               >
-                <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", isOpenTournament ? "border-emerald-600" : "border-slate-300")}>
-                  {isOpenTournament && <div className="w-2 h-2 rounded-full bg-emerald-600" />}
+                <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0", isOpenTournament ? "border-status-success bg-status-success text-white" : "border-slate-300")}>
+                  {isOpenTournament && <Check size={12} className="stroke-[3]" />}
                 </div>
                 <div>
-                  <h4 className={cn("text-xs font-black", isOpenTournament ? "text-emerald-700" : "text-slate-700")}>OPEN CUP (LINTAS DAERAH)</h4>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase mt-1">Format Input: <code>[Daerah-Tim] Nama</code></p>
-                  <p className="text-[9px] text-slate-400 mt-0.5 font-bold leading-normal normal-case">Mendeteksi Daerah dan Tim secara bersamaan untuk mencegah bentrok satu daerah & satu tim sekaligus (e.g. <code>[Majalengka-Senyap] Andi</code>).</p>
+                  <h4 className={cn("text-xs font-black uppercase tracking-wider", isOpenTournament ? "text-status-success" : "text-border-strong")}>OPEN CUP (LINTAS DAERAH)</h4>
+                  <p className="text-[10px] text-status-success font-bold uppercase mt-1">Format: <code>[Daerah-Tim] Nama</code></p>
+                  <p className="text-[11px] text-on-surface-variant mt-1 font-semibold leading-relaxed">Mencegah bentrok satu daerah sekaligus satu tim (e.g. <code>[Majalengka-Senyap] Andi</code>).</p>
                 </div>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Kapasitas Per Bagan</label>
-              <div className="grid grid-cols-4 gap-2">
-                {['auto', '16', '32', '64'].map(size => (
+          {/* Step 3: Konfigurasi Bagan & Aturan */}
+          <div>
+            <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-4">
+              <h3 className="font-black text-xs uppercase tracking-widest text-border-strong flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-border-strong text-white text-[10px] flex items-center justify-center">3</span>
+                Kapasitas, Nyawa, & Format Final
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Kapasitas */}
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Kapasitas Per Bagan</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {['auto', '16', '32', '64'].map(size => (
+                    <button 
+                      key={size} 
+                      onClick={() => setBracketSize(size)}
+                      className={cn(
+                        "py-2.5 rounded-lg font-black text-xs transition-all border-2",
+                        bracketSize === size ? "bg-border-strong border-border-strong text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                      )}
+                    >
+                      {size === 'auto' ? 'AUTO' : size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Aturan Nyawa */}
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Aturan Nyawa</label>
+                <div className="grid grid-cols-2 gap-1.5">
                   <button 
-                    key={size} 
-                    onClick={() => setBracketSize(size)}
+                    onClick={() => setDoubleLife(false)}
                     className={cn(
-                      "py-3 rounded-xl font-black text-xs transition-all border-2",
-                      bracketSize === size ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                      "py-2.5 rounded-lg font-black text-[10px] transition-all border-2 uppercase",
+                      !doubleLife ? "bg-border-strong border-border-strong text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
                     )}
                   >
-                    {size === 'auto' ? 'AUTO' : size}
+                    1 Nyawa
                   </button>
-                ))}
+                  <button 
+                    onClick={() => setDoubleLife(true)}
+                    className={cn(
+                      "py-2.5 rounded-lg font-black text-[10px] transition-all border-2 uppercase",
+                      doubleLife ? "bg-status-live border-status-live text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    2 Nyawa (Silang)
+                  </button>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Aturan Nyawa</label>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => setDoubleLife(false)}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
-                    !doubleLife ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  1 NYAWA
-                </button>
-                <button 
-                  onClick={() => setDoubleLife(true)}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[10px] transition-all border-2",
-                    doubleLife ? "bg-gradient-to-r from-red-500 to-rose-600 border-transparent text-white shadow-lg shadow-red-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  2 NYAWA (BEDA)
-                </button>
+
+              {/* Format Final */}
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Format Bagan Final</label>
+                <div className="grid grid-cols-3 gap-1 mb-1.5">
+                  <button 
+                    onClick={() => setFinalFormat('bracket')}
+                    className={cn(
+                      "py-2.5 px-1 rounded-lg font-black text-[9px] transition-all border-2 leading-tight uppercase",
+                      finalFormat === 'bracket' ? "bg-primary border-primary text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    Tunggal
+                  </button>
+                  <button 
+                    onClick={() => setFinalFormat('double')}
+                    className={cn(
+                      "py-2.5 px-1 rounded-lg font-black text-[9px] transition-all border-2 leading-tight uppercase",
+                      finalFormat === 'double' ? "bg-status-success border-status-success text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    Ganda
+                  </button>
+                  <button 
+                    onClick={() => setFinalFormat('roundrobin')}
+                    className={cn(
+                      "py-2.5 px-1 rounded-lg font-black text-[9px] transition-all border-2 leading-tight uppercase",
+                      finalFormat === 'roundrobin' ? "bg-status-warning border-status-warning text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    R-Robin
+                  </button>
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Format Bagan Final</label>
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                <button 
-                  onClick={() => setFinalFormat('bracket')}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
-                    finalFormat === 'bracket' ? "bg-brand-600 border-brand-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  GUGUR TUNGGAL
-                </button>
-                <button 
-                  onClick={() => setFinalFormat('double')}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
-                    finalFormat === 'double' ? "bg-emerald-600 border-emerald-600 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  GUGUR GANDA
-                </button>
-                <button 
-                  onClick={() => setFinalFormat('roundrobin')}
-                  className={cn(
-                    "py-3 rounded-xl font-black text-[9px] transition-all border-2 flex flex-col items-center justify-center leading-tight",
-                    finalFormat === 'roundrobin' ? "bg-yellow-500 border-yellow-500 text-white shadow-lg" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  ROUND ROBIN
-                </button>
-              </div>
-              <p className="text-[9px] font-bold text-slate-400 leading-normal">
-                {finalFormat === 'bracket' && "💡 Gugur Tunggal: Cocok untuk mencari Juara 1 & 2 secara cepat."}
-                {finalFormat === 'double' && "💡 Gugur Ganda: Semifinal + Grand Final + Perebutan Juara 3 (cocok untuk 4 pool)."}
-                {finalFormat === 'roundrobin' && "💡 Round Robin: Liga saling bertemu (sangat cocok untuk 3 pool)."}
-              </p>
-            </div>
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Sistem Poin Pertandingan</label>
-              <div className="flex flex-col gap-1.5">
-                <button 
-                  onClick={() => setPrelimPointsSystem('normal')}
-                  className={cn(
-                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
-                    (prelimPointsSystem === 'normal' || prelimPointsSystem === false) ? "bg-brand-600 border-brand-600 text-white shadow-md" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  NORMAL (1x MENANG)
-                </button>
-                <button 
-                  onClick={() => setPrelimPointsSystem('prelim')}
-                  className={cn(
-                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
-                    (prelimPointsSystem === 'prelim' || prelimPointsSystem === true) ? "bg-gradient-to-r from-emerald-500 to-teal-600 border-transparent text-white shadow-md shadow-emerald-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  DULUAN 2 POIN (BABAK 1)
-                </button>
-                <button 
-                  onClick={() => setPrelimPointsSystem('all')}
-                  className={cn(
-                    "py-2 rounded-xl font-black text-[10px] transition-all border-2",
-                    prelimPointsSystem === 'all' ? "bg-gradient-to-r from-amber-500 to-orange-600 border-transparent text-white shadow-md shadow-amber-100" : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
-                  )}
-                >
-                  DULUAN 2 POIN (SEMUA BABAK)
-                </button>
+
+              {/* Sistem Poin */}
+              <div>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Sistem Poin Match</label>
+                <div className="flex flex-col gap-1">
+                  <button 
+                    onClick={() => setPrelimPointsSystem('normal')}
+                    className={cn(
+                      "py-1.5 px-2 rounded-lg font-black text-[9px] transition-all border-2 text-left uppercase",
+                      (prelimPointsSystem === 'normal' || prelimPointsSystem === false) ? "bg-border-strong border-border-strong text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    Normal (1x Menang)
+                  </button>
+                  <button 
+                    onClick={() => setPrelimPointsSystem('prelim')}
+                    className={cn(
+                      "py-1.5 px-2 rounded-lg font-black text-[9px] transition-all border-2 text-left uppercase",
+                      (prelimPointsSystem === 'prelim' || prelimPointsSystem === true) ? "bg-status-success border-status-success text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    Duluan 2 Poin (R1)
+                  </button>
+                  <button 
+                    onClick={() => setPrelimPointsSystem('all')}
+                    className={cn(
+                      "py-1.5 px-2 rounded-lg font-black text-[9px] transition-all border-2 text-left uppercase",
+                      prelimPointsSystem === 'all' ? "bg-status-warning border-status-warning text-white shadow-tactical-sm" : "bg-surface border-border-subtle text-slate-600 hover:border-slate-400"
+                    )}
+                  >
+                    Duluan 2 Poin (Semua)
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="relative">
-            <div className="flex justify-between items-center mb-3">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                {useLocalPool ? 'Daftar Peserta (Jalur Open)' : 'Daftar Peserta'} ({(bulkInput || '').split('\n').filter(n => n.trim()).length} Orang)
-              </label>
+          {/* Step 4: Input Daftar Peserta */}
+          <div>
+            <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-4">
+              <h3 className="font-black text-xs uppercase tracking-widest text-border-strong flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-border-strong text-white text-[10px] flex items-center justify-center">4</span>
+                {useLocalPool ? 'Daftar Peserta (Jalur Open)' : 'Daftar Peserta'} ({(bulkInput || '').split('\n').filter(n => n.trim()).length} Peserta)
+              </h3>
 
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input
                   type="checkbox"
                   checked={useLocalPool}
                   onChange={(e) => setUseLocalPool(e.target.checked)}
-                  className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
+                  className="w-4 h-4 text-primary rounded border-border-strong focus:ring-primary cursor-pointer"
                 />
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-brand-600 transition-colors">
+                <span className="text-[10px] font-black text-border-strong uppercase tracking-wider group-hover:text-primary transition-colors">
                   Aktifkan Jalur Pool Lokal
                 </span>
               </label>
@@ -428,62 +466,65 @@ export default function SetupWizard({
                 ? "[Cirebon-Kincir] Joko\n[Bandung-Terbang] Aceng\nPeserta Open Tanpa Tim"
                 : "[Senyap] Daim\n[LabaLaba] Ucup\nPeserta Solo Tanpa Tim"
               }
-              rows={useLocalPool ? 7 : 10}
-              className={`w-full bg-white border-2 border-slate-200 p-6 rounded-2xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none resize-y transition-all shadow-inner ${!useLocalPool ? "mb-6" : ""}`}
+              rows={useLocalPool ? 6 : 9}
+              className="w-full bg-surface border-2 border-border-strong p-4 rounded-xl font-bold text-xs text-border-strong focus:outline-none focus:ring-2 focus:ring-primary transition-all shadow-inner resize-y placeholder:text-slate-400"
             />
+
+            {useLocalPool && (
+              <div className="mt-4">
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black text-status-success uppercase tracking-wider block flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-status-success animate-pulse"></span>
+                    Peserta Pool Lokal Khusus ({(bulkInputLocal || '').split('\n').filter(n => n.trim()).length} Orang)
+                  </label>
+                  <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                    Diisi mulai pool terakhir
+                  </span>
+                </div>
+                <textarea
+                  value={bulkInputLocal}
+                  onChange={(e) => setBulkInputLocal(e.target.value)}
+                  placeholder={isOpenTournament
+                    ? "[Majalengka-Senyap] Daim\n[Majalengka-Angin] Maman\nOrang Majalengka Asli"
+                    : "[Senyap-Lokal] Daim\n[Lokal] Aceng\nPeserta Khusus Tuan Rumah"
+                  }
+                  rows={6}
+                  className="w-full bg-emerald-50/40 border-2 border-status-success p-4 rounded-xl font-bold text-xs text-border-strong focus:outline-none focus:ring-2 focus:ring-status-success transition-all shadow-inner resize-y"
+                />
+              </div>
+            )}
           </div>
 
-          {useLocalPool && (
-            <div className="relative mb-6 mt-4">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Peserta Pool Lokal Khusus ({(bulkInputLocal || '').split('\n').filter(n => n.trim()).length} Orang)
-                </label>
-                <div className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                  Akan diisi mulai dari Pool akhir
-                </div>
+          {/* Action Buttons */}
+          <div className="pt-4 border-t-2 border-border-subtle">
+            {hasExistingTournament ? (
+              <div className="flex flex-col md:flex-row gap-3">
+                <button 
+                  onClick={saveGlobalSettings} 
+                  className="flex-1 bg-status-success text-white py-4 px-6 rounded-xl font-black text-xs md:text-sm shadow-tactical hover:bg-emerald-800 transition-all flex items-center justify-center gap-2.5 active:scale-95 uppercase tracking-wider border-2 border-border-strong"
+                >
+                  <Save size={18}/> SIMPAN PENGATURAN
+                </button>
+                <button 
+                  onClick={() => {
+                    if (window.confirm("PERINGATAN: Membuat ulang bagan akan menghapus semua skor dan bagan saat ini secara permanen! Lanjutkan?")) {
+                      generateGlobalBracket();
+                    }
+                  }} 
+                  className="flex-1 bg-status-live text-white py-4 px-6 rounded-xl font-black text-xs md:text-sm shadow-tactical hover:bg-red-800 transition-all flex items-center justify-center gap-2.5 active:scale-95 uppercase tracking-wider border-2 border-border-strong"
+                >
+                  <Shuffle size={18}/> BUAT ULANG BAGAN (RESET)
+                </button>
               </div>
-              <textarea
-                value={bulkInputLocal}
-                onChange={(e) => setBulkInputLocal(e.target.value)}
-                placeholder={isOpenTournament
-                  ? "[Majalengka-Senyap] Daim\n[Majalengka-Angin] Maman\nOrang Majalengka Asli"
-                  : "[Senyap-Lokal] Daim\n[Lokal] Aceng\nPeserta Khusus Tuan Rumah"
-                }
-                rows={7}
-                className="w-full bg-emerald-50/30 border-2 border-emerald-200 p-6 rounded-2xl font-bold text-slate-800 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none resize-y transition-all shadow-inner"
-              />
-            </div>
-          )}
-
-          {hasExistingTournament ? (
-            <div className="flex flex-col md:flex-row gap-3">
+            ) : (
               <button 
-                onClick={saveGlobalSettings} 
-                className="flex-1 bg-emerald-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center justify-center gap-3 active:scale-95"
+                onClick={generateGlobalBracket} 
+                className="w-full bg-primary text-white py-4 px-6 rounded-xl font-black text-sm md:text-base shadow-tactical hover:bg-primary-container transition-all flex items-center justify-center gap-3 active:scale-95 uppercase tracking-wide border-2 border-border-strong min-h-[52px]"
               >
-                <Save size={20}/> SIMPAN PENGATURAN
+                <Zap size={20} className="fill-white" /> GENERATE SEMUA BAGAN
               </button>
-              <button 
-                onClick={() => {
-                  if (window.confirm("PERINGATAN: Membuat ulang bagan akan menghapus semua skor dan bagan saat ini secara permanen! Lanjutkan?")) {
-                    generateGlobalBracket();
-                  }
-                }} 
-                className="flex-1 bg-red-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-red-200 hover:bg-red-700 transition-all flex items-center justify-center gap-3 active:scale-95"
-              >
-                <Shuffle size={20}/> BUAT ULANG BAGAN (RESET)
-              </button>
-            </div>
-          ) : (
-            <button 
-              onClick={generateGlobalBracket} 
-              className="w-full bg-brand-600 text-white p-5 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95"
-            >
-              <Shuffle size={20}/> GENERATE SEMUA BAGAN
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

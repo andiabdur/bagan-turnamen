@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Trophy } from 'lucide-react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
@@ -254,7 +255,7 @@ function FinalColumn({ match, roundIdx, totalR, isPool, bracketH, centerW }) {
         {/* Winner trophy */}
         {winner && (
           <div style={{ background:'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius:8, padding:'8px 14px', display:'flex', alignItems:'center', gap:8, boxShadow:'0 4px 14px rgba(245,158,11,.3)', marginTop:4 }}>
-            <span style={{ fontSize:18 }}>🏆</span>
+            <Trophy size={18} color="#fff" />
             <div>
               <p style={{ margin:0, fontSize:6.5, fontWeight:900, color:'#fff', textTransform:'uppercase', letterSpacing:'0.1em' }}>JUARA</p>
               <p style={{ margin:'2px 0 0', fontSize:10, fontWeight:900, color:'#fff' }}>{winner}</p>
@@ -493,7 +494,7 @@ export default function PrintPage() {
                     </div>
                     <div style={{ display:'flex', alignItems:'center', height: slotH * 2 }}>
                       <div style={{ background:'linear-gradient(135deg,#f59e0b,#d97706)', borderRadius:8, padding:'8px 14px', display:'flex', alignItems:'center', gap:8, boxShadow:'0 4px 14px rgba(245,158,11,.3)' }}>
-                        <span style={{ fontSize:16 }}>🏆</span>
+                        <Trophy size={16} color="#fff" />
                         <div>
                           <p style={{ margin:0, fontSize:6.5, fontWeight:900, color:'#fff', textTransform:'uppercase' }}>JUARA</p>
                           <p style={{ margin:'2px 0 0', fontSize:10, fontWeight:900, color:'#fff' }}>

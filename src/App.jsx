@@ -779,16 +779,49 @@ export default function App() {
         }
       });
       const poolNames = poolsMap[poolId].flat();
+      const poolCap = poolNames.length;
+
+      // Reorder pairs supaya setim/sedaerah masuk section bracket berbeda (R2=4, R3=8, R4=16)
+      {
+        const pairs = [];
+        for (let i = 0; i < poolCap; i += 2) pairs.push([poolNames[i], poolNames[i + 1]]);
+        let bestPairs = [...pairs], bestScore = Infinity;
+        for (let attempt = 0; attempt < 300; attempt++) {
+          const sp = [...pairs].sort(() => Math.random() - 0.5);
+          const flat = sp.flat();
+          let score = 0;
+          for (const [sSize, w] of [[4, 1000], [8, 300], [16, 100], [32, 30]]) {
+            if (sSize > poolCap) break;
+            for (let s = 0; s < poolCap; s += sSize) {
+              const sec = flat.slice(s, s + sSize);
+              const tc = {}, rc = {};
+              sec.forEach(p => {
+                if (p.startsWith('BYE_')) return;
+                const info = playerInfoMap[p];
+                if (!info) return;
+                if (info.team !== 'SOLO') tc[info.team] = (tc[info.team] || 0) + 1;
+                if (isOpenTournament && info.region !== 'NONE') rc[info.region] = (rc[info.region] || 0) + 1;
+              });
+              for (const k in tc) if (tc[k] > 1) score += (tc[k] - 1) * w;
+              if (isOpenTournament) for (const k in rc) if (rc[k] > 1) score += (rc[k] - 1) * (w >> 1);
+            }
+          }
+          if (score < bestScore) { bestScore = score; bestPairs = sp; }
+          if (score === 0) break;
+        }
+        const reordered = bestPairs.flat();
+        for (let i = 0; i < poolCap; i++) poolNames[i] = reordered[i];
+      }
 
       let matches = [];
       let matchIdCounter = 1;
       let currentRoundMatches = [];
 
-      for (let i = 0; i < capacity; i += 2) {
+      for (let i = 0; i < poolCap; i += 2) {
         const p1 = poolNames[i];
         const p2 = poolNames[i + 1];
-        const match = { 
-          id: `m${matchIdCounter++}`, 
+        const match = {
+          id: `m${matchIdCounter++}`,
           round: 1, 
           player1: p1.startsWith('BYE_') ? null : p1, 
           player2: p2.startsWith('BYE_') ? null : p2, 
@@ -842,9 +875,9 @@ export default function App() {
     // Setiap peserta dari Pool B mendapat nyawa ke-2 di Pool D dengan lawan BERBEDA dari babak 1 Pool B.
     // Struktur Final: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D.
     if (doubleLife) {
-      // Crossover mapping: Pool A (idx 0) → Pool C (idx 0 + numPools), Pool B (idx 1) → Pool D, dst.
-      const set2PoolIds = Array.from({ length: numPools }, (_, i) =>
-        String.fromCharCode(65 + numPools + i)
+      // Crossover mapping: Pool A (idx 0) → Pool C (idx 0 + poolIds.length), Pool B (idx 1) → Pool D, dst.
+      const set2PoolIds = Array.from({ length: poolIds.length }, (_, i) =>
+        String.fromCharCode(65 + poolIds.length + i)
       );
 
       poolIds.forEach((srcPoolId, pIdx) => {
@@ -852,7 +885,8 @@ export default function App() {
         
         // Ambil pemain dari pool sumber (nyawa 1) untuk dikocok ulang di pool silang
         const srcPlayers = poolsMap[srcPoolId].flat();
-        
+        const poolCap = srcPlayers.length;
+
         let bestShuffle = [...srcPlayers];
         let bestScore = Infinity;
         let attempts = 0;
@@ -871,7 +905,7 @@ export default function App() {
           let isOpponentValid = true;
           let score = 0;
 
-          for (let mIdx = 0; mIdx < capacity; mIdx += 2) {
+          for (let mIdx = 0; mIdx < poolCap; mIdx += 2) {
             const p1 = shuffled[mIdx];
             const p2 = shuffled[mIdx + 1];
             if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
@@ -899,11 +933,11 @@ export default function App() {
             const regionHalfCounts = {};
             const regionBlockCounts = {};
 
-            const blockSize = capacity / 8;
-            const quarterSize = capacity / 4;
-            const halfSize = capacity / 2;
+            const blockSize = poolCap / 8;
+            const quarterSize = poolCap / 4;
+            const halfSize = poolCap / 2;
 
-            for (let i = 0; i < capacity; i++) {
+            for (let i = 0; i < poolCap; i++) {
               const p = shuffled[i];
               if (p.startsWith('BYE_')) continue;
               const info = playerInfoMap[p];
@@ -979,13 +1013,46 @@ export default function App() {
 
         // Bangun bracket untuk pool silang menggunakan bestShuffle
         const poolNames = bestShuffle;
+
+        // Reorder pairs supaya setim/sedaerah masuk section bracket berbeda (R2=4, R3=8, R4=16)
+        {
+          const pairs = [];
+          for (let i = 0; i < poolCap; i += 2) pairs.push([poolNames[i], poolNames[i + 1]]);
+          let bestPairs = [...pairs], bestScore = Infinity;
+          for (let attempt = 0; attempt < 300; attempt++) {
+            const sp = [...pairs].sort(() => Math.random() - 0.5);
+            const flat = sp.flat();
+            let score = 0;
+            for (const [sSize, w] of [[4, 1000], [8, 300], [16, 100], [32, 30]]) {
+              if (sSize > poolCap) break;
+              for (let s = 0; s < poolCap; s += sSize) {
+                const sec = flat.slice(s, s + sSize);
+                const tc = {}, rc = {};
+                sec.forEach(p => {
+                  if (p.startsWith('BYE_')) return;
+                  const info = playerInfoMap[p];
+                  if (!info) return;
+                  if (info.team !== 'SOLO') tc[info.team] = (tc[info.team] || 0) + 1;
+                  if (isOpenTournament && info.region !== 'NONE') rc[info.region] = (rc[info.region] || 0) + 1;
+                });
+                for (const k in tc) if (tc[k] > 1) score += (tc[k] - 1) * w;
+                if (isOpenTournament) for (const k in rc) if (rc[k] > 1) score += (rc[k] - 1) * (w >> 1);
+              }
+            }
+            if (score < bestScore) { bestScore = score; bestPairs = sp; }
+            if (score === 0) break;
+          }
+          const reordered = bestPairs.flat();
+          for (let i = 0; i < poolCap; i++) poolNames[i] = reordered[i];
+        }
+
         let matches = [];
         let matchIdCounter = 1;
         let currentRoundMatches = [];
 
         // Kocok tiap blok dalam pool untuk pastikan R1 beda lawan & minim bentrok
-        const blockSize = capacity / 8;
-        for (let bStart = 0; bStart < capacity; bStart += blockSize) {
+        const blockSize = poolCap / 8;
+        for (let bStart = 0; bStart < poolCap; bStart += blockSize) {
           const block = poolNames.slice(bStart, bStart + blockSize);
           let bestBlock = [...block];
           let bestBlockConflict = Infinity;
@@ -1011,7 +1078,7 @@ export default function App() {
           for (let k = 0; k < block.length; k++) poolNames[bStart + k] = bestBlock[k];
         }
 
-        for (let i = 0; i < capacity; i += 2) {
+        for (let i = 0; i < poolCap; i += 2) {
           const p1 = poolNames[i];
           const p2 = poolNames[i + 1];
           const match = {
@@ -1061,6 +1128,8 @@ export default function App() {
       const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'all_pools');
       await setDoc(docRef, newData);
       setBulkInput('');
+      setBulkInputLocal('');
+      setUseLocalPool(false);
       setLogoBase64('');
       setShowGlobalSetup(false);
       setActivePool('A');
@@ -1764,17 +1833,13 @@ export default function App() {
     const podiumPhotos = currentTournament.podiumPhotos || {};
 
     return (
-      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up">
-        {/* Decorative background gradients */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-yellow-100/40 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-100/30 rounded-full blur-3xl -ml-16 -mb-16 pointer-events-none"></div>
-
-        <div className="relative text-center mb-10">
-          <span className="inline-block bg-amber-50 text-amber-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-200/50">
-            🏆 Podium Kejuaraan
+      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-surface border-2 border-border-strong rounded-2xl shadow-tactical relative overflow-hidden animate-slide-up">
+        <div className="relative text-center mb-8">
+          <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-300 shadow-sm">
+            <Trophy size={12} className="stroke-[2.5]" /> Podium Kejuaraan
           </span>
-          <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Podium Juara</h3>
-          <p className="text-xs text-slate-500 font-bold mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
+          <h3 className="text-2xl font-black text-border-strong uppercase tracking-tight">Podium Juara</h3>
+          <p className="text-xs text-on-surface-variant font-bold mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
         </div>
 
         {/* 3D Podium container */}
@@ -1798,37 +1863,37 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j2')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-300 shadow-md overflow-hidden bg-slate-50 flex items-center justify-center text-slate-500 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
+                    "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-400 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary/40",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j2 ? (
                     <img src={podiumPhotos.j2} alt="Silver" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={28} className="text-slate-300" />
+                    <User size={28} className="text-slate-400" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                       <Camera size={14} className="mb-0.5" />
                       <span>Klik / Paste</span>
                     </div>
                   )}
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-400 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-slate-200">
-                  🥈 Silver
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-slate-400 flex items-center gap-1">
+                  <Medal size={10} className="stroke-[2.5]" /> Silver
                 </div>
               </div>
 
               {/* Name */}
               <div className="text-center mb-2 px-1">
-                <p className="text-xs md:text-sm font-black text-slate-800 tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+                <p className="text-xs md:text-sm font-black text-border-strong tracking-tight truncate max-w-[110px] md:max-w-[130px]">
                   {champs.j2}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-slate-300 to-slate-500 border-t border-slate-200 rounded-t-2xl shadow-lg h-24 md:h-28 flex flex-col items-center justify-center text-white relative">
-                <span className="text-4xl md:text-5xl font-black text-slate-200/50 drop-shadow">2</span>
+              <div className="w-full bg-gradient-to-b from-slate-300 to-slate-500 border-2 border-border-strong rounded-t-xl shadow-tactical-sm h-24 md:h-28 flex flex-col items-center justify-center text-white relative">
+                <span className="text-4xl md:text-5xl font-black text-slate-100/60 drop-shadow">2</span>
               </div>
             </div>
           )}
@@ -1851,17 +1916,17 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j1')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 shadow-lg overflow-hidden bg-yellow-50 flex items-center justify-center text-yellow-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
+                    "w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 shadow-tactical-gold overflow-hidden bg-yellow-50 flex items-center justify-center text-yellow-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400/50",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j1 ? (
                     <img src={podiumPhotos.j1} alt="Gold" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={36} className="text-yellow-400" />
+                    <User size={36} className="text-yellow-500" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                       <Camera size={16} className="mb-0.5" />
                       <span>Klik / Paste</span>
                     </div>
@@ -1871,22 +1936,22 @@ export default function App() {
                 <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-yellow-500 drop-shadow-md animate-bounce" style={{ animationDuration: '3s' }}>
                   <Crown size={28} fill="currentColor" />
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-slate-900 text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-yellow-200">
-                  🥇 Gold
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-border-strong text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-yellow-300 flex items-center gap-1">
+                  <Trophy size={10} className="stroke-[2.5]" /> Gold
                 </div>
               </div>
 
               {/* Name */}
               <div className="text-center mb-2 px-1">
-                <p className="text-sm md:text-base font-black text-slate-800 tracking-tight truncate max-w-[130px] md:max-w-[150px]">
+                <p className="text-sm md:text-base font-black text-border-strong tracking-tight truncate max-w-[130px] md:max-w-[150px]">
                   {champs.j1}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-yellow-400 to-amber-500 border-t border-yellow-300 rounded-t-2xl shadow-xl h-32 md:h-36 flex flex-col items-center justify-center text-white relative">
-                <span className="text-5xl md:text-6xl font-black text-yellow-100/50 drop-shadow">1</span>
-                <Trophy size={20} className="text-yellow-200/40 absolute bottom-3" />
+              <div className="w-full bg-gradient-to-b from-yellow-400 to-amber-500 border-2 border-border-strong rounded-t-xl shadow-tactical h-32 md:h-36 flex flex-col items-center justify-center text-white relative">
+                <span className="text-5xl md:text-6xl font-black text-yellow-100/70 drop-shadow">1</span>
+                <Trophy size={20} className="text-yellow-100/50 absolute bottom-3" />
               </div>
             </div>
           )}
@@ -1923,17 +1988,17 @@ export default function App() {
                       onPaste={(e) => handlePasteImage(e, 'j3')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
+                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j3 ? (
                         <img src={podiumPhotos.j3} alt="Bronze 3" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-amber-500/50" />
+                        <User size={20} className="text-amber-600/50" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
                           <Camera size={10} className="mb-0.5" />
                           <span>Paste</span>
                         </div>
@@ -1945,17 +2010,17 @@ export default function App() {
                       onPaste={(e) => handlePasteImage(e, 'j4')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
+                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j4 ? (
                         <img src={podiumPhotos.j4} alt="Bronze 4" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-amber-500/50" />
+                        <User size={20} className="text-amber-600/50" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
                           <Camera size={10} className="mb-0.5" />
                           <span>Paste</span>
                         </div>
@@ -1969,17 +2034,17 @@ export default function App() {
                     onPaste={(e) => handlePasteImage(e, 'j3')}
                     title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                     className={cn(
-                      "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-600 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-700 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-brand-500/50",
+                      "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
                       role === 'referee' && "cursor-pointer group"
                     )}
                   >
                     {podiumPhotos.j3 ? (
                       <img src={podiumPhotos.j3} alt="Bronze" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={28} className="text-amber-500/50" />
+                      <User size={28} className="text-amber-600/50" />
                     )}
                     {role === 'referee' && (
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                         <Camera size={14} className="mb-0.5" />
                         <span>Klik / Paste</span>
                       </div>
@@ -1987,27 +2052,27 @@ export default function App() {
                   </div>
                 )}
                 
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-700 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow border border-amber-500">
-                  🥉 {isBracket ? "Juara 3" : "Bronze"}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-amber-600 flex items-center gap-1">
+                  <Award size={10} className="stroke-[2.5]" /> {isBracket ? "Juara 3" : "Bronze"}
                 </div>
               </div>
 
               {/* Name */}
               <div className="text-center mb-2 px-1">
                 {isBracket && champs.j3 && champs.j4 ? (
-                  <p className="text-[10px] md:text-xs font-black text-slate-800 tracking-tight leading-tight max-w-[110px] md:max-w-[130px]">
+                  <p className="text-[10px] md:text-xs font-black text-border-strong tracking-tight leading-tight max-w-[110px] md:max-w-[130px]">
                     {champs.j3} & {champs.j4}
                   </p>
                 ) : (
-                  <p className="text-xs md:text-sm font-black text-slate-800 tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+                  <p className="text-xs md:text-sm font-black text-border-strong tracking-tight truncate max-w-[110px] md:max-w-[130px]">
                     {champs.j3}
                   </p>
                 )}
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-amber-700 to-amber-900 border-t border-amber-600 rounded-t-2xl shadow-lg h-16 md:h-20 flex flex-col items-center justify-center text-white relative">
-                <span className="text-3xl md:text-4xl font-black text-amber-200/40 drop-shadow">3</span>
+              <div className="w-full bg-gradient-to-b from-amber-700 to-amber-900 border-2 border-border-strong rounded-t-xl shadow-tactical-sm h-16 md:h-20 flex flex-col items-center justify-center text-white relative">
+                <span className="text-3xl md:text-4xl font-black text-amber-100/50 drop-shadow">3</span>
               </div>
             </div>
           )}
@@ -2016,7 +2081,7 @@ export default function App() {
 
         {/* 4th Place: Harapan 1 (For non-bracket format e.g. roundrobin / double) */}
         {!isBracket && champs.j4 && (
-          <div className="mt-4 max-w-md mx-auto p-4 bg-slate-50 border border-slate-200/60 rounded-2xl flex items-center justify-between shadow-inner">
+          <div className="mt-4 max-w-md mx-auto p-4 bg-surface-dim border-2 border-border-strong rounded-xl flex items-center justify-between shadow-tactical-sm">
             <input 
               type="file" 
               id="podium-upload-input-j4" 
@@ -2028,7 +2093,7 @@ export default function App() {
               <div 
                 onClick={() => triggerPodiumPhotoUpload('j4')}
                 className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-md border-2 border-slate-200 overflow-hidden bg-white relative transition-transform hover:scale-105",
+                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow border-2 border-border-strong overflow-hidden bg-surface relative transition-transform hover:scale-105",
                   role === 'referee' && "cursor-pointer group"
                 )}
               >
@@ -2044,11 +2109,11 @@ export default function App() {
                 )}
               </div>
               <div className="text-left">
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Juara 4 (Harapan 1)</p>
-                <p className="text-xs font-black text-slate-800 tracking-tight">{champs.j4}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Juara 4 (Harapan 1)</p>
+                <p className="text-xs font-black text-border-strong tracking-tight">{champs.j4}</p>
               </div>
             </div>
-            <Award size={22} className="text-slate-300 mr-1" />
+            <Award size={22} className="text-slate-400 mr-1" />
           </div>
         )}
       </div>
@@ -2061,17 +2126,18 @@ export default function App() {
 
     return (
       <div 
+        id="gallery-section"
         tabIndex={role === 'referee' ? 0 : -1}
         onPaste={(e) => handlePasteImage(e, 'doc')}
         title={role === 'referee' ? "Klik area ini lalu tekan Ctrl+V/Cmd+V untuk menempel gambar dari clipboard" : undefined}
-        className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border border-slate-100 rounded-3xl shadow-xl relative overflow-hidden animate-slide-up focus:outline-none focus:ring-4 focus:ring-brand-500/30"
+        className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-surface border-2 border-border-strong rounded-2xl shadow-tactical relative overflow-hidden animate-slide-up focus:outline-none focus:ring-4 focus:ring-primary/30"
       >
         <div className="relative text-center mb-6">
-          <span className="inline-block bg-slate-50 text-slate-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-slate-200/50">
-            📸 Dokumentasi Turnamen
+          <span className="inline-flex items-center gap-1.5 bg-surface-dim text-border-strong px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border-2 border-border-strong shadow-tactical-sm">
+            <Camera size={12} className="stroke-[2.5]" /> Dokumentasi Turnamen
           </span>
-          <h3 className="text-xl font-black text-slate-800 uppercase tracking-wide">Galeri Foto</h3>
-          <p className="text-xs text-slate-500 font-bold mt-1">
+          <h3 className="text-2xl font-black text-border-strong uppercase tracking-tight">Galeri Foto</h3>
+          <p className="text-xs text-on-surface-variant font-bold mt-1">
             Foto kenangan dari keseruan turnamen
           </p>
         </div>
@@ -2587,50 +2653,56 @@ export default function App() {
 
   if (!role && !viewingArchive) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-12 px-4 font-sans overflow-y-auto">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-scale-in shrink-0">
-          <div className="bg-gradient-to-br from-brand-600 to-indigo-700 p-10 text-center text-white flex flex-col items-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background py-12 px-4 font-sans overflow-y-auto">
+        <div className="max-w-md w-full bg-surface rounded-2xl shadow-tactical border-2 border-border-strong overflow-hidden animate-scale-in shrink-0">
+          <div className="bg-border-strong p-8 text-center text-white flex flex-col items-center border-b-2 border-border-strong relative">
             {tournamentData.logo ? (
-              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-2xl shadow-xl bg-white/10 backdrop-blur-md p-2 mb-4 border border-white/20 animate-scale-in" />
+              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-xl shadow bg-surface p-2 mb-3 border-2 border-white/20 animate-scale-in" />
             ) : (
-              <Trophy className="w-14 h-14 text-white mx-auto mb-4 drop-shadow-lg"/>
+              <div className="w-16 h-16 rounded-xl bg-surface border-2 border-white/20 flex items-center justify-center text-border-strong mb-3 shadow">
+                <Trophy className="w-8 h-8"/>
+              </div>
             )}
-            <h1 className="text-3xl font-black tracking-tighter uppercase leading-none mt-2">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
+            <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest bg-white/10 px-2.5 py-0.5 rounded-full mb-1">
+              Live Tournament System
+            </span>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase leading-tight mt-1">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
           </div>
-          <div className="p-8 space-y-6">
+          <div className="p-6 md:p-8 space-y-6">
             <button 
               onClick={() => {
                 setRole('spectator');
                 localStorage.setItem('tournament_role', 'spectator');
               }} 
-              className="w-full flex items-center justify-between bg-slate-50 hover:bg-brand-50 border-2 border-slate-100 hover:border-brand-200 p-6 rounded-2xl transition-all group"
+              className="w-full flex items-center justify-between bg-surface-bright hover:bg-blue-50 border-2 border-border-strong p-5 rounded-xl transition-all group shadow-tactical-sm active:scale-95"
             >
               <div className="flex items-center gap-4 text-left">
-                <div className="bg-white p-3 rounded-xl shadow-sm text-brand-600 group-hover:bg-brand-600 group-hover:text-white transition-colors">
-                  <Users className="w-6 h-6"/>
+                <div className="bg-primary text-white p-3 rounded-lg border-2 border-border-strong shadow-tactical-sm shrink-0">
+                  <Users className="w-5 h-5"/>
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-800">Lihat Bagan</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Pantau Skor Real-time</p>
+                  <h3 className="font-black text-border-strong text-sm">Lihat Bagan Pertandingan</h3>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pantau Skor Real-time (Penonton)</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-slate-300"/>
+              <ChevronRight className="w-5 h-5 text-border-strong group-hover:translate-x-1 transition-transform"/>
             </button>
-            <form onSubmit={handleLoginReferee} className="space-y-4">
+            <form onSubmit={handleLoginReferee} className="space-y-3 pt-2 border-t-2 border-border-subtle">
+              <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Login Wasit / Panitia</label>
               <div className="relative">
-                <input type="password" name="pin" placeholder="Password Wasit" className="w-full bg-slate-50 border-2 border-slate-100 p-5 rounded-2xl outline-none font-bold text-slate-800 focus:border-brand-500 transition-all" required />
+                <input type="password" name="pin" placeholder="Masukkan Password Wasit" className="w-full bg-surface border-2 border-border-strong p-4 rounded-xl outline-none font-bold text-xs text-border-strong focus:ring-2 focus:ring-primary transition-all shadow-inner" required />
               </div>
-              <button type="submit" className="w-full bg-slate-900 text-white p-5 rounded-2xl font-black text-lg hover:bg-black transition-all shadow-xl active:scale-95">Login</button>
+              <button type="submit" className="w-full bg-border-strong text-white py-4 rounded-xl font-black text-sm hover:bg-black transition-all shadow-tactical active:scale-95 uppercase tracking-wide border-2 border-border-strong">Login Wasit</button>
             </form>
           </div>
 
           {/* Section Riwayat Turnamen */}
           {archivesList.length > 0 && (
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                <Archive size={14} className="text-brand-500" /> RIWAYAT TURNAMEN ARSIP
+            <div className="p-6 border-t-2 border-border-strong bg-surface-dim">
+              <h3 className="text-[10px] font-black text-border-strong uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                <Archive size={14} className="text-primary" /> RIWAYAT TURNAMEN ARSIP
               </h3>
-              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-2 scrollbar-thin">
+              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
                 {archivesList.map((archive) => {
                   const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
                     year: 'numeric',
@@ -2651,27 +2723,27 @@ export default function App() {
                           }
                         }
                       }}
-                      className="w-full flex items-center justify-between bg-white border border-slate-100 hover:border-brand-300 p-4 rounded-2xl transition-all shadow-sm cursor-pointer group"
+                      className="w-full flex items-center justify-between bg-surface border-2 border-border-strong hover:border-primary p-3.5 rounded-xl transition-all shadow-tactical-sm cursor-pointer group active:scale-98"
                     >
                       <div className="flex items-center gap-3">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-slate-50" />
+                          <img src={archive.logo} alt="Logo" className="w-9 h-9 object-contain rounded-lg border border-border-subtle p-0.5 bg-surface" />
                         ) : (
-                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
-                            <Trophy size={16} />
+                          <div className="bg-blue-50 text-primary p-2 rounded-lg border border-border-subtle">
+                            <Trophy size={14} />
                           </div>
                         )}
                         <div className="text-left">
-                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none group-hover:text-brand-600 transition-colors">
+                          <h4 className="font-black text-border-strong text-xs uppercase tracking-tight leading-none group-hover:text-primary transition-colors">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
                             {archive.organizer} • {dateStr}
                           </p>
                         </div>
                       </div>
-                      <div className="bg-slate-50 group-hover:bg-brand-50 text-slate-400 group-hover:text-brand-600 p-1.5 rounded-xl transition-all">
-                        <ChevronRight size={16} />
+                      <div className="bg-surface group-hover:bg-primary group-hover:text-white text-border-strong p-1.5 rounded-lg border border-border-strong transition-all">
+                        <ChevronRight size={14} />
                       </div>
                     </div>
                   );
@@ -2683,10 +2755,10 @@ export default function App() {
         
         {/* Footer for Landing Page */}
         <div className="text-center px-4 flex flex-col items-center gap-1 mt-8 pb-4 shrink-0">
-           <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+           <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed">
              Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
            </p>
-           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
+           <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mt-0.5">
              © Copyright by Senyap
            </p>
         </div>
@@ -2695,10 +2767,10 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col text-slate-900 font-sans overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col text-on-surface font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Sticky Archive Indicator Banner */}
       {viewingArchive && (
-        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3.5 px-4 flex items-center justify-between shadow-md z-[45] animate-slide-down shrink-0">
+        <div className="bg-status-warning text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3 px-4 flex items-center justify-between shadow-tactical-sm z-[45] animate-slide-down shrink-0 border-b-2 border-border-strong">
           <span className="flex items-center gap-2">
             <Archive size={14} className="animate-pulse text-amber-100" />
             ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} {role === 'referee' ? '(EDITABLE)' : '(READ-ONLY)'}
@@ -2707,7 +2779,7 @@ export default function App() {
             {role === 'referee' ? (
               <button 
                 onClick={handleOpenEditArchiveModal} 
-                className="bg-white hover:bg-slate-50 text-slate-800 font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-slate-200 active:scale-95 shrink-0"
+                className="bg-surface hover:bg-surface-bright text-border-strong font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
               >
                 EDIT DETAIL ARSIP
               </button>
@@ -2724,15 +2796,15 @@ export default function App() {
                   } else if (pin !== null) {
                     alert("Password Wasit salah!");
                   }
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-blue-500 active:scale-95 shrink-0"
+                }} 
+                className="bg-primary hover:bg-primary-container text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
               >
                 LOGIN WASIT UNTUK EDIT
               </button>
             )}
             <button 
               onClick={() => setViewingArchive(null)} 
-              className="bg-white/20 hover:bg-white/30 text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-white/20 active:scale-95 shrink-0"
+              className="bg-white/20 hover:bg-white/30 text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-white/40 active:scale-95 shrink-0"
             >
               KEMBALI KE BERANDA
             </button>
@@ -2741,95 +2813,108 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-4 flex items-center justify-between sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center gap-4">
+      <header className="bg-surface border-b-2 border-border-strong px-4 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-tactical-sm">
+        <div className="flex items-center gap-3 md:gap-4">
           {currentTournament.logo ? (
-            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-slate-50 p-1 shrink-0 shadow-sm" />
+            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border-2 border-border-strong bg-surface p-1 shrink-0 shadow-sm" />
           ) : (
-            <div className="bg-brand-600 p-2.5 rounded-xl shadow-lg shadow-brand-200 hidden md:block shrink-0">
-              <Trophy className="w-6 h-6 text-white"/>
+            <div className="bg-border-strong text-white p-2.5 rounded-xl border-2 border-border-strong shadow-tactical-sm hidden md:block shrink-0">
+              <Trophy className="w-5 h-5"/>
             </div>
           )}
           <div>
-            <h1 className="font-black text-slate-800 text-sm md:text-xl tracking-tighter leading-none mb-1 flex items-center flex-wrap">
+            <h1 className="font-black text-border-strong text-sm md:text-lg tracking-tight leading-none mb-1 flex items-center flex-wrap gap-1.5">
               {currentTournament.title || tournamentTitle}
               {(currentTournament.isArchived || viewingArchive) && (
-                <span className="inline-flex items-center gap-1 text-[8px] font-black bg-red-500 text-white px-2.5 py-0.5 rounded-full uppercase ml-2 animate-pulse shrink-0">
+                <span className="inline-flex items-center gap-1 text-[8px] font-black bg-status-live text-white px-2 py-0.5 rounded-full uppercase animate-pulse shrink-0">
                   <Archive size={8}/> Terarsip
                 </span>
               )}
             </h1>
-            <p className="text-[9px] md:text-[11px] text-brand-600 font-black uppercase tracking-[0.1em]">
+            <p className="text-[9px] md:text-[10px] text-primary font-black uppercase tracking-wider">
               {currentTournament.organizer || tournamentOrganizer}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden lg:flex flex-col items-end mr-4 border-r pr-4 border-slate-200">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Status Sistem</p>
-            <p className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> ONLINE
+          <div className="hidden lg:flex flex-col items-end mr-3 border-r-2 pr-4 border-border-subtle">
+            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Status Sistem</p>
+            <p className="text-[10px] font-black text-status-success flex items-center gap-1">
+              <span className="w-2 h-2 bg-status-success rounded-full animate-pulse"></span> ONLINE
             </p>
           </div>
           {/* Search button in header - only when bracket is active */}
           {activeBracket && activePool !== 'Final' && (
             <button
               onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 80); }}
-              className={cn('p-2.5 rounded-xl transition-colors', showSearch ? 'bg-emerald-500 text-white' : 'hover:bg-slate-100 text-slate-600')}
+              className={cn('p-2.5 rounded-xl border-2 transition-all active:scale-95', showSearch ? 'bg-status-success text-white border-border-strong shadow-tactical-sm' : 'bg-surface hover:bg-surface-bright text-border-strong border-border-strong shadow-tactical-sm')}
+              title="Cari Peserta"
             >
-              <Search className="w-5 h-5"/>
+              <Search className="w-4 h-4 stroke-[2.5]"/>
             </button>
           )}
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors">
-            <Settings className="w-5 h-5 text-slate-600"/>
+          <button 
+            onClick={() => setIsMenuOpen(!isMenuOpen)} 
+            className="p-2.5 bg-surface hover:bg-surface-bright text-border-strong rounded-xl border-2 border-border-strong shadow-tactical-sm transition-all active:scale-95"
+            title="Menu & Pengaturan"
+          >
+            <Settings className="w-4 h-4 stroke-[2.5] text-border-strong"/>
           </button>
         </div>
         
         {isMenuOpen && (
-          <div className="absolute right-4 top-20 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 animate-scale-in">
-            <div className="px-4 py-2 border-b border-slate-50 mb-2">
-               <p className="text-[9px] font-black text-slate-400 uppercase">Akses: {role === 'referee' ? 'Wasit' : 'Penonton'}</p>
+          <div className="absolute right-4 top-16 w-60 bg-surface rounded-2xl shadow-tactical border-2 border-border-strong py-2 z-50 animate-scale-in">
+            <div className="px-4 py-2 border-b-2 border-border-subtle mb-1">
+               <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Akses: {role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}</p>
             </div>
             {role === 'referee' && (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-brand-600 text-sm font-bold flex items-center gap-3 hover:bg-brand-50"><Shuffle size={14}/> Buat Bagan Otomatis</button>
-                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-3 text-slate-700 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-b border-slate-100"><Trash2 size={14} className="text-red-500"/> Kelola Arsip</button>
-                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-600 text-sm font-bold flex items-center gap-3 hover:bg-red-50"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-primary text-xs font-black flex items-center gap-3 hover:bg-blue-50 transition-colors"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-border-strong text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-b-2 border-border-subtle transition-colors"><Trash2 size={14} className="text-status-live"/> Kelola Arsip</button>
+                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-status-live text-xs font-black flex items-center gap-3 hover:bg-red-50 transition-colors"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
                 {Object.keys(tournamentData.pools || {}).length > 0 && (
                   <>
-                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-3 text-red-700 text-sm font-bold flex items-center gap-3 hover:bg-red-100/50"><RefreshCw size={14}/> Reset Semua Bagan</button>
-                    <button onClick={archiveTournament} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50 mt-1 pt-2">
+                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-red-700 text-xs font-black flex items-center gap-3 hover:bg-red-100/50 transition-colors"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                    <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-slate-700 text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-t border-border-subtle mt-1 pt-2 transition-colors">
                       <Archive size={14}/> Arsipkan Turnamen
                     </button>
                   </>
                 )}
-                <button onClick={handleChangePassword} className="w-full text-left px-4 py-3 text-indigo-600 text-sm font-bold flex items-center gap-3 hover:bg-indigo-50 border-t border-slate-50 mt-1 pt-2">
+                <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-indigo-700 text-xs font-black flex items-center gap-3 hover:bg-indigo-50 border-t border-border-subtle mt-1 pt-2 transition-colors">
                   <Key size={14}/> Ganti Password Wasit
                 </button>
               </>
             )}
-            <button onClick={logout} className="w-full text-left px-4 py-3 text-slate-600 text-sm font-bold flex items-center gap-3 hover:bg-slate-50 border-t border-slate-50"><LogOut size={14}/> Keluar Sistem</button>
+            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-slate-600 text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-t-2 border-border-subtle transition-colors"><LogOut size={14}/> Keluar Sistem</button>
           </div>
         )}
       </header>
 
       {/* Pool Tabs */}
-      <div className="bg-white border-b border-slate-200 px-4 flex items-center justify-between sticky top-[77px] z-30 shadow-sm">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
+      <div className="bg-surface border-b-2 border-border-strong px-4 py-2.5 flex items-center justify-between sticky top-[65px] z-30 shadow-tactical-sm">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 py-1">
           {poolsList.map(pool => (
-            <button key={pool} onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} className={cn("py-4 px-8 font-black text-xs md:text-sm relative transition-colors", activePool === pool ? (pool === 'Final' ? 'text-yellow-600' : 'text-brand-600') : 'text-slate-400 hover:text-slate-600')}>
+            <button 
+              key={pool} 
+              onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} 
+              className={cn(
+                "py-2 px-5 font-black text-xs md:text-sm rounded-full transition-all border-2 active:scale-95 shrink-0 uppercase tracking-wider", 
+                activePool === pool 
+                  ? (pool === 'Final' ? 'bg-status-warning border-border-strong text-white shadow-tactical-sm' : 'bg-border-strong border-border-strong text-white shadow-tactical-sm') 
+                  : 'bg-surface text-border-strong border-border-subtle hover:border-border-strong'
+              )}
+            >
               {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
-              {activePool === pool && <div className={cn("absolute bottom-0 left-0 right-0 h-1 rounded-t-full", pool === 'Final' ? 'bg-yellow-500 shadow-[0_-2px_10px_rgba(234,179,8,0.4)]' : 'bg-brand-600 shadow-[0_-2px_10px_rgba(16,137,226,0.3)]')}></div>}
             </button>
           ))}
         </div>
         {activeBracket && (
           <button 
             onClick={handlePrintPDF}
-            className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 text-slate-700 py-2.5 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-sm"
+            className="flex items-center gap-2 bg-surface border-2 border-border-strong hover:bg-blue-50 text-border-strong py-2 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-tactical-sm ml-2 uppercase tracking-wide"
           >
-            <Printer size={14}/>
-            CETAK / PDF
+            <Printer size={14} className="stroke-[2.5]" />
+            <span className="hidden sm:inline">CETAK / PDF</span>
           </button>
         )}
       </div>
@@ -2838,26 +2923,26 @@ export default function App() {
       {/* Edit Modal / Setelan Peserta */}
       {editingPlayer && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
-          <div className="relative bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100">
-            <h3 className="text-xl font-black text-slate-800 mb-1">Setelan Peserta</h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Kelola: {editingPlayer.currentName}</p>
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
+          <div className="relative bg-surface w-full max-w-md rounded-2xl p-6 md:p-8 shadow-tactical animate-scale-in border-2 border-border-strong">
+            <h3 className="text-xl font-black text-border-strong mb-1 tracking-tight">Setelan Peserta</h3>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Kelola: {editingPlayer.currentName}</p>
             
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Ubah Nama Peserta</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Ubah Nama Peserta</label>
                 <input 
                   autoFocus 
                   id="edit-name-input" 
                   type="text" 
                   defaultValue={editingPlayer.currentName} 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-xl font-bold text-slate-800 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 outline-none transition-all"
+                  className="w-full bg-surface border-2 border-border-strong p-3.5 rounded-xl font-bold text-xs text-border-strong focus:ring-2 focus:ring-primary outline-none transition-all shadow-inner"
                   onKeyDown={(e) => e.key === 'Enter' && handleUpdatePlayerName(e.target.value)} 
                 />
               </div>
               
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Tindakan Khusus</label>
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Tindakan Khusus</label>
                 {(() => {
                   const poolData = tournamentData.pools[activePool];
                   const match = poolData?.matches?.find(m => m.id === editingPlayer.matchId);
@@ -2867,22 +2952,30 @@ export default function App() {
                     <button 
                       onClick={() => handleDisqualifyPlayer(editingPlayer.matchId, editingPlayer.playerSlot)}
                       className={cn(
-                        "w-full py-4 rounded-xl font-black text-xs transition-colors flex items-center justify-center gap-2 border",
+                        "w-full py-3.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 border-2 shadow-tactical-sm active:scale-95 uppercase tracking-wide",
                         isDis 
-                          ? "bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border-emerald-200" 
-                          : "bg-red-50 hover:bg-red-100 text-red-600 border-red-200"
+                          ? "bg-status-success hover:bg-emerald-800 text-white border-border-strong" 
+                          : "bg-status-live hover:bg-red-800 text-white border-border-strong"
                       )}
                     >
-                      {isDis ? "✅ BATALKAN DISKUALIFIKASI" : "❌ DISKUALIFIKASI PESERTA (DIS)"}
+                      {isDis ? (
+                        <>
+                          <Check size={14} className="stroke-[3]" /> BATALKAN DISKUALIFIKASI
+                        </>
+                      ) : (
+                        <>
+                          <X size={14} className="stroke-[3]" /> DISKUALIFIKASI PESERTA (DIS)
+                        </>
+                      )}
                     </button>
                   );
                 })()}
               </div>
             </div>
             
-            <div className="flex gap-3 mt-8 pt-6 border-t border-slate-100">
-              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">Tutup</button>
-              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-brand-600 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-200 hover:bg-brand-700 transition-all">Simpan Nama</button>
+            <div className="flex gap-3 mt-8 pt-5 border-t-2 border-border-subtle">
+              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-surface border-2 border-border-strong text-border-strong py-3 rounded-xl font-black text-xs hover:bg-slate-100 transition-all active:scale-95 uppercase">Tutup</button>
+              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-primary border-2 border-border-strong text-white py-3 rounded-xl font-black text-xs shadow-tactical-sm hover:bg-primary-container transition-all active:scale-95 uppercase tracking-wide">Simpan Nama</button>
             </div>
           </div>
         </div>
@@ -2891,12 +2984,12 @@ export default function App() {
       {/* Archive Management Modal */}
       {showArchiveManagement && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
-          <div className="relative bg-white w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 flex flex-col max-h-[85vh]">
-            <h3 className="text-xl font-black text-slate-800 mb-1 flex items-center gap-2">
-              <Archive className="text-brand-500" size={24}/> Kelola Arsip Turnamen
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
+          <div className="relative bg-surface w-full max-w-lg rounded-2xl p-6 md:p-8 shadow-tactical animate-scale-in border-2 border-border-strong flex flex-col max-h-[85vh]">
+            <h3 className="text-xl font-black text-border-strong mb-1 flex items-center gap-2 tracking-tight">
+              <Archive className="text-primary" size={22}/> Kelola Arsip Turnamen
             </h3>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
             
             <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin flex-1">
               {archivesList.length === 0 ? (
@@ -2909,20 +3002,20 @@ export default function App() {
                     day: 'numeric'
                   });
                   return (
-                    <div key={archive.id} className="flex items-center justify-between bg-slate-50 border border-slate-100 p-4 rounded-2xl shadow-sm">
+                    <div key={archive.id} className="flex items-center justify-between bg-surface-bright border-2 border-border-strong p-3.5 rounded-xl shadow-tactical-sm">
                       <div className="flex items-center gap-3">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-slate-100 p-1 bg-white" />
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-border-subtle p-1 bg-surface" />
                         ) : (
-                          <div className="bg-brand-50 text-brand-600 p-2 rounded-lg">
+                          <div className="bg-blue-50 text-primary p-2 rounded-lg border border-border-subtle">
                             <Trophy size={16} />
                           </div>
                         )}
                         <div className="text-left">
-                          <h4 className="font-black text-slate-800 text-xs uppercase tracking-tight leading-none">
+                          <h4 className="font-black text-border-strong text-xs uppercase tracking-tight leading-none">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-1">
+                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
                             {archive.organizer} • {dateStr}
                           </p>
                         </div>
@@ -2942,13 +3035,13 @@ export default function App() {
                               }
                             }
                           }}
-                          className="bg-brand-50 hover:bg-brand-100 text-brand-600 font-bold text-[10px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all border border-brand-100 active:scale-95 shrink-0"
+                          className="bg-primary hover:bg-primary-container text-white font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-lg transition-all border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
                         >
                           Lihat / Edit
                         </button>
                         <button 
                           onClick={() => handleDeleteArchive(archive.id, archive.title)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition-all border border-red-100 hover:border-red-200 active:scale-95 shrink-0"
+                          className="bg-red-50 hover:bg-red-100 text-status-live p-2.5 rounded-lg transition-all border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
                           title="Hapus Arsip"
                         >
                           <Trash2 size={16} />
@@ -3207,45 +3300,76 @@ export default function App() {
 
             {/* Round-Robin Matches */}
             {activeBracket?.type === 'roundrobin' && (
-              <div className="space-y-4 max-w-3xl mx-auto">
-                <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Pertandingan Final</h3>
-                {activeBracket.matches.map((match, idx) => (
-                  <div key={match.id} className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pertandingan {idx + 1}</span>
-                      <span className="text-[9px] font-black text-brand-600 bg-brand-50 px-3 py-1 rounded-full">{match.label}</span>
+              <div className="space-y-5 max-w-3xl mx-auto">
+                <div className="flex items-center justify-between border-b-2 border-border-strong pb-2">
+                  <h3 className="font-black text-border-strong text-xs uppercase tracking-widest">Pertandingan Final</h3>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{activeBracket.matches.length} Pertandingan</span>
+                </div>
+                <div className="space-y-3">
+                  {activeBracket.matches.map((match, idx) => (
+                    <div key={match.id} className="bg-surface border-2 border-border-strong rounded-xl p-4 md:p-5 shadow-tactical-sm hover:shadow-tactical transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Match #{idx + 1}</span>
+                        <span className="text-[9px] font-black text-primary bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider">{match.label}</span>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {[{name: match.player1, slot: 1}, {name: match.player2, slot: 2}].map(p => (
+                          <button 
+                            key={p.slot} 
+                            onClick={() => setFinalWinner(match.id, p.name)} 
+                            disabled={role !== 'referee' || !p.name} 
+                            className={cn(
+                              'w-full flex items-center gap-3 p-3.5 rounded-xl border-2 font-black text-xs md:text-sm transition-all text-left active:scale-98',
+                              match.winner === p.name 
+                                ? 'bg-primary border-border-strong text-white shadow-tactical-sm' 
+                                : 'bg-surface border-border-subtle hover:border-border-strong text-border-strong'
+                            )}
+                          >
+                            <div className={cn('w-3 h-3 rounded-full shrink-0 border-2', match.winner === p.name ? 'bg-white border-white' : 'bg-slate-200 border-slate-300')}/>
+                            <span className="truncate">{p.name || 'TBA'}</span>
+                            {match.winner === p.name && <Check size={14} className="ml-auto stroke-[3]"/>}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      {[{name: match.player1, slot: 1}, {name: match.player2, slot: 2}].map(p => (
-                        <button key={p.slot} onClick={() => setFinalWinner(match.id, p.name)} disabled={role !== 'referee' || !p.name} className={cn(
-                          'w-full flex items-center gap-4 p-4 rounded-xl border-2 font-black text-sm transition-all text-left',
-                          match.winner === p.name ? 'bg-brand-600 border-brand-600 text-white' : 'bg-slate-50 border-transparent hover:border-brand-200'
-                        )}>
-                          <div className={cn('w-3 h-3 rounded-full shrink-0', match.winner === p.name ? 'bg-white' : 'bg-slate-300')}/>
-                          {p.name || 'TBA'}
-                          {match.winner === p.name && <Check size={14} className="ml-auto"/>}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
                 {/* Standings Table */}
                 <div className="mt-8">
-                  <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-4">Klasemen Sementara</h3>
-                  <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                    <div className="grid grid-cols-4 bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3">
-                      <div>Nama</div><div className="text-center">M</div><div className="text-center">K</div><div className="text-center">Poin</div>
+                  <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-3">
+                    <h3 className="font-black text-border-strong text-xs uppercase tracking-widest flex items-center gap-2">
+                      <Trophy size={14} className="text-amber-500" /> Klasemen Sementara
+                    </h3>
+                  </div>
+                  <div className="bg-surface border-2 border-border-strong rounded-xl overflow-hidden shadow-tactical">
+                    <div className="grid grid-cols-4 bg-border-strong text-white text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-3">
+                      <div>Nama Peserta</div>
+                      <div className="text-center">Menang (M)</div>
+                      <div className="text-center">Kalah (K)</div>
+                      <div className="text-center">Poin (PTS)</div>
                     </div>
                     {computeStandings(activeBracket).map((s, i) => (
-                      <div key={s.name} className={cn('grid grid-cols-4 px-6 py-4 border-b last:border-0 items-center', i === 0 && 'bg-yellow-50')}>
-                        <div className="flex items-center gap-3">
-                          {i === 0 && <Trophy size={14} className="text-yellow-500 shrink-0"/>}
-                          <span className="font-black text-sm text-slate-800 truncate">{s.name}</span>
+                      <div 
+                        key={s.name} 
+                        className={cn(
+                          'grid grid-cols-4 px-4 md:px-6 py-3.5 border-b-2 last:border-0 border-border-subtle items-center transition-colors', 
+                          i === 0 && 'bg-amber-50/70 border-l-4 border-l-yellow-500',
+                          i === 1 && 'bg-slate-50 border-l-4 border-l-slate-400',
+                          i === 2 && 'bg-amber-50/30 border-l-4 border-l-amber-600',
+                          i > 2 && 'bg-surface'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {i === 0 && <Trophy size={14} className="text-yellow-600 shrink-0 stroke-[2.5]"/>}
+                          {i === 1 && <Medal size={14} className="text-slate-500 shrink-0 stroke-[2.5]"/>}
+                          {i === 2 && <Award size={14} className="text-amber-700 shrink-0 stroke-[2.5]"/>}
+                          {i > 2 && <span className="text-[10px] font-black text-slate-400 w-4 text-center shrink-0">{i + 1}</span>}
+                          <span className="font-black text-xs md:text-sm text-border-strong truncate">{s.name}</span>
                         </div>
-                        <div className="text-center font-black text-emerald-600">{s.w}</div>
-                        <div className="text-center font-black text-red-500">{s.l}</div>
-                        <div className="text-center font-black text-brand-600 text-lg">{s.pts}</div>
+                        <div className="text-center font-black text-xs md:text-sm text-status-success">{s.w}</div>
+                        <div className="text-center font-black text-xs md:text-sm text-status-live">{s.l}</div>
+                        <div className="text-center font-black text-sm md:text-base text-primary">{s.pts}</div>
                       </div>
                     ))}
                   </div>
@@ -3618,6 +3742,92 @@ export default function App() {
           </div>
         );
       })()}
+
+      {/* Mobile Bottom Navigation Bar (Sunlight Optimized) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t-2 border-border-strong px-3 py-2 flex items-center justify-around shadow-[0_-4px_10px_rgba(0,0,0,0.06)]">
+        <button
+          onClick={() => {
+            if (activePool === 'Final') {
+              const regularPools = poolsList.filter(p => p !== 'Final');
+              if (regularPools.length > 0) setActivePool(regularPools[0]);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
+            activePool !== 'Final' && !viewingArchive
+              ? "text-primary font-black"
+              : "text-slate-500 font-bold"
+          )}
+        >
+          <div className={cn(
+            "p-1.5 rounded-lg transition-all",
+            activePool !== 'Final' && !viewingArchive ? "bg-blue-50 border border-primary/40 shadow-tactical-sm text-primary" : ""
+          )}>
+            <Play size={18} className="stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] uppercase tracking-wider">Live</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActivePool('Final');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
+            activePool === 'Final' && !viewingArchive
+              ? "text-amber-600 font-black"
+              : "text-slate-500 font-bold"
+          )}
+        >
+          <div className={cn(
+            "p-1.5 rounded-lg transition-all",
+            activePool === 'Final' && !viewingArchive ? "bg-amber-50 border border-amber-400 shadow-tactical-sm text-amber-600" : ""
+          )}>
+            <Trophy size={18} className="stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] uppercase tracking-wider">Finals</span>
+        </button>
+
+        <button
+          onClick={() => {
+            if (role === 'referee') {
+              setShowArchiveManagement(true);
+            } else {
+              setIsMenuOpen(true);
+            }
+          }}
+          className={cn(
+            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
+            viewingArchive ? "text-primary font-black" : "text-slate-500 font-bold"
+          )}
+        >
+          <div className={cn(
+            "p-1.5 rounded-lg transition-all",
+            viewingArchive ? "bg-blue-50 border border-primary/40 shadow-tactical-sm text-primary" : ""
+          )}>
+            <Archive size={18} className="stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] uppercase tracking-wider">History</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActivePool('Final');
+            setTimeout(() => {
+              const el = document.getElementById('gallery-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }}
+          className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-slate-500 font-bold hover:text-border-strong transition-all active:scale-95"
+        >
+          <div className="p-1.5 rounded-lg">
+            <Camera size={18} className="stroke-[2.5]" />
+          </div>
+          <span className="text-[10px] uppercase tracking-wider">Media</span>
+        </button>
+      </div>
 
       {/* Datalist untuk autocomplete peserta kustom di Bagan Final */}
       <datalist id="all-participants-list">
