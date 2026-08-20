@@ -4,33 +4,74 @@
 
 @layer base {
   body {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-    color: #020617;
-    background-color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #000000;
+    background-color: #FFFFFF;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
-.no-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar,
+.hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar {
+.no-scrollbar,
+.hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Tactical outdoor contrast enhancements */
-.tactical-border {
-  border-width: 2px;
-  border-color: #020617;
+/* Solar Brutalist core classes */
+.brutal-card {
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  background-color: #FFFFFF;
+  transition: all 0.1s ease;
 }
 
-.tactical-shadow {
-  box-shadow: 4px 4px 0px 0px #020617;
+.brutal-btn {
+  border: 3px solid #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  transition: all 0.1s ease;
+}
+.brutal-btn:active {
+  box-shadow: 0px 0px 0px 0px #000000;
+  transform: translate(2px, 2px);
 }
 
-.tactical-shadow-sm {
-  box-shadow: 2px 2px 0px 0px #020617;
+.brutal-tab {
+  border: 3px solid #000000;
+  background-color: #FFFFFF;
+  color: #000000;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.1s ease;
+}
+.brutal-tab.active {
+  background-color: #0000FF;
+  color: #FFFFFF;
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.brutal-shadow {
+  box-shadow: 4px 4px 0px 0px #000000;
+}
+
+.brutal-shadow-sm {
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.brutal-border {
+  border: 3px solid #000000;
+}
+
+.brutal-border-2 {
+  border: 2px solid #000000;
+}
+
+.neo-brutalist-input:focus {
+  outline: none;
+  box-shadow: 4px 4px 0px 0px #0000FF;
 }
 
 /* Connector lines for bracket */
@@ -39,6 +80,6 @@
   position: absolute;
   top: 50%;
   right: -2rem;
-  width: 2px;
-  @apply bg-slate-300;
+  width: 3px;
+  @apply bg-black;
 }

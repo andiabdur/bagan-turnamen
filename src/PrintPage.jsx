@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Trophy } from 'lucide-react';
+import { Trophy, Printer } from 'lucide-react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
@@ -396,9 +396,9 @@ export default function PrintPage() {
           </a>
           <button
             onClick={() => window.print()}
-            style={{ background:'#2563eb', color:'#fff', padding:'8px 20px', borderRadius:8, fontWeight:900, fontSize:12, border:'none', cursor:'pointer', textTransform:'uppercase', letterSpacing:'0.08em' }}
+            style={{ background:'#0000FF', color:'#fff', padding:'8px 20px', borderRadius:0, fontWeight:900, fontSize:12, border:'2px solid #000', cursor:'pointer', textTransform:'uppercase', letterSpacing:'0.08em', display:'flex', alignItems:'center', gap:6 }}
           >
-            🖨️ Cetak / Simpan PDF
+            <Printer size={14} /> Cetak / Simpan PDF
           </button>
         </div>
       </div>

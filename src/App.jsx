@@ -1833,13 +1833,13 @@ export default function App() {
     const podiumPhotos = currentTournament.podiumPhotos || {};
 
     return (
-      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-surface border-2 border-border-strong rounded-2xl shadow-tactical relative overflow-hidden animate-slide-up">
+      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border-[3px] border-black shadow-brutal relative overflow-hidden animate-slide-up">
         <div className="relative text-center mb-8">
-          <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 border border-amber-300 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 bg-safety-orange text-white px-3.5 py-1 text-[10px] font-black uppercase tracking-widest mb-2 border border-black shadow-brutal-sm">
             <Trophy size={12} className="stroke-[2.5]" /> Podium Kejuaraan
           </span>
-          <h3 className="text-2xl font-black text-border-strong uppercase tracking-tight">Podium Juara</h3>
-          <p className="text-xs text-on-surface-variant font-bold mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
+          <h3 className="text-2xl font-black text-black uppercase tracking-tight">Podium Juara</h3>
+          <p className="text-xs text-black font-bold uppercase mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
         </div>
 
         {/* 3D Podium container */}
@@ -1863,37 +1863,37 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j2')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-slate-400 shadow-md overflow-hidden bg-slate-100 flex items-center justify-center text-slate-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-primary/40",
+                    "w-16 h-16 md:w-20 md:h-20 border-[3px] border-black shadow-brutal-sm overflow-hidden bg-surface-variant flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j2 ? (
                     <img src={podiumPhotos.j2} alt="Silver" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={28} className="text-slate-400" />
+                    <User size={28} className="text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                       <Camera size={14} className="mb-0.5" />
                       <span>Klik / Paste</span>
                     </div>
                   )}
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-600 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-slate-400 flex items-center gap-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-surface-variant text-black text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
                   <Medal size={10} className="stroke-[2.5]" /> Silver
                 </div>
               </div>
 
               {/* Name */}
               <div className="text-center mb-2 px-1">
-                <p className="text-xs md:text-sm font-black text-border-strong tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+                <p className="text-xs md:text-sm font-black text-black uppercase tracking-tight truncate max-w-[110px] md:max-w-[130px]">
                   {champs.j2}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-slate-300 to-slate-500 border-2 border-border-strong rounded-t-xl shadow-tactical-sm h-24 md:h-28 flex flex-col items-center justify-center text-white relative">
-                <span className="text-4xl md:text-5xl font-black text-slate-100/60 drop-shadow">2</span>
+              <div className="w-full bg-surface-variant border-[3px] border-black shadow-brutal h-24 md:h-28 flex flex-col items-center justify-center text-black relative">
+                <span className="text-4xl md:text-5xl font-black text-black">2</span>
               </div>
             </div>
           )}
@@ -1916,42 +1916,42 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j1')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 shadow-tactical-gold overflow-hidden bg-yellow-50 flex items-center justify-center text-yellow-600 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-400/50",
+                    "w-20 h-20 md:w-24 md:h-24 border-[3px] border-black shadow-brutal overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j1 ? (
                     <img src={podiumPhotos.j1} alt="Gold" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={36} className="text-yellow-500" />
+                    <User size={36} className="text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                       <Camera size={16} className="mb-0.5" />
                       <span>Klik / Paste</span>
                     </div>
                   )}
                 </div>
                 {/* Crown Icon */}
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-yellow-500 drop-shadow-md animate-bounce" style={{ animationDuration: '3s' }}>
+                <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-black animate-bounce" style={{ animationDuration: '3s' }}>
                   <Crown size={28} fill="currentColor" />
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-border-strong text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-yellow-300 flex items-center gap-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
                   <Trophy size={10} className="stroke-[2.5]" /> Gold
                 </div>
               </div>
 
               {/* Name */}
               <div className="text-center mb-2 px-1">
-                <p className="text-sm md:text-base font-black text-border-strong tracking-tight truncate max-w-[130px] md:max-w-[150px]">
+                <p className="text-sm md:text-base font-black text-black uppercase tracking-tight truncate max-w-[130px] md:max-w-[150px]">
                   {champs.j1}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-yellow-400 to-amber-500 border-2 border-border-strong rounded-t-xl shadow-tactical h-32 md:h-36 flex flex-col items-center justify-center text-white relative">
-                <span className="text-5xl md:text-6xl font-black text-yellow-100/70 drop-shadow">1</span>
-                <Trophy size={20} className="text-yellow-100/50 absolute bottom-3" />
+              <div className="w-full bg-warning-red border-[3px] border-black shadow-brutal h-32 md:h-36 flex flex-col items-center justify-center text-white relative">
+                <span className="text-5xl md:text-6xl font-black text-white">1</span>
+                <Trophy size={20} className="text-white absolute bottom-3" />
               </div>
             </div>
           )}
@@ -1988,17 +1988,17 @@ export default function App() {
                       onPaste={(e) => handlePasteImage(e, 'j3')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
+                        "w-12 h-12 md:w-14 md:h-14 border-2 border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j3 ? (
                         <img src={podiumPhotos.j3} alt="Bronze 3" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-amber-600/50" />
+                        <User size={20} className="text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
                           <Camera size={10} className="mb-0.5" />
                           <span>Paste</span>
                         </div>
@@ -2010,17 +2010,17 @@ export default function App() {
                       onPaste={(e) => handlePasteImage(e, 'j4')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 rounded-full border-2 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
+                        "w-12 h-12 md:w-14 md:h-14 border-2 border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j4 ? (
                         <img src={podiumPhotos.j4} alt="Bronze 4" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-amber-600/50" />
+                        <User size={20} className="text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
                           <Camera size={10} className="mb-0.5" />
                           <span>Paste</span>
                         </div>
@@ -2034,17 +2034,17 @@ export default function App() {
                     onPaste={(e) => handlePasteImage(e, 'j3')}
                     title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                     className={cn(
-                      "w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-amber-700 shadow overflow-hidden bg-amber-50 flex items-center justify-center text-amber-800 relative transition-transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-amber-500/50",
+                      "w-16 h-16 md:w-20 md:h-20 border-[3px] border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                       role === 'referee' && "cursor-pointer group"
                     )}
                   >
                     {podiumPhotos.j3 ? (
                       <img src={podiumPhotos.j3} alt="Bronze" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={28} className="text-amber-600/50" />
+                      <User size={28} className="text-black" />
                     )}
                     {role === 'referee' && (
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
                         <Camera size={14} className="mb-0.5" />
                         <span>Klik / Paste</span>
                       </div>
@@ -2052,7 +2052,7 @@ export default function App() {
                   </div>
                 )}
                 
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-800 text-white text-[9px] font-black px-2.5 py-0.5 rounded-full shadow border border-amber-600 flex items-center gap-1">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-safety-orange text-white text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
                   <Award size={10} className="stroke-[2.5]" /> {isBracket ? "Juara 3" : "Bronze"}
                 </div>
               </div>
@@ -2060,19 +2060,19 @@ export default function App() {
               {/* Name */}
               <div className="text-center mb-2 px-1">
                 {isBracket && champs.j3 && champs.j4 ? (
-                  <p className="text-[10px] md:text-xs font-black text-border-strong tracking-tight leading-tight max-w-[110px] md:max-w-[130px]">
+                  <p className="text-[10px] md:text-xs font-black text-black uppercase tracking-tight leading-tight max-w-[110px] md:max-w-[130px]">
                     {champs.j3} & {champs.j4}
                   </p>
                 ) : (
-                  <p className="text-xs md:text-sm font-black text-border-strong tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+                  <p className="text-xs md:text-sm font-black text-black uppercase tracking-tight truncate max-w-[110px] md:max-w-[130px]">
                     {champs.j3}
                   </p>
                 )}
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-gradient-to-b from-amber-700 to-amber-900 border-2 border-border-strong rounded-t-xl shadow-tactical-sm h-16 md:h-20 flex flex-col items-center justify-center text-white relative">
-                <span className="text-3xl md:text-4xl font-black text-amber-100/50 drop-shadow">3</span>
+              <div className="w-full bg-safety-orange border-[3px] border-black shadow-brutal h-16 md:h-20 flex flex-col items-center justify-center text-white relative">
+                <span className="text-3xl md:text-4xl font-black text-white">3</span>
               </div>
             </div>
           )}
@@ -2081,7 +2081,7 @@ export default function App() {
 
         {/* 4th Place: Harapan 1 (For non-bracket format e.g. roundrobin / double) */}
         {!isBracket && champs.j4 && (
-          <div className="mt-4 max-w-md mx-auto p-4 bg-surface-dim border-2 border-border-strong rounded-xl flex items-center justify-between shadow-tactical-sm">
+          <div className="mt-4 max-w-md mx-auto p-4 bg-white border-[3px] border-black flex items-center justify-between shadow-brutal-sm">
             <input 
               type="file" 
               id="podium-upload-input-j4" 
@@ -2093,27 +2093,27 @@ export default function App() {
               <div 
                 onClick={() => triggerPodiumPhotoUpload('j4')}
                 className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow border-2 border-border-strong overflow-hidden bg-surface relative transition-transform hover:scale-105",
+                  "w-12 h-12 flex items-center justify-center shrink-0 border-2 border-black overflow-hidden bg-white relative transition-transform hover:scale-105",
                   role === 'referee' && "cursor-pointer group"
                 )}
               >
                 {podiumPhotos.j4 ? (
                   <img src={podiumPhotos.j4} alt="Harapan 1" className="w-full h-full object-cover" />
                 ) : (
-                  <Award size={20} className="text-slate-400" />
+                  <Award size={20} className="text-black" />
                 )}
                 {role === 'referee' && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
                     <Camera size={10} />
                   </div>
                 )}
               </div>
               <div className="text-left">
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Juara 4 (Harapan 1)</p>
-                <p className="text-xs font-black text-border-strong tracking-tight">{champs.j4}</p>
+                <p className="text-[9px] font-black text-black uppercase tracking-widest">Juara 4 (Harapan 1)</p>
+                <p className="text-xs font-black text-black uppercase tracking-tight">{champs.j4}</p>
               </div>
             </div>
-            <Award size={22} className="text-slate-400 mr-1" />
+            <Award size={22} className="text-black mr-1" />
           </div>
         )}
       </div>
@@ -2163,7 +2163,7 @@ export default function App() {
                   {role === 'referee' && (
                     <button 
                       onClick={() => handleRemoveDocPhoto(idx)}
-                      className="bg-red-650 hover:bg-red-750 text-white p-2.5 rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center bg-red-600 animate-scale-in"
+                      className="bg-warning-red hover:bg-red-700 text-white p-2.5 border-2 border-black transition-all shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center animate-scale-in"
                       title="Hapus Foto"
                     >
                       <Trash2 size={16} />
@@ -2176,7 +2176,7 @@ export default function App() {
             {role === 'referee' && (
               <div 
                 onClick={() => document.getElementById('add-more-doc-photo-input').click()}
-                className="border-2 border-dashed border-slate-200 hover:border-brand-500 hover:bg-brand-50/20 rounded-2xl p-4 text-center flex flex-col items-center justify-center bg-slate-50/50 cursor-pointer transition-all aspect-video md:aspect-[4/3] group"
+                className="border-[3px] border-dashed border-black hover:bg-surface-variant p-4 text-center flex flex-col items-center justify-center bg-white cursor-pointer transition-all aspect-video md:aspect-[4/3] group shadow-brutal-sm"
                 title="Klik untuk menambahkan foto baru"
               >
                 <input
@@ -2189,30 +2189,30 @@ export default function App() {
                 />
                 {galleryUploadProgress ? (
                   <div className="w-full px-2 flex flex-col items-center gap-2">
-                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-wider text-center">
+                    <p className="text-[10px] font-black text-brutal-blue uppercase tracking-wider text-center">
                       Foto {galleryUploadProgress.current}/{galleryUploadProgress.total}
                     </p>
-                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-200 border border-black h-2 overflow-hidden">
                       <div
-                        className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                        className="h-full bg-brutal-blue transition-all duration-300"
                         style={{ width: `${galleryUploadProgress.percent}%` }}
                       />
                     </div>
-                    <p className="text-[10px] font-black text-brand-500">{galleryUploadProgress.percent}%</p>
+                    <p className="text-[10px] font-black text-black">{galleryUploadProgress.percent}%</p>
                   </div>
                 ) : (
                   <>
-                    <div className="p-3 bg-white rounded-full shadow border border-slate-100 text-slate-400 group-hover:text-brand-500 transition-colors">
+                    <div className="p-3 bg-black text-white border-2 border-black shadow-brutal-sm group-hover:bg-brutal-blue transition-colors">
                       <Plus size={20} className="stroke-[3]" />
                     </div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mt-2">Tambah Foto</p>
+                    <p className="text-[10px] font-black text-black uppercase tracking-wider mt-2">Tambah Foto</p>
                   </>
                 )}
               </div>
             )}
           </div>
         ) : (
-          <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-slate-50/50 min-h-[200px]">
+          <div className="border-[3px] border-dashed border-black p-8 text-center flex flex-col items-center justify-center bg-white min-h-[200px] shadow-brutal-sm">
             <input
               type="file"
               id="upload-doc-photo-input"
@@ -2225,27 +2225,27 @@ export default function App() {
               <div className="flex flex-col items-center gap-3">
                 {galleryUploadProgress ? (
                   <div className="w-full max-w-[200px] flex flex-col items-center gap-2">
-                    <p className="text-xs font-black text-brand-600">
+                    <p className="text-xs font-black text-brutal-blue uppercase">
                       Foto {galleryUploadProgress.current}/{galleryUploadProgress.total} · {galleryUploadProgress.percent}%
                     </p>
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-slate-200 border border-black h-2 overflow-hidden">
                       <div
-                        className="h-full bg-brand-500 rounded-full transition-all duration-300"
+                        className="h-full bg-brutal-blue transition-all duration-300"
                         style={{ width: `${galleryUploadProgress.percent}%` }}
                       />
                     </div>
                   </div>
                 ) : (
                   <>
-                    <div className="p-4 bg-white rounded-full shadow border border-slate-100 text-slate-400">
+                    <div className="p-4 bg-black text-white border-2 border-black shadow-brutal-sm">
                       <Camera size={32} />
                     </div>
-                    <p className="text-xs text-slate-450 font-bold max-w-sm">
+                    <p className="text-xs text-black font-bold max-w-sm">
                       Belum ada foto dokumentasi. Unggah foto penyerahan piala atau momen seru turnamen Anda.
                     </p>
                     <button
                       onClick={() => document.getElementById('upload-doc-photo-input').click()}
-                      className="mt-2 bg-slate-900 hover:bg-black text-white font-black text-xs py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2"
+                      className="mt-2 bg-black hover:bg-brutal-blue text-white font-black text-xs py-3 px-6 border-2 border-black transition-all shadow-brutal active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wide"
                     >
                       + Unggah Foto Dokumentasi
                     </button>
@@ -2253,9 +2253,9 @@ export default function App() {
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-slate-400">
+              <div className="flex flex-col items-center gap-2 text-black">
                 <Camera size={28} />
-                <p className="text-xs font-bold">Belum ada foto dokumentasi.</p>
+                <p className="text-xs font-bold uppercase">Belum ada foto dokumentasi.</p>
               </div>
             )}
           </div>
@@ -2653,20 +2653,20 @@ export default function App() {
 
   if (!role && !viewingArchive) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background py-12 px-4 font-sans overflow-y-auto">
-        <div className="max-w-md w-full bg-surface rounded-2xl shadow-tactical border-2 border-border-strong overflow-hidden animate-scale-in shrink-0">
-          <div className="bg-border-strong p-8 text-center text-white flex flex-col items-center border-b-2 border-border-strong relative">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white py-12 px-4 font-sans overflow-y-auto">
+        <div className="max-w-md w-full bg-white shadow-brutal border-[3px] border-black overflow-hidden animate-scale-in shrink-0">
+          <div className="bg-black p-8 text-center text-white flex flex-col items-center border-b-[3px] border-black relative">
             {tournamentData.logo ? (
-              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain rounded-xl shadow bg-surface p-2 mb-3 border-2 border-white/20 animate-scale-in" />
+              <img src={tournamentData.logo} alt="Logo" className="w-20 h-20 object-contain border-2 border-black bg-white p-2 mb-3 shadow-brutal-sm animate-scale-in" />
             ) : (
-              <div className="w-16 h-16 rounded-xl bg-surface border-2 border-white/20 flex items-center justify-center text-border-strong mb-3 shadow">
-                <Trophy className="w-8 h-8"/>
+              <div className="w-16 h-16 bg-white border-2 border-black flex items-center justify-center text-black mb-3 shadow-brutal-sm">
+                <Trophy className="w-8 h-8 stroke-[2.5]"/>
               </div>
             )}
-            <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest bg-white/10 px-2.5 py-0.5 rounded-full mb-1">
+            <span className="text-[10px] font-black text-black bg-safety-orange uppercase tracking-widest px-2.5 py-0.5 border border-black mb-2 inline-block">
               Live Tournament System
             </span>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase leading-tight mt-1">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase leading-tight mt-1 text-white">{(tournamentData.title || tournamentTitle).toUpperCase()}</h1>
           </div>
           <div className="p-6 md:p-8 space-y-6">
             <button 
@@ -2674,33 +2674,33 @@ export default function App() {
                 setRole('spectator');
                 localStorage.setItem('tournament_role', 'spectator');
               }} 
-              className="w-full flex items-center justify-between bg-surface-bright hover:bg-blue-50 border-2 border-border-strong p-5 rounded-xl transition-all group shadow-tactical-sm active:scale-95"
+              className="w-full flex items-center justify-between bg-white hover:bg-surface-variant border-[3px] border-black p-5 transition-all group shadow-brutal active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
             >
               <div className="flex items-center gap-4 text-left">
-                <div className="bg-primary text-white p-3 rounded-lg border-2 border-border-strong shadow-tactical-sm shrink-0">
+                <div className="bg-brutal-blue text-white p-3 border-2 border-black shadow-brutal-sm shrink-0">
                   <Users className="w-5 h-5"/>
                 </div>
                 <div>
-                  <h3 className="font-black text-border-strong text-sm">Lihat Bagan Pertandingan</h3>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Pantau Skor Real-time (Penonton)</p>
+                  <h3 className="font-black text-black text-sm uppercase">Lihat Bagan Pertandingan</h3>
+                  <p className="text-[10px] text-black font-bold uppercase tracking-wider mt-0.5">Pantau Skor Real-time (Penonton)</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-border-strong group-hover:translate-x-1 transition-transform"/>
+              <ChevronRight className="w-5 h-5 text-black group-hover:translate-x-1 transition-transform stroke-[3]"/>
             </button>
-            <form onSubmit={handleLoginReferee} className="space-y-3 pt-2 border-t-2 border-border-subtle">
-              <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Login Wasit / Panitia</label>
+            <form onSubmit={handleLoginReferee} className="space-y-3 pt-2 border-t-[3px] border-black">
+              <label className="text-[10px] font-black text-black uppercase tracking-wider block">Login Wasit / Panitia</label>
               <div className="relative">
-                <input type="password" name="pin" placeholder="Masukkan Password Wasit" className="w-full bg-surface border-2 border-border-strong p-4 rounded-xl outline-none font-bold text-xs text-border-strong focus:ring-2 focus:ring-primary transition-all shadow-inner" required />
+                <input type="password" name="pin" placeholder="Masukkan Password Wasit" className="w-full bg-white border-[3px] border-black p-4 font-bold text-xs text-black outline-none focus:ring-0 neo-brutalist-input transition-all shadow-inner" required />
               </div>
-              <button type="submit" className="w-full bg-border-strong text-white py-4 rounded-xl font-black text-sm hover:bg-black transition-all shadow-tactical active:scale-95 uppercase tracking-wide border-2 border-border-strong">Login Wasit</button>
+              <button type="submit" className="w-full bg-black text-white py-4 font-black text-sm hover:bg-brutal-blue transition-all shadow-brutal active:translate-x-0.5 active:translate-y-0.5 active:shadow-none uppercase tracking-wide border-[3px] border-black">Login Wasit</button>
             </form>
           </div>
 
           {/* Section Riwayat Turnamen */}
           {archivesList.length > 0 && (
-            <div className="p-6 border-t-2 border-border-strong bg-surface-dim">
-              <h3 className="text-[10px] font-black text-border-strong uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                <Archive size={14} className="text-primary" /> RIWAYAT TURNAMEN ARSIP
+            <div className="p-6 border-t-[3px] border-black bg-surface-variant">
+              <h3 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                <Archive size={14} className="text-brutal-blue" /> RIWAYAT TURNAMEN ARSIP
               </h3>
               <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
                 {archivesList.map((archive) => {
@@ -2723,26 +2723,26 @@ export default function App() {
                           }
                         }
                       }}
-                      className="w-full flex items-center justify-between bg-surface border-2 border-border-strong hover:border-primary p-3.5 rounded-xl transition-all shadow-tactical-sm cursor-pointer group active:scale-98"
+                      className="w-full flex items-center justify-between bg-white border-[2px] border-black hover:bg-blue-50 p-3.5 transition-all shadow-brutal-sm cursor-pointer group active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
                     >
                       <div className="flex items-center gap-3">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-9 h-9 object-contain rounded-lg border border-border-subtle p-0.5 bg-surface" />
+                          <img src={archive.logo} alt="Logo" className="w-9 h-9 object-contain border border-black p-0.5 bg-white" />
                         ) : (
-                          <div className="bg-blue-50 text-primary p-2 rounded-lg border border-border-subtle">
+                          <div className="bg-surface-variant text-black p-2 border border-black">
                             <Trophy size={14} />
                           </div>
                         )}
                         <div className="text-left">
-                          <h4 className="font-black text-border-strong text-xs uppercase tracking-tight leading-none group-hover:text-primary transition-colors">
+                          <h4 className="font-black text-black text-xs uppercase tracking-tight leading-none group-hover:text-brutal-blue transition-colors">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                          <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-1">
                             {archive.organizer} • {dateStr}
                           </p>
                         </div>
                       </div>
-                      <div className="bg-surface group-hover:bg-primary group-hover:text-white text-border-strong p-1.5 rounded-lg border border-border-strong transition-all">
+                      <div className="bg-white group-hover:bg-black group-hover:text-white text-black p-1.5 border border-black transition-all">
                         <ChevronRight size={14} />
                       </div>
                     </div>
@@ -2755,10 +2755,10 @@ export default function App() {
         
         {/* Footer for Landing Page */}
         <div className="text-center px-4 flex flex-col items-center gap-1 mt-8 pb-4 shrink-0">
-           <p className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase tracking-widest leading-relaxed">
+           <p className="text-[9px] md:text-[10px] font-black text-black uppercase tracking-widest leading-relaxed">
              Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
            </p>
-           <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] mt-0.5">
+           <p className="text-[10px] font-black text-black uppercase tracking-[0.2em] mt-0.5">
              © Copyright by Senyap
            </p>
         </div>
@@ -2767,19 +2767,19 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col text-on-surface font-sans overflow-x-hidden pb-20 md:pb-0">
+    <div className="min-h-screen bg-white flex flex-col text-black font-sans overflow-x-hidden pb-20 md:pb-0">
       {/* Sticky Archive Indicator Banner */}
       {viewingArchive && (
-        <div className="bg-status-warning text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3 px-4 flex items-center justify-between shadow-tactical-sm z-[45] animate-slide-down shrink-0 border-b-2 border-border-strong">
+        <div className="bg-safety-orange text-white font-black text-[10px] md:text-xs uppercase tracking-widest py-3 px-4 flex items-center justify-between shadow-brutal-sm z-[45] animate-slide-down shrink-0 border-b-[3px] border-black">
           <span className="flex items-center gap-2">
-            <Archive size={14} className="animate-pulse text-amber-100" />
+            <Archive size={14} className="animate-pulse text-white" />
             ANDA SEDANG MELIHAT ARSIP: {viewingArchive.title.toUpperCase()} {role === 'referee' ? '(EDITABLE)' : '(READ-ONLY)'}
           </span>
           <div className="flex items-center gap-2">
             {role === 'referee' ? (
               <button 
                 onClick={handleOpenEditArchiveModal} 
-                className="bg-surface hover:bg-surface-bright text-border-strong font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
+                className="bg-white hover:bg-surface-variant text-black font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none shrink-0 uppercase"
               >
                 EDIT DETAIL ARSIP
               </button>
@@ -2797,14 +2797,14 @@ export default function App() {
                     alert("Password Wasit salah!");
                   }
                 }} 
-                className="bg-primary hover:bg-primary-container text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
+                className="bg-black hover:bg-brutal-blue text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 active:shadow-none shrink-0 uppercase"
               >
                 LOGIN WASIT UNTUK EDIT
               </button>
             )}
             <button 
               onClick={() => setViewingArchive(null)} 
-              className="bg-white/20 hover:bg-white/30 text-white font-black text-[9px] md:text-[10px] py-1.5 px-3 rounded-lg transition-colors border border-white/40 active:scale-95 shrink-0"
+              className="bg-black hover:bg-surface-variant text-white hover:text-black font-black text-[9px] md:text-[10px] py-1.5 px-3 transition-colors border-2 border-black active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase"
             >
               KEMBALI KE BERANDA
             </button>
@@ -2813,95 +2813,95 @@ export default function App() {
       )}
 
       {/* Header */}
-      <header className="bg-surface border-b-2 border-border-strong px-4 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-tactical-sm">
+      <header className="bg-white border-b-[3px] border-black px-4 py-3.5 flex items-center justify-between sticky top-0 z-40 shadow-brutal-sm">
         <div className="flex items-center gap-3 md:gap-4">
           {currentTournament.logo ? (
-            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border-2 border-border-strong bg-surface p-1 shrink-0 shadow-sm" />
+            <img src={currentTournament.logo} alt="Logo" className="w-10 h-10 object-contain border-2 border-black bg-white p-1 shrink-0 shadow-brutal-sm" />
           ) : (
-            <div className="bg-border-strong text-white p-2.5 rounded-xl border-2 border-border-strong shadow-tactical-sm hidden md:block shrink-0">
+            <div className="bg-black text-white p-2.5 border-2 border-black shadow-brutal-sm hidden md:block shrink-0">
               <Trophy className="w-5 h-5"/>
             </div>
           )}
           <div>
-            <h1 className="font-black text-border-strong text-sm md:text-lg tracking-tight leading-none mb-1 flex items-center flex-wrap gap-1.5">
+            <h1 className="font-black text-black text-sm md:text-lg tracking-tight leading-none mb-1 flex items-center flex-wrap gap-1.5 uppercase">
               {currentTournament.title || tournamentTitle}
               {(currentTournament.isArchived || viewingArchive) && (
-                <span className="inline-flex items-center gap-1 text-[8px] font-black bg-status-live text-white px-2 py-0.5 rounded-full uppercase animate-pulse shrink-0">
+                <span className="inline-flex items-center gap-1 text-[8px] font-black bg-warning-red text-white px-2 py-0.5 uppercase border border-black animate-pulse shrink-0">
                   <Archive size={8}/> Terarsip
                 </span>
               )}
             </h1>
-            <p className="text-[9px] md:text-[10px] text-primary font-black uppercase tracking-wider">
+            <p className="text-[9px] md:text-[10px] text-brutal-blue font-black uppercase tracking-wider">
               {currentTournament.organizer || tournamentOrganizer}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden lg:flex flex-col items-end mr-3 border-r-2 pr-4 border-border-subtle">
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Status Sistem</p>
-            <p className="text-[10px] font-black text-status-success flex items-center gap-1">
-              <span className="w-2 h-2 bg-status-success rounded-full animate-pulse"></span> ONLINE
+          <div className="hidden lg:flex flex-col items-end mr-3 border-r-2 pr-4 border-black">
+            <p className="text-[8px] font-black text-black uppercase tracking-widest">Status Sistem</p>
+            <p className="text-[10px] font-black text-success-green flex items-center gap-1">
+              <span className="w-2 h-2 bg-success-green border border-black rounded-full animate-pulse"></span> ONLINE
             </p>
           </div>
           {/* Search button in header - only when bracket is active */}
           {activeBracket && activePool !== 'Final' && (
             <button
               onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 80); }}
-              className={cn('p-2.5 rounded-xl border-2 transition-all active:scale-95', showSearch ? 'bg-status-success text-white border-border-strong shadow-tactical-sm' : 'bg-surface hover:bg-surface-bright text-border-strong border-border-strong shadow-tactical-sm')}
+              className={cn('p-2.5 border-2 border-black transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm', showSearch ? 'bg-success-green text-black' : 'bg-white hover:bg-surface-variant text-black')}
               title="Cari Peserta"
             >
-              <Search className="w-4 h-4 stroke-[2.5]"/>
+              <Search className="w-4 h-4 stroke-[3]"/>
             </button>
           )}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className="p-2.5 bg-surface hover:bg-surface-bright text-border-strong rounded-xl border-2 border-border-strong shadow-tactical-sm transition-all active:scale-95"
+            className="p-2.5 bg-white hover:bg-surface-variant text-black border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5"
             title="Menu & Pengaturan"
           >
-            <Settings className="w-4 h-4 stroke-[2.5] text-border-strong"/>
+            <Settings className="w-4 h-4 stroke-[3] text-black"/>
           </button>
         </div>
         
         {isMenuOpen && (
-          <div className="absolute right-4 top-16 w-60 bg-surface rounded-2xl shadow-tactical border-2 border-border-strong py-2 z-50 animate-scale-in">
-            <div className="px-4 py-2 border-b-2 border-border-subtle mb-1">
-               <p className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Akses: {role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}</p>
+          <div className="absolute right-4 top-16 w-60 bg-white shadow-brutal border-[3px] border-black py-2 z-50 animate-scale-in">
+            <div className="px-4 py-2 border-b-2 border-black mb-1 bg-surface-variant">
+               <p className="text-[9px] font-black text-black uppercase tracking-wider">Akses: {role === 'referee' ? 'Wasit / Panitia' : 'Penonton'}</p>
             </div>
             {role === 'referee' && (
               <>
-                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-primary text-xs font-black flex items-center gap-3 hover:bg-blue-50 transition-colors"><Shuffle size={14}/> Buat Bagan Otomatis</button>
-                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-border-strong text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-b-2 border-border-subtle transition-colors"><Trash2 size={14} className="text-status-live"/> Kelola Arsip</button>
-                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-status-live text-xs font-black flex items-center gap-3 hover:bg-red-50 transition-colors"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
+                <button onClick={() => { setShowGlobalSetup(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-brutal-blue hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><Shuffle size={14}/> Buat Bagan Otomatis</button>
+                <button onClick={() => { setShowArchiveManagement(true); setIsMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-b-2 border-black transition-colors uppercase"><Trash2 size={14} className="text-warning-red"/> Kelola Arsip</button>
+                {activeBracket && <button onClick={() => {resetPool(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Bagan {activePool}</button>}
                 {Object.keys(tournamentData.pools || {}).length > 0 && (
                   <>
-                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-red-700 text-xs font-black flex items-center gap-3 hover:bg-red-100/50 transition-colors"><RefreshCw size={14}/> Reset Semua Bagan</button>
-                    <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-slate-700 text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-t border-border-subtle mt-1 pt-2 transition-colors">
+                    <button onClick={() => {resetAllPools(); setIsMenuOpen(false);}} className="w-full text-left px-4 py-2.5 text-warning-red hover:bg-warning-red hover:text-white text-xs font-black flex items-center gap-3 transition-colors uppercase"><RefreshCw size={14}/> Reset Semua Bagan</button>
+                    <button onClick={archiveTournament} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
                       <Archive size={14}/> Arsipkan Turnamen
                     </button>
                   </>
                 )}
-                <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-indigo-700 text-xs font-black flex items-center gap-3 hover:bg-indigo-50 border-t border-border-subtle mt-1 pt-2 transition-colors">
+                <button onClick={handleChangePassword} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t border-black mt-1 pt-2 transition-colors uppercase">
                   <Key size={14}/> Ganti Password Wasit
                 </button>
               </>
             )}
-            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-slate-600 text-xs font-black flex items-center gap-3 hover:bg-slate-50 border-t-2 border-border-subtle transition-colors"><LogOut size={14}/> Keluar Sistem</button>
+            <button onClick={logout} className="w-full text-left px-4 py-2.5 text-black hover:bg-surface-variant text-xs font-black flex items-center gap-3 border-t-2 border-black transition-colors uppercase"><LogOut size={14}/> Keluar Sistem</button>
           </div>
         )}
       </header>
 
       {/* Pool Tabs */}
-      <div className="bg-surface border-b-2 border-border-strong px-4 py-2.5 flex items-center justify-between sticky top-[65px] z-30 shadow-tactical-sm">
+      <div className="bg-white border-b-[3px] border-black px-4 py-2.5 flex items-center justify-between sticky top-[65px] z-30 shadow-brutal-sm">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 py-1">
           {poolsList.map(pool => (
             <button 
               key={pool} 
               onClick={() => { setActivePool(pool); setSearchResult(null); setShowSearch(false); setSearchQuery(''); }} 
               className={cn(
-                "py-2 px-5 font-black text-xs md:text-sm rounded-full transition-all border-2 active:scale-95 shrink-0 uppercase tracking-wider", 
+                "py-2.5 px-6 font-black text-xs md:text-sm transition-all border-[3px] border-black active:translate-x-0.5 active:translate-y-0.5 shrink-0 uppercase tracking-wider", 
                 activePool === pool 
-                  ? (pool === 'Final' ? 'bg-status-warning border-border-strong text-white shadow-tactical-sm' : 'bg-border-strong border-border-strong text-white shadow-tactical-sm') 
-                  : 'bg-surface text-border-strong border-border-subtle hover:border-border-strong'
+                  ? (pool === 'Final' ? 'bg-safety-orange text-white shadow-brutal-sm' : 'bg-brutal-blue text-white shadow-brutal-sm') 
+                  : 'bg-white text-black hover:bg-surface-variant'
               )}
             >
               {pool === 'Final' ? 'FINAL' : `BAGAN ${pool}`}
@@ -2911,7 +2911,7 @@ export default function App() {
         {activeBracket && (
           <button 
             onClick={handlePrintPDF}
-            className="flex items-center gap-2 bg-surface border-2 border-border-strong hover:bg-blue-50 text-border-strong py-2 px-4 rounded-xl font-black text-xs transition-all shrink-0 active:scale-95 shadow-tactical-sm ml-2 uppercase tracking-wide"
+            className="flex items-center gap-2 bg-white border-[3px] border-black hover:bg-black hover:text-white text-black py-2 px-4 font-black text-xs transition-all shrink-0 active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm ml-2 uppercase tracking-wide"
           >
             <Printer size={14} className="stroke-[2.5]" />
             <span className="hidden sm:inline">CETAK / PDF</span>
@@ -2923,26 +2923,26 @@ export default function App() {
       {/* Edit Modal / Setelan Peserta */}
       {editingPlayer && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
-          <div className="relative bg-surface w-full max-w-md rounded-2xl p-6 md:p-8 shadow-tactical animate-scale-in border-2 border-border-strong">
-            <h3 className="text-xl font-black text-border-strong mb-1 tracking-tight">Setelan Peserta</h3>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Kelola: {editingPlayer.currentName}</p>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setEditingPlayer(null)}></div>
+          <div className="relative bg-white w-full max-w-md p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black">
+            <h3 className="text-xl font-black text-black mb-1 uppercase tracking-tight">Setelan Peserta</h3>
+            <p className="text-xs font-bold text-black uppercase tracking-wider mb-6">Kelola: {editingPlayer.currentName}</p>
             
             <div className="space-y-5">
               <div>
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Ubah Nama Peserta</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-wider mb-2 block">Ubah Nama Peserta</label>
                 <input 
                   autoFocus 
                   id="edit-name-input" 
                   type="text" 
                   defaultValue={editingPlayer.currentName} 
-                  className="w-full bg-surface border-2 border-border-strong p-3.5 rounded-xl font-bold text-xs text-border-strong focus:ring-2 focus:ring-primary outline-none transition-all shadow-inner"
+                  className="w-full bg-white border-[2px] border-black p-3.5 font-bold text-xs text-black outline-none neo-brutalist-input transition-all shadow-inner"
                   onKeyDown={(e) => e.key === 'Enter' && handleUpdatePlayerName(e.target.value)} 
                 />
               </div>
               
               <div>
-                <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider mb-2 block">Tindakan Khusus</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-wider mb-2 block">Tindakan Khusus</label>
                 {(() => {
                   const poolData = tournamentData.pools[activePool];
                   const match = poolData?.matches?.find(m => m.id === editingPlayer.matchId);
@@ -2952,10 +2952,10 @@ export default function App() {
                     <button 
                       onClick={() => handleDisqualifyPlayer(editingPlayer.matchId, editingPlayer.playerSlot)}
                       className={cn(
-                        "w-full py-3.5 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 border-2 shadow-tactical-sm active:scale-95 uppercase tracking-wide",
+                        "w-full py-3.5 font-black text-xs transition-all flex items-center justify-center gap-2 border-[2px] border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wide",
                         isDis 
-                          ? "bg-status-success hover:bg-emerald-800 text-white border-border-strong" 
-                          : "bg-status-live hover:bg-red-800 text-white border-border-strong"
+                          ? "bg-success-green hover:bg-green-400 text-black" 
+                          : "bg-warning-red hover:bg-red-700 text-white"
                       )}
                     >
                       {isDis ? (
@@ -2973,9 +2973,9 @@ export default function App() {
               </div>
             </div>
             
-            <div className="flex gap-3 mt-8 pt-5 border-t-2 border-border-subtle">
-              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-surface border-2 border-border-strong text-border-strong py-3 rounded-xl font-black text-xs hover:bg-slate-100 transition-all active:scale-95 uppercase">Tutup</button>
-              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-primary border-2 border-border-strong text-white py-3 rounded-xl font-black text-xs shadow-tactical-sm hover:bg-primary-container transition-all active:scale-95 uppercase tracking-wide">Simpan Nama</button>
+            <div className="flex gap-3 mt-8 pt-5 border-t-[3px] border-black">
+              <button onClick={() => setEditingPlayer(null)} className="flex-1 bg-white border-2 border-black text-black py-3 font-black text-xs hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 uppercase">Tutup</button>
+              <button onClick={() => handleUpdatePlayerName(document.getElementById('edit-name-input').value)} className="flex-1 bg-brutal-blue border-2 border-black text-white py-3 font-black text-xs shadow-brutal-sm hover:bg-blue-700 transition-all active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wide">Simpan Nama</button>
             </div>
           </div>
         </div>
@@ -2984,16 +2984,16 @@ export default function App() {
       {/* Archive Management Modal */}
       {showArchiveManagement && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
-          <div className="relative bg-surface w-full max-w-lg rounded-2xl p-6 md:p-8 shadow-tactical animate-scale-in border-2 border-border-strong flex flex-col max-h-[85vh]">
-            <h3 className="text-xl font-black text-border-strong mb-1 flex items-center gap-2 tracking-tight">
-              <Archive className="text-primary" size={22}/> Kelola Arsip Turnamen
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
+          <div className="relative bg-white w-full max-w-lg p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[85vh]">
+            <h3 className="text-xl font-black text-black mb-1 flex items-center gap-2 tracking-tight uppercase">
+              <Archive className="text-black stroke-[2.5]" size={22}/> Kelola Arsip Turnamen
             </h3>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            <p className="text-xs font-bold text-black uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
             
             <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin flex-1">
               {archivesList.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 font-bold">Belum ada turnamen yang diarsipkan.</div>
+                <div className="text-center py-12 text-black font-bold uppercase">Belum ada turnamen yang diarsipkan.</div>
               ) : (
                 archivesList.map((archive) => {
                   const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
@@ -3002,20 +3002,20 @@ export default function App() {
                     day: 'numeric'
                   });
                   return (
-                    <div key={archive.id} className="flex items-center justify-between bg-surface-bright border-2 border-border-strong p-3.5 rounded-xl shadow-tactical-sm">
+                    <div key={archive.id} className="flex items-center justify-between bg-surface-variant border-2 border-black p-3.5 shadow-brutal-sm">
                       <div className="flex items-center gap-3">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain rounded-lg border border-border-subtle p-1 bg-surface" />
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain border border-black p-1 bg-white" />
                         ) : (
-                          <div className="bg-blue-50 text-primary p-2 rounded-lg border border-border-subtle">
+                          <div className="bg-white text-black p-2 border border-black">
                             <Trophy size={16} />
                           </div>
                         )}
                         <div className="text-left">
-                          <h4 className="font-black text-border-strong text-xs uppercase tracking-tight leading-none">
+                          <h4 className="font-black text-black text-xs uppercase tracking-tight leading-none">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                          <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-1">
                             {archive.organizer} • {dateStr}
                           </p>
                         </div>
@@ -3035,13 +3035,13 @@ export default function App() {
                               }
                             }
                           }}
-                          className="bg-primary hover:bg-primary-container text-white font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-lg transition-all border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
+                          className="bg-brutal-blue hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-wider py-2 px-3 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0"
                         >
                           Lihat / Edit
                         </button>
                         <button 
                           onClick={() => handleDeleteArchive(archive.id, archive.title)}
-                          className="bg-red-50 hover:bg-red-100 text-status-live p-2.5 rounded-lg transition-all border-2 border-border-strong shadow-tactical-sm active:scale-95 shrink-0"
+                          className="bg-warning-red hover:bg-red-700 text-white p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0"
                           title="Hapus Arsip"
                         >
                           <Trash2 size={16} />
@@ -3053,8 +3053,8 @@ export default function App() {
               )}
             </div>
             
-            <div className="mt-6 pt-6 border-t border-slate-100 flex justify-end">
-              <button onClick={() => setShowArchiveManagement(false)} className="bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm">
+            <div className="mt-6 pt-6 border-t-[3px] border-black flex justify-end">
+              <button onClick={() => setShowArchiveManagement(false)} className="bg-black hover:bg-brutal-blue text-white px-6 py-3 font-black transition-all shadow-brutal border-2 border-black active:translate-x-0.5 active:translate-y-0.5 text-xs uppercase tracking-wider">
                 Selesai & Tutup
               </button>
             </div>
@@ -3063,14 +3063,14 @@ export default function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-slate-50">
+      <main className="flex-1 overflow-auto bg-white">
         {currentTournament.isArchived && (
           role === 'referee' ? (
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30">
+            <div className="bg-success-green text-black font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 border-b-[3px] border-black shadow-brutal-sm relative z-30">
               <Archive size={16}/> Turnamen ini telah diarsipkan (Mode Edit Wasit Aktif)
             </div>
           ) : (
-            <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 shadow-inner relative z-30 animate-pulse">
+            <div className="bg-warning-red text-white font-black text-xs md:text-sm uppercase tracking-widest text-center px-4 py-3 flex items-center justify-center gap-2 border-b-[3px] border-black shadow-brutal-sm relative z-30 animate-pulse">
               <Archive size={16}/> Turnamen ini telah diarsipkan dan bersifat final (Read-Only)
             </div>
           )
@@ -3112,13 +3112,14 @@ export default function App() {
           <div className="max-w-7xl mx-auto p-6 md:p-12 animate-slide-up">
             {/* Header Final */}
             <div className="relative mb-8 max-w-3xl mx-auto">
-              <div className="absolute -inset-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-3xl blur-xl opacity-20"></div>
-              <div className="relative bg-white border-2 border-yellow-200 rounded-3xl p-8 flex items-center gap-6 shadow-xl">
-                <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 rounded-2xl text-white shadow-lg"><Trophy size={36}/></div>
+              <div className="relative bg-white border-[3px] border-black p-6 md:p-8 flex items-center gap-6 shadow-brutal">
+                <div className="bg-black p-4 text-white border-2 border-black shadow-brutal-sm"><Trophy size={36}/></div>
                 <div>
-                  <p className="text-[10px] font-black text-yellow-600 uppercase tracking-widest">Grand Final</p>
-                  <h2 className="text-2xl font-black text-slate-800">{currentTournament.title || tournamentTitle}</h2>
-                  <p className="text-xs text-slate-500 font-bold mt-1">{getFinalFormatText()}</p>
+                  <span className="text-[10px] font-black text-black bg-safety-orange px-2 py-0.5 uppercase tracking-widest border border-black inline-block mb-1">
+                    Grand Final
+                  </span>
+                  <h2 className="text-2xl font-black text-black uppercase tracking-tight">{currentTournament.title || tournamentTitle}</h2>
+                  <p className="text-xs text-black font-bold uppercase mt-1">{getFinalFormatText()}</p>
                 </div>
               </div>
             </div>
@@ -3133,18 +3134,18 @@ export default function App() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-8 max-w-3xl mx-auto">
               {currentTournament.useCustomFinalists ? (
                 (currentTournament.customFinalists || Array(currentTournament.customFinalistsCount || 4).fill('')).map((name, idx) => (
-                  <div key={idx} className={cn("rounded-2xl p-5 border-2 text-center shadow-sm", name ? 'bg-white border-yellow-200' : 'bg-slate-50 border-slate-200')}>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Finalis #{idx + 1}</p>
-                    <p className={cn("text-sm font-black", name ? 'text-slate-800' : 'text-slate-350 italic')}>{ name || 'TBA'}</p>
-                    {name && <div className="mt-2 w-2 h-2 bg-yellow-500 rounded-full mx-auto"></div>}
+                  <div key={idx} className={cn("p-5 border-[2px] border-black text-center shadow-brutal-sm", name ? 'bg-surface-variant' : 'bg-white')}>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-black">Finalis #{idx + 1}</p>
+                    <p className={cn("text-sm font-black uppercase", name ? 'text-black' : 'text-slate-400 italic')}>{ name || 'TBA'}</p>
+                    {name && <div className="mt-2 w-2 h-2 bg-black rounded-full mx-auto"></div>}
                   </div>
                 ))
               ) : (
                 finalParticipants.map((p) => (
-                  <div key={p.pool} className={cn("rounded-2xl p-5 border-2 text-center shadow-sm", p.name ? 'bg-white border-emerald-200' : 'bg-slate-50 border-slate-200')}>
-                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-slate-400">Juara Pool {p.pool}</p>
-                    <p className={cn("text-sm font-black", p.name ? 'text-slate-800' : 'text-slate-350 italic')}>{ p.name || 'Belum Ada'}</p>
-                    {p.name && <div className="mt-2 w-2 h-2 bg-emerald-500 rounded-full mx-auto"></div>}
+                  <div key={p.pool} className={cn("p-5 border-[2px] border-black text-center shadow-brutal-sm", p.name ? 'bg-surface-variant' : 'bg-white')}>
+                    <p className="text-[9px] font-black uppercase tracking-widest mb-2 text-black">Juara Pool {p.pool}</p>
+                    <p className={cn("text-sm font-black uppercase", p.name ? 'text-black' : 'text-slate-400 italic')}>{ p.name || 'Belum Ada'}</p>
+                    {p.name && <div className="mt-2 w-2 h-2 bg-black rounded-full mx-auto"></div>}
                   </div>
                 ))
               )}
@@ -3152,19 +3153,19 @@ export default function App() {
 
             {/* Referee Quick Setup Panel */}
             {role === 'referee' && (
-              <div className="bg-slate-100/80 border-2 border-slate-200/50 p-6 rounded-3xl mb-8 max-w-3xl mx-auto shadow-sm">
+              <div className="bg-surface-variant border-[3px] border-black p-6 mb-8 max-w-3xl mx-auto shadow-brutal">
                 <div className="flex flex-col gap-6">
                   {/* Finalists Data Source Configuration */}
-                  <div className="border-b border-slate-200/50 pb-5">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 block">Sumber Data Finalis</label>
-                    <div className="flex gap-2 bg-slate-200/40 p-1 rounded-xl mb-4">
+                  <div className="border-b-[2px] border-black pb-5">
+                    <label className="text-[10px] font-black text-black uppercase tracking-widest mb-3 block">Sumber Data Finalis</label>
+                    <div className="flex gap-2 p-1 mb-4">
                       <button 
                         onClick={() => updateCustomFinalistSettings({ useCustomFinalists: false })} 
                         className={cn(
-                          "flex-1 py-2 px-4 rounded-lg text-xs font-black transition-all", 
+                          "flex-1 py-2 px-4 text-xs font-black transition-all border-2 border-black uppercase", 
                           !currentTournament.useCustomFinalists 
-                            ? "bg-white text-slate-850 shadow-sm" 
-                            : "text-slate-500 hover:text-slate-700"
+                            ? "bg-black text-white shadow-brutal-sm" 
+                            : "bg-white text-black hover:bg-surface-container"
                         )}
                       >
                         Otomatis (Juara Pool)
@@ -3172,10 +3173,10 @@ export default function App() {
                       <button 
                         onClick={() => updateCustomFinalistSettings({ useCustomFinalists: true })} 
                         className={cn(
-                          "flex-1 py-2 px-4 rounded-lg text-xs font-black transition-all", 
+                          "flex-1 py-2 px-4 text-xs font-black transition-all border-2 border-black uppercase", 
                           currentTournament.useCustomFinalists 
-                            ? "bg-white text-slate-850 shadow-sm" 
-                            : "text-slate-500 hover:text-slate-700"
+                            ? "bg-black text-white shadow-brutal-sm" 
+                            : "bg-white text-black hover:bg-surface-container"
                         )}
                       >
                         Kustom (Pilih Manual)
@@ -3183,15 +3184,15 @@ export default function App() {
                     </div>
 
                     {currentTournament.useCustomFinalists && (
-                      <div className="bg-white border border-slate-200/60 p-5 rounded-2xl flex flex-col gap-4">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Daftar Finalis Kustom</span>
+                      <div className="bg-white border-2 border-black p-5 flex flex-col gap-4 shadow-brutal-sm">
+                        <div className="flex items-center justify-between border-b-2 border-black pb-3">
+                          <span className="text-[10px] font-black text-black uppercase tracking-widest">Daftar Finalis Kustom</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-[9px] font-bold text-slate-450 uppercase">Jumlah Slot:</span>
+                            <span className="text-[9px] font-bold text-black uppercase">Jumlah Slot:</span>
                             <select 
                               value={currentTournament.customFinalistsCount || 4} 
                               onChange={(e) => updateCustomFinalistSettings({ customFinalistsCount: parseInt(e.target.value) })}
-                              className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-black text-slate-700 outline-none focus:border-brand-500"
+                              className="bg-white border-2 border-black px-2.5 py-1 text-xs font-black text-black outline-none"
                             >
                               {[2, 4, 8, 16].map(num => (
                                 <option key={num} value={num}>{num} Pemain</option>
@@ -3205,7 +3206,7 @@ export default function App() {
                             const name = (currentTournament.customFinalists || [])[idx] || '';
                             return (
                               <div key={idx} className="flex flex-col gap-1.5">
-                                <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Slot Finalis #{idx + 1}</span>
+                                <span className="text-[8px] font-black text-black uppercase tracking-wider">Slot Finalis #{idx + 1}</span>
                                 <input 
                                   type="text"
                                   list="all-participants-list"
@@ -3233,7 +3234,7 @@ export default function App() {
                                     updateCustomFinalistSettings({ customFinalists: newList });
                                   }}
                                   placeholder={`Ketik nama atau pilih dari bagan...`}
-                                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                                  className="w-full bg-white border-2 border-black p-3 outline-none font-bold text-xs text-black neo-brutalist-input transition-all"
                                 />
                               </div>
                             );
@@ -3245,8 +3246,8 @@ export default function App() {
 
                   {/* Format Selector */}
                   <div>
-                    <label className="text-[10px] font-black text-slate-555 uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
-                    <div className="grid grid-cols-3 gap-2 bg-slate-200/60 p-1.5 rounded-2xl">
+                    <label className="text-[10px] font-black text-black uppercase tracking-widest mb-3 block text-center md:text-left">Format Bagan Final</label>
+                    <div className="grid grid-cols-3 gap-2 p-1">
                       {[
                         { id: 'bracket', label: 'Gugur Tunggal' },
                         { id: 'double', label: 'Gugur Ganda' },
@@ -3258,10 +3259,10 @@ export default function App() {
                             key={opt.id}
                             onClick={() => changeFinalFormat(opt.id)}
                             className={cn(
-                              "py-2.5 px-3 rounded-xl text-xs font-black transition-all",
+                              "py-2.5 px-3 text-xs font-black transition-all border-2 border-black uppercase",
                               isActive
-                                ? "bg-white text-slate-800 shadow-md"
-                                : "text-slate-450 hover:text-slate-700"
+                                ? "bg-brutal-blue text-white shadow-brutal-sm"
+                                : "bg-white text-black hover:bg-surface-container"
                             )}
                           >
                             {opt.label}
@@ -3276,10 +3277,10 @@ export default function App() {
                     <button 
                       onClick={syncFinalBracket} 
                       className={cn(
-                        "flex-1 p-4 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2", 
+                        "flex-1 p-4 font-black text-xs md:text-sm transition-all flex items-center justify-center gap-2 border-[3px] border-black uppercase tracking-wide", 
                         allFinalistsReady 
-                          ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-lg shadow-yellow-200' 
-                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                          ? 'bg-success-green hover:bg-green-400 text-black shadow-brutal active:translate-x-0.5 active:translate-y-0.5 active:shadow-none' 
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed border-2'
                       )} 
                       disabled={!allFinalistsReady}
                     >
@@ -3288,7 +3289,7 @@ export default function App() {
                     {activeBracket && (
                       <button 
                         onClick={resetPool} 
-                        className="px-6 py-4 rounded-2xl font-black text-sm text-red-600 border-2 border-red-150 hover:bg-red-50 transition-all bg-white shadow-sm"
+                        className="px-6 py-4 font-black text-xs md:text-sm text-white bg-warning-red hover:bg-red-700 transition-all border-[3px] border-black shadow-brutal active:translate-x-0.5 active:translate-y-0.5 uppercase"
                       >
                         Reset
                       </button>
@@ -3301,16 +3302,16 @@ export default function App() {
             {/* Round-Robin Matches */}
             {activeBracket?.type === 'roundrobin' && (
               <div className="space-y-5 max-w-3xl mx-auto">
-                <div className="flex items-center justify-between border-b-2 border-border-strong pb-2">
-                  <h3 className="font-black text-border-strong text-xs uppercase tracking-widest">Pertandingan Final</h3>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">{activeBracket.matches.length} Pertandingan</span>
+                <div className="flex items-center justify-between border-b-[3px] border-black pb-2">
+                  <h3 className="font-black text-black text-xs uppercase tracking-widest">Pertandingan Final</h3>
+                  <span className="text-[10px] font-black text-black uppercase tracking-wider">{activeBracket.matches.length} Pertandingan</span>
                 </div>
                 <div className="space-y-3">
                   {activeBracket.matches.map((match, idx) => (
-                    <div key={match.id} className="bg-surface border-2 border-border-strong rounded-xl p-4 md:p-5 shadow-tactical-sm hover:shadow-tactical transition-all">
+                    <div key={match.id} className="bg-white border-[3px] border-black p-4 md:p-5 shadow-brutal-sm hover:shadow-brutal transition-all">
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider">Match #{idx + 1}</span>
-                        <span className="text-[9px] font-black text-primary bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded uppercase tracking-wider">{match.label}</span>
+                        <span className="text-[9px] font-black text-black uppercase tracking-wider">Match #{idx + 1}</span>
+                        <span className="text-[9px] font-black text-white bg-black px-2.5 py-0.5 uppercase tracking-wider border border-black">{match.label}</span>
                       </div>
                       <div className="flex flex-col gap-2">
                         {[{name: match.player1, slot: 1}, {name: match.player2, slot: 2}].map(p => (
@@ -3319,13 +3320,13 @@ export default function App() {
                             onClick={() => setFinalWinner(match.id, p.name)} 
                             disabled={role !== 'referee' || !p.name} 
                             className={cn(
-                              'w-full flex items-center gap-3 p-3.5 rounded-xl border-2 font-black text-xs md:text-sm transition-all text-left active:scale-98',
+                              'w-full flex items-center gap-3 p-3.5 border-2 border-black font-black text-xs md:text-sm transition-all text-left uppercase active:translate-x-0.5 active:translate-y-0.5',
                               match.winner === p.name 
-                                ? 'bg-primary border-border-strong text-white shadow-tactical-sm' 
-                                : 'bg-surface border-border-subtle hover:border-border-strong text-border-strong'
+                                ? 'bg-brutal-blue text-white shadow-brutal-sm' 
+                                : 'bg-white hover:bg-surface-variant text-black'
                             )}
                           >
-                            <div className={cn('w-3 h-3 rounded-full shrink-0 border-2', match.winner === p.name ? 'bg-white border-white' : 'bg-slate-200 border-slate-300')}/>
+                            <div className={cn('w-3.5 h-3.5 shrink-0 border-2 border-black', match.winner === p.name ? 'bg-white' : 'bg-black')}/>
                             <span className="truncate">{p.name || 'TBA'}</span>
                             {match.winner === p.name && <Check size={14} className="ml-auto stroke-[3]"/>}
                           </button>
@@ -3337,13 +3338,13 @@ export default function App() {
 
                 {/* Standings Table */}
                 <div className="mt-8">
-                  <div className="flex items-center justify-between border-b-2 border-border-strong pb-2 mb-3">
-                    <h3 className="font-black text-border-strong text-xs uppercase tracking-widest flex items-center gap-2">
-                      <Trophy size={14} className="text-amber-500" /> Klasemen Sementara
+                  <div className="flex items-center justify-between border-b-[3px] border-black pb-2 mb-3">
+                    <h3 className="font-black text-black text-xs uppercase tracking-widest flex items-center gap-2">
+                      <Trophy size={14} className="text-black" /> Klasemen Sementara
                     </h3>
                   </div>
-                  <div className="bg-surface border-2 border-border-strong rounded-xl overflow-hidden shadow-tactical">
-                    <div className="grid grid-cols-4 bg-border-strong text-white text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-3">
+                  <div className="bg-white border-[3px] border-black overflow-hidden shadow-brutal">
+                    <div className="grid grid-cols-4 bg-black text-white text-[10px] font-black uppercase tracking-widest px-4 md:px-6 py-3">
                       <div>Nama Peserta</div>
                       <div className="text-center">Menang (M)</div>
                       <div className="text-center">Kalah (K)</div>
@@ -3353,23 +3354,23 @@ export default function App() {
                       <div 
                         key={s.name} 
                         className={cn(
-                          'grid grid-cols-4 px-4 md:px-6 py-3.5 border-b-2 last:border-0 border-border-subtle items-center transition-colors', 
-                          i === 0 && 'bg-amber-50/70 border-l-4 border-l-yellow-500',
-                          i === 1 && 'bg-slate-50 border-l-4 border-l-slate-400',
-                          i === 2 && 'bg-amber-50/30 border-l-4 border-l-amber-600',
-                          i > 2 && 'bg-surface'
+                          'grid grid-cols-4 px-4 md:px-6 py-3.5 border-b-2 last:border-0 border-black items-center transition-colors', 
+                          i === 0 && 'bg-safety-orange/20 border-l-4 border-l-safety-orange',
+                          i === 1 && 'bg-surface-variant border-l-4 border-l-black',
+                          i === 2 && 'bg-amber-100 border-l-4 border-l-amber-600',
+                          i > 2 && 'bg-white'
                         )}
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          {i === 0 && <Trophy size={14} className="text-yellow-600 shrink-0 stroke-[2.5]"/>}
-                          {i === 1 && <Medal size={14} className="text-slate-500 shrink-0 stroke-[2.5]"/>}
-                          {i === 2 && <Award size={14} className="text-amber-700 shrink-0 stroke-[2.5]"/>}
-                          {i > 2 && <span className="text-[10px] font-black text-slate-400 w-4 text-center shrink-0">{i + 1}</span>}
-                          <span className="font-black text-xs md:text-sm text-border-strong truncate">{s.name}</span>
+                          {i === 0 && <Trophy size={14} className="text-black shrink-0 stroke-[2.5]"/>}
+                          {i === 1 && <Medal size={14} className="text-black shrink-0 stroke-[2.5]"/>}
+                          {i === 2 && <Award size={14} className="text-black shrink-0 stroke-[2.5]"/>}
+                          {i > 2 && <span className="text-[10px] font-black text-black w-4 text-center shrink-0">{i + 1}</span>}
+                          <span className="font-black text-xs md:text-sm text-black truncate uppercase">{s.name}</span>
                         </div>
-                        <div className="text-center font-black text-xs md:text-sm text-status-success">{s.w}</div>
-                        <div className="text-center font-black text-xs md:text-sm text-status-live">{s.l}</div>
-                        <div className="text-center font-black text-sm md:text-base text-primary">{s.pts}</div>
+                        <div className="text-center font-black text-xs md:text-sm text-success-green">{s.w}</div>
+                        <div className="text-center font-black text-xs md:text-sm text-warning-red">{s.l}</div>
+                        <div className="text-center font-black text-sm md:text-base text-brutal-blue">{s.pts}</div>
                       </div>
                     ))}
                   </div>
@@ -3379,9 +3380,9 @@ export default function App() {
 
             {/* Tree Bracket Matches (Gugur Tunggal / Gugur Ganda) */}
             {activeBracket && activeBracket.type !== 'roundrobin' && (
-              <div className="relative mt-8 border-t border-slate-150 pt-8 overflow-visible">
-                <h3 className="font-black text-slate-700 text-xs uppercase tracking-widest mb-6 text-center">Bagan Pertandingan Final</h3>
-                <div className="border-2 border-slate-200/60 rounded-3xl bg-slate-100/30 overflow-hidden shadow-inner">
+              <div className="relative mt-8 border-t-[3px] border-black pt-8 overflow-visible">
+                <h3 className="font-black text-black text-xs uppercase tracking-widest mb-6 text-center">Bagan Pertandingan Final</h3>
+                <div className="border-[3px] border-black bg-white overflow-hidden shadow-brutal">
                   {renderBracket()}
                 </div>
               </div>
@@ -3389,7 +3390,7 @@ export default function App() {
 
             {/* Empty state */}
             {!activeBracket && role !== 'referee' && (
-              <div className="text-center py-20 max-w-3xl mx-auto"><Trophy size={60} className="text-slate-200 mx-auto mb-4"/><p className="text-slate-400 font-bold">Bagan Final belum dimulai.</p></div>
+              <div className="text-center py-20 max-w-3xl mx-auto"><Trophy size={60} className="text-black mx-auto mb-4"/><p className="text-black font-black uppercase">Bagan Final belum dimulai.</p></div>
             )}
           </div>
         ) : (
@@ -3398,43 +3399,43 @@ export default function App() {
             {!activeBracket ? (
               role === 'referee' ? (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in">
-                  <Shuffle size={80} className="text-slate-200 mb-6"/>
-                  <h2 className="text-2xl font-black text-slate-800 uppercase tracking-widest">Bagan {activePool} Kosong</h2>
-                  <p className="text-slate-500 font-bold mt-2 mb-8">Anda harus menggunakan fitur Buat Bagan Otomatis untuk mengisi ulang bagan.</p>
-                  <button onClick={() => setShowGlobalSetup(true)} className="bg-brand-600 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-brand-200 hover:bg-brand-700 transition-all flex items-center justify-center gap-3 active:scale-95">
-                    <Shuffle size={20}/> BUAT BAGAN OTOMATIS (96 SLOT)
+                  <Shuffle size={80} className="text-black mb-6 stroke-[2]"/>
+                  <h2 className="text-2xl font-black text-black uppercase tracking-widest">Bagan {activePool} Kosong</h2>
+                  <p className="text-black font-bold mt-2 mb-8">Anda harus menggunakan fitur Buat Bagan Otomatis untuk mengisi ulang bagan.</p>
+                  <button onClick={() => setShowGlobalSetup(true)} className="bg-brutal-blue text-white px-8 py-4 font-black text-sm border-[3px] border-black shadow-brutal hover:bg-blue-700 transition-all flex items-center justify-center gap-3 active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wide">
+                    <Shuffle size={20}/> BUAT BAGAN OTOMATIS
                   </button>
                 </div>
-              ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-slate-200 mb-6"/><h2 className="text-2xl font-black text-slate-300 uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-slate-400 font-bold mt-2">Menunggu panitia mengunggah daftar peserta.</p></div>
+              ) : <div className="flex flex-col items-center justify-center min-h-[60vh] p-20 text-center animate-fade-in"><Trophy size={80} className="text-black mb-6 stroke-[2]"/><h2 className="text-2xl font-black text-black uppercase tracking-widest">Bagan {activePool} Belum Siap</h2><p className="text-black font-bold mt-2 uppercase">Menunggu panitia mengunggah daftar peserta.</p></div>
             ) : (
               <div className="relative">
                 {/* Reusable Bracket Renderer */}
                 {renderBracket()}
 
                 {/* Floating Controls — Zoom + Search */}
-                <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1 select-none">
-                  <div className="bg-white/90 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col items-center">
+                <div className="fixed bottom-28 right-4 z-50 flex flex-col items-center gap-1.5 select-none">
+                  <div className="bg-white border-[3px] border-black shadow-brutal flex flex-col items-center">
                     <button
                       onClick={() => setBracketZoom(z => Math.min(2, parseFloat((z + 0.1).toFixed(1))))}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-surface-variant active:bg-slate-200 transition-colors"
                     >
-                      <ZoomIn size={18} className="text-slate-700"/>
+                      <ZoomIn size={18} className="text-black stroke-[2.5]"/>
                     </button>
-                    <div className="w-8 h-px bg-slate-200"/>
+                    <div className="w-8 h-[2px] bg-black"/>
                     <div className="w-11 h-8 flex items-center justify-center">
-                      <span className="text-[9px] font-black text-slate-500">{Math.round(bracketZoom * 100)}%</span>
+                      <span className="text-[9px] font-black text-black">{Math.round(bracketZoom * 100)}%</span>
                     </div>
-                    <div className="w-8 h-px bg-slate-200"/>
+                    <div className="w-8 h-[2px] bg-black"/>
                     <button
                       onClick={() => setBracketZoom(z => Math.max(0.4, parseFloat((z - 0.1).toFixed(1))))}
-                      className="w-11 h-11 flex items-center justify-center hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                      className="w-11 h-11 flex items-center justify-center hover:bg-surface-variant active:bg-slate-200 transition-colors"
                     >
-                      <ZoomOut size={18} className="text-slate-700"/>
+                      <ZoomOut size={18} className="text-black stroke-[2.5]"/>
                     </button>
                   </div>
                   <button
                     onClick={() => setBracketZoom(1)}
-                    className="mt-1 bg-white/90 backdrop-blur-md border border-slate-200 rounded-xl shadow-lg px-3 py-1.5 text-[9px] font-black text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+                    className="mt-1 bg-white border-[2px] border-black shadow-brutal-sm px-3 py-1.5 text-[9px] font-black text-black hover:bg-surface-variant transition-colors uppercase"
                   >
                     RESET
                   </button>
@@ -3442,13 +3443,13 @@ export default function App() {
                   <button
                     onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResult(null); setTimeout(() => searchInputRef.current?.focus(), 80); }}
                     className={cn(
-                      'mt-1 w-11 h-11 flex items-center justify-center rounded-2xl shadow-xl border transition-all',
+                      'mt-1 w-11 h-11 flex items-center justify-center border-[3px] border-black shadow-brutal transition-all active:translate-x-0.5 active:translate-y-0.5',
                       showSearch
-                        ? 'bg-emerald-500 border-emerald-400 text-white'
-                        : 'bg-white/90 backdrop-blur-md border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-success-green text-black'
+                        : 'bg-white text-black hover:bg-surface-variant'
                     )}
                   >
-                    <Search size={18}/>
+                    <Search size={18} className="stroke-[3]"/>
                   </button>
                 </div>
               </div>
@@ -3460,16 +3461,13 @@ export default function App() {
               if (!poolWinner) return null;
               return (
                 <div className="max-w-sm mx-auto px-4 pb-16 pt-8 animate-slide-up">
-                  <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-500 rounded-3xl blur-lg opacity-25 group-hover:opacity-40 transition duration-700"></div>
-                    <div className="relative bg-white border-2 border-yellow-200 rounded-3xl px-6 py-5 shadow-xl flex items-center gap-5">
-                      <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-3.5 rounded-2xl text-white shadow-lg shrink-0">
-                        <Trophy size={26} className="drop-shadow-sm"/>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[9px] font-black text-yellow-600 uppercase tracking-widest mb-0.5">Juara Pool {activePool}</p>
-                        <p className="text-lg font-black text-slate-800 tracking-tight truncate">{poolWinner}</p>
-                      </div>
+                  <div className="relative bg-white border-[3px] border-black px-6 py-5 shadow-brutal flex items-center gap-5">
+                    <div className="bg-black p-3.5 text-white border-2 border-black shadow-brutal-sm shrink-0">
+                      <Trophy size={26} className="stroke-[2.5]"/>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black text-black uppercase tracking-widest mb-0.5">Juara Pool {activePool}</p>
+                      <p className="text-lg font-black text-black tracking-tight truncate uppercase">{poolWinner}</p>
                     </div>
                   </div>
                 </div>
@@ -3479,13 +3477,13 @@ export default function App() {
         )}
       </main>
 
-      {/* Search Modal Overlay — triggered by floating search button */}
+      {/* Search Modal Overlay */}
       {showSearch && activeBracket && activePool !== 'Final' && (
         <div className="fixed inset-0 z-[55] flex items-start justify-center pt-24 px-4 pointer-events-none">
           <div className="pointer-events-auto w-full max-w-md">
-            <div className="bg-white/95 backdrop-blur-xl border border-slate-200 rounded-3xl shadow-2xl p-4 flex items-center gap-3 animate-scale-in">
+            <div className="bg-white border-[3px] border-black shadow-brutal p-4 flex items-center gap-3 animate-scale-in">
               <div className="flex-1 relative">
-                <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"/>
+                <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-black stroke-[3]"/>
                 <input
                   ref={searchInputRef}
                   type="text"
@@ -3496,24 +3494,24 @@ export default function App() {
                     if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); setSearchResult(null); }
                   }}
                   placeholder="Ketik nama peserta..."
-                  className="w-full pl-10 pr-4 py-3.5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-800 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3.5 bg-white border-[2px] border-black text-sm font-bold text-black neo-brutalist-input transition-all"
                 />
               </div>
               <button
                 onClick={handleSearch}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3.5 rounded-2xl font-black text-sm transition-all shadow-lg shadow-emerald-200 active:scale-95 shrink-0"
+                className="bg-success-green hover:bg-green-400 text-black px-5 py-3.5 border-2 border-black font-black text-sm transition-all shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 uppercase shrink-0"
               >
                 Cari
               </button>
               <button
                 onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResult(null); }}
-                className="p-2.5 hover:bg-slate-100 rounded-xl transition-colors shrink-0"
+                className="p-2.5 hover:bg-surface-variant border-2 border-black transition-colors shrink-0"
               >
-                <X size={16} className="text-slate-500"/>
+                <X size={16} className="text-black stroke-[3]"/>
               </button>
             </div>
             {searchResult && (
-              <p className="text-center text-[11px] font-black text-emerald-600 mt-2 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+              <p className="text-center text-[11px] font-black text-black mt-2 bg-success-green border-2 border-black px-4 py-2 uppercase shadow-brutal-sm">
                 Peserta ditemukan — bagan sudah digulir ke kartu yang dicari
               </p>
             )}
@@ -3522,28 +3520,28 @@ export default function App() {
       )}
 
       {/* Footer Branding */}
-      <footer className="bg-white border-t border-slate-200 p-6 flex flex-col items-center justify-center gap-2 z-40 text-center">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">
+      <footer className="bg-white border-t-[3px] border-black p-6 flex flex-col items-center justify-center gap-2 z-40 text-center">
+        <p className="text-[10px] font-black text-black uppercase tracking-widest leading-relaxed">
           Perkumpulan Pelayang Seluruh Indonesia Kabupaten Majalengka
         </p>
-        <p className="text-[11px] font-bold text-slate-400">
-          © Copyright by <span className="text-brand-600">Senyap</span>
+        <p className="text-[11px] font-black text-black uppercase tracking-wider">
+          © Copyright by <span className="text-brutal-blue">Senyap</span>
         </p>
       </footer>
 
       {winnerConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in" onClick={() => setWinnerConfirm(null)}></div>
-          <div className="relative bg-white w-full max-w-sm rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 text-center">
-            <div className="w-16 h-16 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-100 animate-bounce">
-              <Trophy size={32}/>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setWinnerConfirm(null)}></div>
+          <div className="relative bg-white w-full max-w-sm p-8 shadow-brutal animate-scale-in border-[3px] border-black text-center">
+            <div className="w-16 h-16 bg-white text-black border-2 border-black shadow-brutal-sm flex items-center justify-center mx-auto mb-4">
+              <Trophy size={32} className="stroke-[2.5]"/>
             </div>
-            <h3 className="text-xl font-black text-slate-800 mb-2">Konfirmasi Pemenang</h3>
-            <p className="text-slate-500 font-bold text-xs leading-relaxed mb-6">
-              Apakah Anda yakin ingin menetapkan <strong className="text-brand-600 font-black">{winnerConfirm.winnerName}</strong> sebagai pemenang pertandingan ini?
+            <h3 className="text-xl font-black text-black mb-2 uppercase tracking-tight">Konfirmasi Pemenang</h3>
+            <p className="text-black font-bold text-xs leading-relaxed mb-6">
+              Apakah Anda yakin ingin menetapkan <strong className="text-brutal-blue font-black uppercase">{winnerConfirm.winnerName}</strong> sebagai pemenang pertandingan ini?
             </p>
             <div className="flex gap-3">
-              <button onClick={() => setWinnerConfirm(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-xl font-bold hover:bg-slate-200 transition-colors">Batal</button>
+              <button onClick={() => setWinnerConfirm(null)} className="flex-1 bg-white text-black border-2 border-black py-3.5 font-black hover:bg-surface-variant transition-colors uppercase">Batal</button>
               <button 
                 onClick={async () => {
                   const { matchId, winnerName, isFinal } = winnerConfirm;
@@ -3554,7 +3552,7 @@ export default function App() {
                   }
                   setWinnerConfirm(null);
                 }} 
-                className="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-brand-200 transition-all"
+                className="flex-1 bg-brutal-blue hover:bg-blue-700 text-white py-3.5 font-black border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 uppercase tracking-wide"
               >
                 Ya, Konfirmasi
               </button>
@@ -3563,82 +3561,90 @@ export default function App() {
         </div>
       )}
 
-      {errorMessage && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-4 animate-slide-up"><AlertCircle size={20} className="text-brand-400"/><span className="text-sm font-bold">{errorMessage}</span><button onClick={() => setErrorMessage('')} className="p-1 hover:bg-white/10 rounded-lg"><X size={16}/></button></div>}
+      {errorMessage && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-black text-white px-8 py-4 shadow-brutal border-2 border-white z-50 flex items-center gap-4 animate-slide-up">
+          <AlertCircle size={20} className="text-warning-red"/>
+          <span className="text-sm font-black uppercase">{errorMessage}</span>
+          <button onClick={() => setErrorMessage('')} className="p-1 hover:bg-white/20 border border-white">
+            <X size={16}/>
+          </button>
+        </div>
+      )}
 
       {/* Edit Archive Modal */}
       {showEditArchiveModal && viewingArchive && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-scale-in">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-600 p-6 text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white max-w-md w-full shadow-brutal border-[3px] border-black overflow-hidden animate-scale-in">
+            <div className="bg-black p-6 text-white border-b-[3px] border-black">
               <h3 className="text-lg font-black uppercase tracking-wide flex items-center gap-2">
                 <Archive size={20} /> Edit Detail Arsip
               </h3>
-              <p className="text-xs text-amber-100 font-bold mt-1">Ubah metadata untuk turnamen arsip ini</p>
+              <p className="text-xs text-slate-300 font-bold uppercase mt-1">Ubah metadata untuk turnamen arsip ini</p>
             </div>
             
             <form onSubmit={handleSaveArchiveEdit} onPaste={(e) => handlePasteImage(e, 'archive_logo')} className="p-6 space-y-4">
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Judul Turnamen</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Judul Turnamen</label>
                 <input 
                   type="text" 
                   required
                   value={editArchiveTitle} 
                   onChange={(e) => setEditArchiveTitle(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                  className="w-full bg-white border-2 border-black p-3 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
                   placeholder="Contoh: Turnamen Layangan Nasional"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Penyelenggara</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Penyelenggara</label>
                 <input 
                   type="text" 
                   required
                   value={editArchiveOrganizer} 
                   onChange={(e) => setEditArchiveOrganizer(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                  className="w-full bg-white border-2 border-black p-3 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
                   placeholder="Contoh: KOPASUS Majalengka"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Tanggal Turnamen</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Tanggal Turnamen</label>
                 <input 
                   type="date" 
                   required
                   value={editArchiveDate} 
                   onChange={(e) => setEditArchiveDate(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3 rounded-xl outline-none font-bold text-xs text-slate-800 focus:border-brand-500 transition-all"
+                  className="w-full bg-white border-2 border-black p-3 font-bold text-xs text-black outline-none neo-brutalist-input transition-all"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Logo Baru (Opsional - Bisa Paste lewat Ctrl+V)</label>
+                <label className="text-[10px] font-black text-black uppercase tracking-widest">Logo Baru (Opsional - Bisa Paste lewat Ctrl+V)</label>
                 <div className="flex items-center gap-4 mt-1">
                   {viewingArchive.logo && !archiveLogoFile && (
-                    <img src={viewingArchive.logo} alt="Logo lama" className="w-12 h-12 object-contain rounded-xl border border-slate-200 p-1 bg-slate-50" />
+                    <img src={viewingArchive.logo} alt="Logo lama" className="w-12 h-12 object-contain border-2 border-black p-1 bg-white" />
                   )}
                   <input 
                     type="file" 
                     accept="image/*"
                     onChange={(e) => setArchiveLogoFile(e.target.files[0])}
-                    className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
+                    className="block w-full text-xs text-black file:mr-4 file:py-2 file:px-4 file:border-2 file:border-black file:text-xs file:font-black file:bg-white file:text-black hover:file:bg-surface-variant cursor-pointer"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
+              <div className="flex gap-3 pt-4 border-t-[3px] border-black">
                 <button 
                   type="button" 
                   onClick={() => setShowEditArchiveModal(false)}
-                  className="flex-1 py-3 px-4 rounded-xl text-xs font-black border border-slate-200 text-slate-650 hover:bg-slate-50 active:scale-95 transition-all"
+                  className="flex-1 py-3 px-4 text-xs font-black border-2 border-black text-black bg-white hover:bg-surface-variant active:translate-x-0.5 active:translate-y-0.5 uppercase transition-all"
                   disabled={isSavingArchive}
                 >
                   BATAL
                 </button>
                 <button 
                   type="submit" 
-                  className="flex-1 py-3 px-4 rounded-xl text-xs font-black bg-slate-900 text-white hover:bg-black active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 text-xs font-black bg-black text-white hover:bg-brutal-blue border-2 border-black active:translate-x-0.5 active:translate-y-0.5 transition-all shadow-brutal-sm flex items-center justify-center gap-2 uppercase tracking-wider"
                   disabled={isSavingArchive}
                 >
                   {isSavingArchive ? (
@@ -3667,20 +3673,20 @@ export default function App() {
         };
         return (
           <div
-            className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-slate-950/96 backdrop-blur-md animate-fade-in select-none"
+            className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
             {/* Top bar */}
             <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-safe pt-4 z-10 pointer-events-none">
-              <span className="text-white/50 text-[11px] font-black tracking-widest tabular-nums bg-black/20 px-2.5 py-1 rounded-full pointer-events-none">
+              <span className="text-white text-[11px] font-black tracking-widest tabular-nums bg-black border border-white px-2.5 py-1 pointer-events-none">
                 {lightboxIndex + 1} / {total}
               </span>
               <button
                 onClick={() => setLightboxIndex(null)}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90 border border-white/10 pointer-events-auto"
+                className="w-9 h-9 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 pointer-events-auto"
               >
-                <X size={17} />
+                <X size={17} className="stroke-[3]" />
               </button>
             </div>
 
@@ -3688,9 +3694,9 @@ export default function App() {
             {total > 1 && (
               <button
                 onClick={goPrev}
-                className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-90 border border-white/10 shadow-lg"
+                className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
               >
-                <ChevronLeft size={22} strokeWidth={2.5} />
+                <ChevronLeft size={22} strokeWidth={3} />
               </button>
             )}
 
@@ -3701,7 +3707,7 @@ export default function App() {
                 src={lightboxPhotos[lightboxIndex]}
                 alt={`Foto ${lightboxIndex + 1}`}
                 className={cn(
-                  "max-w-full max-h-[78vh] object-contain rounded-2xl shadow-2xl border border-white/8",
+                  "max-w-full max-h-[78vh] object-contain border-[3px] border-white shadow-2xl",
                   slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
                 )}
               />
@@ -3711,9 +3717,9 @@ export default function App() {
             {total > 1 && (
               <button
                 onClick={goNext}
-                className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-all active:scale-90 border border-white/10 shadow-lg"
+                className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
               >
-                <ChevronRight size={22} strokeWidth={2.5} />
+                <ChevronRight size={22} strokeWidth={3} />
               </button>
             )}
 
@@ -3725,8 +3731,8 @@ export default function App() {
                     key={i}
                     onClick={() => { setSlideDir(i > lightboxIndex ? 1 : -1); setLightboxIndex(i); }}
                     className={cn(
-                      "rounded-full transition-all duration-300",
-                      i === lightboxIndex ? "w-5 h-2 bg-white" : "w-2 h-2 bg-white/30 hover:bg-white/60"
+                      "transition-all duration-200 border border-black",
+                      i === lightboxIndex ? "w-5 h-2.5 bg-brutal-blue" : "w-2.5 h-2.5 bg-white hover:bg-slate-300"
                     )}
                   />
                 ))}
@@ -3735,16 +3741,16 @@ export default function App() {
 
             {/* Counter pill (>10 foto) */}
             {total > 10 && (
-              <div className="absolute bottom-6 bg-white/10 border border-white/10 px-3 py-1 rounded-full">
-                <span className="text-white/60 text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
+              <div className="absolute bottom-6 bg-black border border-white px-3 py-1">
+                <span className="text-white text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
               </div>
             )}
           </div>
         );
       })()}
 
-      {/* Mobile Bottom Navigation Bar (Sunlight Optimized) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface/95 backdrop-blur-md border-t-2 border-border-strong px-3 py-2 flex items-center justify-around shadow-[0_-4px_10px_rgba(0,0,0,0.06)]">
+      {/* Mobile Bottom Navigation Bar (Brutalist) */}
+      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-2 h-[72px] md:hidden z-50 border-t-[3px] border-black bg-white">
         <button
           onClick={() => {
             if (activePool === 'Final') {
@@ -3754,19 +3760,14 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={cn(
-            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
+            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
             activePool !== 'Final' && !viewingArchive
-              ? "text-primary font-black"
-              : "text-slate-500 font-bold"
+              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <div className={cn(
-            "p-1.5 rounded-lg transition-all",
-            activePool !== 'Final' && !viewingArchive ? "bg-blue-50 border border-primary/40 shadow-tactical-sm text-primary" : ""
-          )}>
-            <Play size={18} className="stroke-[2.5]" />
-          </div>
-          <span className="text-[10px] uppercase tracking-wider">Live</span>
+          <Play size={18} className="stroke-[3]" />
+          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Live</span>
         </button>
 
         <button
@@ -3775,19 +3776,14 @@ export default function App() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           className={cn(
-            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
+            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
             activePool === 'Final' && !viewingArchive
-              ? "text-amber-600 font-black"
-              : "text-slate-500 font-bold"
+              ? "bg-safety-orange text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <div className={cn(
-            "p-1.5 rounded-lg transition-all",
-            activePool === 'Final' && !viewingArchive ? "bg-amber-50 border border-amber-400 shadow-tactical-sm text-amber-600" : ""
-          )}>
-            <Trophy size={18} className="stroke-[2.5]" />
-          </div>
-          <span className="text-[10px] uppercase tracking-wider">Finals</span>
+          <Trophy size={18} className="stroke-[3]" />
+          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Finals</span>
         </button>
 
         <button
@@ -3799,17 +3795,14 @@ export default function App() {
             }
           }}
           className={cn(
-            "flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-95",
-            viewingArchive ? "text-primary font-black" : "text-slate-500 font-bold"
+            "flex flex-col items-center justify-center p-2 transition-all duration-75 uppercase",
+            viewingArchive
+              ? "bg-brutal-blue text-white border-[2px] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] -translate-x-0.5 -translate-y-0.5"
+              : "text-black hover:bg-surface-variant active:translate-x-0 active:translate-y-0 active:shadow-none"
           )}
         >
-          <div className={cn(
-            "p-1.5 rounded-lg transition-all",
-            viewingArchive ? "bg-blue-50 border border-primary/40 shadow-tactical-sm text-primary" : ""
-          )}>
-            <Archive size={18} className="stroke-[2.5]" />
-          </div>
-          <span className="text-[10px] uppercase tracking-wider">History</span>
+          <Archive size={18} className="stroke-[3]" />
+          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">History</span>
         </button>
 
         <button
@@ -3820,14 +3813,12 @@ export default function App() {
               el?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
           }}
-          className="flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl text-slate-500 font-bold hover:text-border-strong transition-all active:scale-95"
+          className="flex flex-col items-center justify-center text-black p-2 hover:bg-surface-variant transition-all duration-75 uppercase active:translate-x-0 active:translate-y-0 active:shadow-none"
         >
-          <div className="p-1.5 rounded-lg">
-            <Camera size={18} className="stroke-[2.5]" />
-          </div>
-          <span className="text-[10px] uppercase tracking-wider">Media</span>
+          <Camera size={18} className="stroke-[3]" />
+          <span className="font-black text-[11px] uppercase tracking-wider mt-0.5">Media</span>
         </button>
-      </div>
+      </nav>
 
       {/* Datalist untuk autocomplete peserta kustom di Bagan Final */}
       <datalist id="all-participants-list">
