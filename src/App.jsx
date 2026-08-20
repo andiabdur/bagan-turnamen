@@ -43,7 +43,9 @@ import {
   FileText,
   CheckCircle2,
   Image,
-  Sparkles
+  Sparkles,
+  RotateCcw,
+  Maximize2
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -159,6 +161,13 @@ export default function App() {
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [lightboxPhotos, setLightboxPhotos] = useState([]);
   const [slideDir, setSlideDir] = useState(1);
+  const [lightboxZoom, setLightboxZoom] = useState(1);
+  const [lightboxPan, setLightboxPan] = useState({ x: 0, y: 0 });
+  const isDraggingLightbox = useRef(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const lastTouchDistance = useRef(null);
+  const lastTapTime = useRef(0);
+  const touchStartPos = useRef({ x: 0, y: 0 });
   const touchStartX = useRef(null);
   const [galleryUploadProgress, setGalleryUploadProgress] = useState(null);
 
@@ -341,18 +350,45 @@ export default function App() {
     }
   }, [appSettings.pinVersion, sessionPinVersion, role]);
 
-  // Keyboard navigation for lightbox carousel
+  // Keyboard navigation & zoom shortcuts for lightbox carousel
   useEffect(() => {
     if (lightboxIndex === null || lightboxPhotos.length === 0) return;
     const total = lightboxPhotos.length;
     const handleKey = (e) => {
-      if (e.key === 'ArrowRight') { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); }
-      else if (e.key === 'ArrowLeft') { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); }
-      else if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') {
+        if (lightboxZoom === 1) {
+          setSlideDir(1);
+          setLightboxIndex(i => (i + 1) % total);
+          setLightboxZoom(1);
+          setLightboxPan({ x: 0, y: 0 });
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (lightboxZoom === 1) {
+          setSlideDir(-1);
+          setLightboxIndex(i => (i - 1 + total) % total);
+          setLightboxZoom(1);
+          setLightboxPan({ x: 0, y: 0 });
+        }
+      } else if (e.key === 'Escape') {
+        setLightboxIndex(null);
+        setLightboxZoom(1);
+        setLightboxPan({ x: 0, y: 0 });
+      } else if (e.key === '+' || e.key === '=') {
+        setLightboxZoom(z => Math.min(4, Math.round((z + 0.5) * 10) / 10));
+      } else if (e.key === '-' || e.key === '_') {
+        setLightboxZoom(z => {
+          const next = Math.max(1, Math.round((z - 0.5) * 10) / 10);
+          if (next === 1) setLightboxPan({ x: 0, y: 0 });
+          return next;
+        });
+      } else if (e.key === '0' || e.key === 'r' || e.key === 'R') {
+        setLightboxZoom(1);
+        setLightboxPan({ x: 0, y: 0 });
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [lightboxIndex, lightboxPhotos]);
+  }, [lightboxIndex, lightboxPhotos, lightboxZoom]);
 
   // Update viewingArchive state if the archive in the list has changed
   useEffect(() => {
@@ -2050,6 +2086,23 @@ export default function App() {
     const isBracket = activeBracket?.type === 'bracket';
     const podiumPhotos = currentTournament.podiumPhotos || {};
 
+    const openPodiumLightbox = (slot) => {
+      const photos = [];
+      if (podiumPhotos.j1) photos.push(podiumPhotos.j1);
+      if (podiumPhotos.j2) photos.push(podiumPhotos.j2);
+      if (podiumPhotos.j3) photos.push(podiumPhotos.j3);
+      if (podiumPhotos.j4) photos.push(podiumPhotos.j4);
+      const targetPhoto = podiumPhotos[slot];
+      if (targetPhoto) {
+        const idx = photos.indexOf(targetPhoto);
+        setLightboxPhotos(photos.length > 0 ? photos : [targetPhoto]);
+        setSlideDir(1);
+        setLightboxIndex(idx >= 0 ? idx : 0);
+        setLightboxZoom(1);
+        setLightboxPan({ x: 0, y: 0 });
+      }
+    };
+
     return (
       <div className="mb-10 max-w-3xl mx-auto p-4 sm:p-6 md:p-8 bg-white border-[3px] border-black shadow-brutal relative overflow-hidden animate-slide-up">
         <div className="relative text-center mb-6 sm:mb-8">
@@ -2076,13 +2129,19 @@ export default function App() {
                   onChange={(e) => handlePodiumPhotoChange(e, 'j2')}
                 />
                 <div 
-                  onClick={() => triggerPodiumPhotoUpload('j2')}
-                  tabIndex={role === 'referee' ? 0 : -1}
+                  onClick={() => {
+                    if (podiumPhotos.j2) {
+                      openPodiumLightbox('j2');
+                    } else if (role === 'referee') {
+                      triggerPodiumPhotoUpload('j2');
+                    }
+                  }}
+                  tabIndex={role === 'referee' || podiumPhotos.j2 ? 0 : -1}
                   onPaste={(e) => handlePasteImage(e, 'j2')}
-                  title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
+                  title={podiumPhotos.j2 ? "Klik untuk melihat foto lebih besar / zoom" : (role === 'referee' ? "Klik untuk memilih file foto" : undefined)}
                   className={cn(
                     "w-11 h-11 sm:w-14 sm:h-14 md:w-18 md:h-18 border-[2px] sm:border-[3px] border-black shadow-brutal-sm overflow-hidden bg-surface-variant flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
-                    role === 'referee' && "cursor-pointer group"
+                    (podiumPhotos.j2 || role === 'referee') && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j2 ? (
@@ -2091,9 +2150,15 @@ export default function App() {
                     <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerPodiumPhotoUpload('j2');
+                      }}
+                      className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none"
+                    >
                       <Camera size={12} className="mb-0.5" />
-                      <span>Foto</span>
+                      <span>{podiumPhotos.j2 ? 'Ganti' : 'Foto'}</span>
                     </div>
                   )}
                 </div>
@@ -2129,13 +2194,19 @@ export default function App() {
                   onChange={(e) => handlePodiumPhotoChange(e, 'j1')}
                 />
                 <div 
-                  onClick={() => triggerPodiumPhotoUpload('j1')}
-                  tabIndex={role === 'referee' ? 0 : -1}
+                  onClick={() => {
+                    if (podiumPhotos.j1) {
+                      openPodiumLightbox('j1');
+                    } else if (role === 'referee') {
+                      triggerPodiumPhotoUpload('j1');
+                    }
+                  }}
+                  tabIndex={role === 'referee' || podiumPhotos.j1 ? 0 : -1}
                   onPaste={(e) => handlePasteImage(e, 'j1')}
-                  title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
+                  title={podiumPhotos.j1 ? "Klik untuk melihat foto lebih besar / zoom" : (role === 'referee' ? "Klik untuk memilih file foto" : undefined)}
                   className={cn(
                     "w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22 border-[2px] sm:border-[3px] border-black shadow-brutal overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
-                    role === 'referee' && "cursor-pointer group"
+                    (podiumPhotos.j1 || role === 'referee') && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j1 ? (
@@ -2144,9 +2215,15 @@ export default function App() {
                     <User className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                    <div 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerPodiumPhotoUpload('j1');
+                      }}
+                      className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none"
+                    >
                       <Camera size={14} className="mb-0.5" />
-                      <span>Foto</span>
+                      <span>{podiumPhotos.j1 ? 'Ganti' : 'Foto'}</span>
                     </div>
                   )}
                 </div>
@@ -2201,13 +2278,19 @@ export default function App() {
                 {isBracket && champs.j3 && champs.j4 ? (
                   <div className="flex gap-0.5 justify-center">
                     <div 
-                      onClick={() => triggerPodiumPhotoUpload('j3')}
-                      tabIndex={role === 'referee' ? 0 : -1}
+                      onClick={() => {
+                        if (podiumPhotos.j3) {
+                          openPodiumLightbox('j3');
+                        } else if (role === 'referee') {
+                          triggerPodiumPhotoUpload('j3');
+                        }
+                      }}
+                      tabIndex={role === 'referee' || podiumPhotos.j3 ? 0 : -1}
                       onPaste={(e) => handlePasteImage(e, 'j3')}
-                      title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
+                      title={podiumPhotos.j3 ? "Klik untuk melihat foto lebih besar / zoom" : (role === 'referee' ? "Klik untuk memilih file foto" : undefined)}
                       className={cn(
                         "w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 border border-black sm:border-2 shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
-                        role === 'referee' && "cursor-pointer group"
+                        (podiumPhotos.j3 || role === 'referee') && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j3 ? (
@@ -2216,19 +2299,31 @@ export default function App() {
                         <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerPodiumPhotoUpload('j3');
+                          }}
+                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none"
+                        >
                           <Camera size={8} />
                         </div>
                       )}
                     </div>
                     <div 
-                      onClick={() => triggerPodiumPhotoUpload('j4')}
-                      tabIndex={role === 'referee' ? 0 : -1}
+                      onClick={() => {
+                        if (podiumPhotos.j4) {
+                          openPodiumLightbox('j4');
+                        } else if (role === 'referee') {
+                          triggerPodiumPhotoUpload('j4');
+                        }
+                      }}
+                      tabIndex={role === 'referee' || podiumPhotos.j4 ? 0 : -1}
                       onPaste={(e) => handlePasteImage(e, 'j4')}
-                      title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
+                      title={podiumPhotos.j4 ? "Klik untuk melihat foto lebih besar / zoom" : (role === 'referee' ? "Klik untuk memilih file foto" : undefined)}
                       className={cn(
                         "w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 border border-black sm:border-2 shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
-                        role === 'referee' && "cursor-pointer group"
+                        (podiumPhotos.j4 || role === 'referee') && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j4 ? (
@@ -2237,7 +2332,13 @@ export default function App() {
                         <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none">
+                        <div 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerPodiumPhotoUpload('j4');
+                          }}
+                          className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none"
+                        >
                           <Camera size={8} />
                         </div>
                       )}
@@ -2245,13 +2346,19 @@ export default function App() {
                   </div>
                 ) : (
                   <div 
-                    onClick={() => triggerPodiumPhotoUpload('j3')}
-                    tabIndex={role === 'referee' ? 0 : -1}
+                    onClick={() => {
+                      if (podiumPhotos.j3) {
+                        openPodiumLightbox('j3');
+                      } else if (role === 'referee') {
+                        triggerPodiumPhotoUpload('j3');
+                      }
+                    }}
+                    tabIndex={role === 'referee' || podiumPhotos.j3 ? 0 : -1}
                     onPaste={(e) => handlePasteImage(e, 'j3')}
-                    title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
+                    title={podiumPhotos.j3 ? "Klik untuk melihat foto lebih besar / zoom" : (role === 'referee' ? "Klik untuk memilih file foto" : undefined)}
                     className={cn(
                       "w-11 h-11 sm:w-14 sm:h-14 md:w-18 md:h-18 border-[2px] sm:border-[3px] border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
-                      role === 'referee' && "cursor-pointer group"
+                      (podiumPhotos.j3 || role === 'referee') && "cursor-pointer group"
                     )}
                   >
                     {podiumPhotos.j3 ? (
@@ -2260,9 +2367,15 @@ export default function App() {
                       <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-black" />
                     )}
                     {role === 'referee' && (
-                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          triggerPodiumPhotoUpload('j3');
+                        }}
+                        className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none"
+                      >
                         <Camera size={12} className="mb-0.5" />
-                        <span>Foto</span>
+                        <span>{podiumPhotos.j3 ? 'Ganti' : 'Foto'}</span>
                       </div>
                     )}
                   </div>
@@ -2310,10 +2423,16 @@ export default function App() {
             />
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
               <div 
-                onClick={() => triggerPodiumPhotoUpload('j4')}
+                onClick={() => {
+                  if (podiumPhotos.j4) {
+                    openPodiumLightbox('j4');
+                  } else if (role === 'referee') {
+                    triggerPodiumPhotoUpload('j4');
+                  }
+                }}
                 className={cn(
                   "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 border-2 border-black overflow-hidden bg-white relative transition-transform hover:scale-105 shadow-brutal-sm",
-                  role === 'referee' && "cursor-pointer group"
+                  (podiumPhotos.j4 || role === 'referee') && "cursor-pointer group"
                 )}
               >
                 {podiumPhotos.j4 ? (
@@ -2322,7 +2441,13 @@ export default function App() {
                   <Award size={18} className="text-black" />
                 )}
                 {role === 'referee' && (
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerPodiumPhotoUpload('j4');
+                    }}
+                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                  >
                     <Camera size={10} />
                   </div>
                 )}
@@ -3575,89 +3700,336 @@ export default function App() {
   const renderCarouselLightbox = () => {
     if (lightboxIndex === null || lightboxPhotos.length === 0) return null;
     const total = lightboxPhotos.length;
-    const goNext = () => { setSlideDir(1); setLightboxIndex(i => (i + 1) % total); };
-    const goPrev = () => { setSlideDir(-1); setLightboxIndex(i => (i - 1 + total) % total); };
-    const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-    const handleTouchEnd = (e) => {
-      if (touchStartX.current === null) return;
-      const diff = touchStartX.current - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 44) diff > 0 ? goNext() : goPrev();
-      touchStartX.current = null;
+    const currentPhoto = lightboxPhotos[lightboxIndex];
+
+    const resetLightboxZoom = () => {
+      setLightboxZoom(1);
+      setLightboxPan({ x: 0, y: 0 });
     };
+
+    const handleZoomIn = () => {
+      setLightboxZoom(z => Math.min(4, Math.round((z + 0.5) * 10) / 10));
+    };
+
+    const handleZoomOut = () => {
+      setLightboxZoom(z => {
+        const next = Math.max(1, Math.round((z - 0.5) * 10) / 10);
+        if (next === 1) setLightboxPan({ x: 0, y: 0 });
+        return next;
+      });
+    };
+
+    const handleToggleZoom = () => {
+      if (lightboxZoom > 1) {
+        resetLightboxZoom();
+      } else {
+        setLightboxZoom(2.5);
+      }
+    };
+
+    const goNext = () => {
+      setSlideDir(1);
+      setLightboxIndex(i => (i + 1) % total);
+      resetLightboxZoom();
+    };
+
+    const goPrev = () => {
+      setSlideDir(-1);
+      setLightboxIndex(i => (i - 1 + total) % total);
+      resetLightboxZoom();
+    };
+
+    const handleClose = () => {
+      setLightboxIndex(null);
+      resetLightboxZoom();
+    };
+
+    // Desktop mouse wheel zoom
+    const handleWheel = (e) => {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        setLightboxZoom(z => Math.min(4, Math.round((z + 0.25) * 100) / 100));
+      } else {
+        setLightboxZoom(z => {
+          const next = Math.max(1, Math.round((z - 0.25) * 100) / 100);
+          if (next === 1) setLightboxPan({ x: 0, y: 0 });
+          return next;
+        });
+      }
+    };
+
+    // Desktop mouse drag when zoomed in
+    const handleMouseDown = (e) => {
+      if (lightboxZoom > 1) {
+        isDraggingLightbox.current = true;
+        dragStartPos.current = {
+          x: e.clientX - lightboxPan.x,
+          y: e.clientY - lightboxPan.y
+        };
+      }
+    };
+
+    const handleMouseMove = (e) => {
+      if (isDraggingLightbox.current && lightboxZoom > 1) {
+        setLightboxPan({
+          x: e.clientX - dragStartPos.current.x,
+          y: e.clientY - dragStartPos.current.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDraggingLightbox.current = false;
+    };
+
+    // Mobile touch events: supports 1-finger swipe / pan & 2-finger pinch-to-zoom
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        const now = Date.now();
+        if (now - lastTapTime.current < 300) {
+          handleToggleZoom();
+          lastTapTime.current = 0;
+          return;
+        }
+        lastTapTime.current = now;
+
+        touchStartPos.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+
+        if (lightboxZoom > 1) {
+          isDraggingLightbox.current = true;
+          dragStartPos.current = {
+            x: e.touches[0].clientX - lightboxPan.x,
+            y: e.touches[0].clientY - lightboxPan.y
+          };
+        } else {
+          touchStartX.current = e.touches[0].clientX;
+        }
+      } else if (e.touches.length === 2) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        lastTouchDistance.current = dist;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 1 && lightboxZoom > 1 && isDraggingLightbox.current) {
+        setLightboxPan({
+          x: e.touches[0].clientX - dragStartPos.current.x,
+          y: e.touches[0].clientY - dragStartPos.current.y
+        });
+      } else if (e.touches.length === 2 && lastTouchDistance.current) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const ratio = dist / lastTouchDistance.current;
+        setLightboxZoom(z => {
+          const next = Math.min(4, Math.max(1, Math.round(z * ratio * 100) / 100));
+          if (next === 1) setLightboxPan({ x: 0, y: 0 });
+          return next;
+        });
+        lastTouchDistance.current = dist;
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      isDraggingLightbox.current = false;
+      lastTouchDistance.current = null;
+
+      if (lightboxZoom === 1 && touchStartX.current !== null && e.changedTouches.length === 1) {
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 44) {
+          diff > 0 ? goNext() : goPrev();
+        }
+        touchStartX.current = null;
+      }
+    };
+
     return (
       <div
-        className="fixed inset-0 z-[150] flex flex-col items-center justify-center bg-black/95 backdrop-blur-md animate-fade-in select-none"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        className="fixed inset-0 z-[150] flex flex-col items-center justify-between bg-black/95 backdrop-blur-md animate-fade-in select-none"
+        onMouseUp={handleMouseUp}
       >
-        {/* Top bar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-safe pt-4 z-10 pointer-events-none">
-          <span className="text-white text-[11px] font-black tracking-widest tabular-nums bg-black border border-white px-2.5 py-1 pointer-events-none">
-            {lightboxIndex + 1} / {total}
-          </span>
-          <button
-            onClick={() => setLightboxIndex(null)}
-            className="w-9 h-9 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 pointer-events-auto"
-          >
-            <X size={17} className="stroke-[3]" />
-          </button>
-        </div>
+        {/* Top Control Bar */}
+        <div className="w-full flex items-center justify-between px-3 sm:px-6 pt-safe pt-3 sm:pt-4 z-20 gap-2">
+          {/* Photo Counter Pill */}
+          <div className="flex items-center gap-2">
+            <span className="text-white text-[10px] sm:text-xs font-black tracking-widest tabular-nums bg-black border-2 border-white px-2.5 sm:px-3 py-1 shadow-brutal-sm">
+              {lightboxIndex + 1} / {total}
+            </span>
+          </div>
 
-        {/* Prev button */}
-        {total > 1 && (
-          <button
-            onClick={goPrev}
-            className="absolute left-2 md:left-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
-          >
-            <ChevronLeft size={22} strokeWidth={3} />
-          </button>
-        )}
-
-        {/* Image */}
-        <div className="flex items-center justify-center w-full px-14 md:px-24 max-h-[80vh]">
-          <img
-            key={`lb-${lightboxIndex}-${slideDir}`}
-            src={lightboxPhotos[lightboxIndex]}
-            alt={`Foto ${lightboxIndex + 1}`}
-            className={cn(
-              "max-w-full max-h-[78vh] object-contain border-[3px] border-white shadow-2xl",
-              slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
-            )}
-          />
-        </div>
-
-        {/* Next button */}
-        {total > 1 && (
-          <button
-            onClick={goNext}
-            className="absolute right-2 md:right-5 z-10 w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
-          >
-            <ChevronRight size={22} strokeWidth={3} />
-          </button>
-        )}
-
-        {/* Dot indicators (≤10 foto) */}
-        {total > 1 && total <= 10 && (
-          <div className="absolute bottom-6 flex items-center gap-1.5">
-            {lightboxPhotos.map((_, i) => (
+          {/* Brutalist Zoom & Action Toolbar */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Zoom Controls Pill */}
+            <div className="flex items-center bg-black border-2 border-white shadow-brutal-sm">
               <button
-                key={i}
-                onClick={() => { setSlideDir(i > lightboxIndex ? 1 : -1); setLightboxIndex(i); }}
-                className={cn(
-                  "transition-all duration-200 border border-black",
-                  i === lightboxIndex ? "w-5 h-2.5 bg-brutal-blue" : "w-2.5 h-2.5 bg-white hover:bg-slate-300"
-                )}
-              />
-            ))}
-          </div>
-        )}
+                type="button"
+                onClick={handleZoomOut}
+                disabled={lightboxZoom <= 1}
+                className="w-8 h-8 flex items-center justify-center text-white hover:bg-white hover:text-black disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white transition-all"
+                title="Perkecil (-)"
+              >
+                <ZoomOut size={15} className="stroke-[2.5]" />
+              </button>
+              
+              <button
+                type="button"
+                onClick={handleToggleZoom}
+                className="px-2 h-8 flex items-center justify-center text-white text-[10px] sm:text-xs font-mono font-black border-x border-white/40 hover:bg-white hover:text-black transition-all min-w-[52px]"
+                title="Klik untuk ubah zoom (100% / 250%)"
+              >
+                {Math.round(lightboxZoom * 100)}%
+              </button>
 
-        {/* Counter pill (>10 foto) */}
-        {total > 10 && (
-          <div className="absolute bottom-6 bg-black border border-white px-3 py-1">
-            <span className="text-white text-[11px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={lightboxZoom >= 4}
+                className="w-8 h-8 flex items-center justify-center text-white hover:bg-white hover:text-black disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-white transition-all"
+                title="Perbesar (+)"
+              >
+                <ZoomIn size={15} className="stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* Reset Zoom Button */}
+            {lightboxZoom > 1 && (
+              <button
+                type="button"
+                onClick={resetLightboxZoom}
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-all shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5"
+                title="Reset Ukuran (0 / R)"
+              >
+                <RotateCcw size={15} className="stroke-[2.5]" />
+              </button>
+            )}
+
+            {/* Open Original Full Resolution */}
+            {currentPhoto && (
+              <a
+                href={currentPhoto}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-black text-white border-2 border-white hover:bg-white hover:text-black transition-all shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5"
+                title="Buka Gambar Asli di Tab Baru"
+              >
+                <ExternalLink size={15} className="stroke-[2.5]" />
+              </a>
+            )}
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center bg-warning-red text-white border-2 border-white hover:bg-red-700 transition-all shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5"
+              title="Tutup (Esc)"
+            >
+              <X size={17} className="stroke-[3]" />
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Main Image Stage */}
+        <div 
+          className="relative flex-1 w-full flex items-center justify-center overflow-hidden p-2 sm:p-4 my-auto cursor-grab active:cursor-grabbing"
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onDoubleClick={handleToggleZoom}
+        >
+          {/* Previous Button */}
+          {total > 1 && (
+            <button
+              type="button"
+              onClick={goPrev}
+              className="absolute left-2 sm:left-4 md:left-6 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal"
+              title="Foto Sebelumnya (Panah Kiri)"
+            >
+              <ChevronLeft size={22} strokeWidth={3} />
+            </button>
+          )}
+
+          {/* The Zoomable Image */}
+          <div 
+            className="flex items-center justify-center max-w-full max-h-[76vh] transition-transform"
+            style={{
+              transform: `translate3d(${lightboxPan.x}px, ${lightboxPan.y}px, 0px) scale(${lightboxZoom})`,
+              transition: isDraggingLightbox.current ? 'none' : 'transform 0.15s ease-out',
+              willChange: 'transform'
+            }}
+          >
+            <img
+              key={`lb-${lightboxIndex}-${slideDir}`}
+              src={currentPhoto}
+              alt={`Foto ${lightboxIndex + 1}`}
+              draggable={false}
+              className={cn(
+                "max-w-full max-h-[74vh] object-contain border-[3px] border-white shadow-2xl pointer-events-none select-none",
+                slideDir >= 0 ? "animate-slide-from-right" : "animate-slide-from-left"
+              )}
+            />
+          </div>
+
+          {/* Next Button */}
+          {total > 1 && (
+            <button
+              type="button"
+              onClick={goNext}
+              className="absolute right-2 sm:right-4 md:right-6 z-30 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-surface-variant transition-all active:translate-x-0.5 active:translate-y-0.5 shadow-brutal"
+              title="Foto Berikutnya (Panah Kanan)"
+            >
+              <ChevronRight size={22} strokeWidth={3} />
+            </button>
+          )}
+        </div>
+
+        {/* Bottom Bar: Hints & Dot Indicators */}
+        <div className="w-full flex flex-col items-center gap-2 pb-safe pb-4 z-20 px-4">
+          {/* Helper hint */}
+          <div className="bg-black/80 border border-white/40 text-white/90 text-[9px] sm:text-[10px] font-bold px-3 py-1 uppercase tracking-wider text-center shadow-lg">
+            {lightboxZoom > 1 ? (
+              <span>Zoom aktif ({Math.round(lightboxZoom * 100)}%) • Geser untuk menggeser gambar • Klik 2x / Reset untuk normal</span>
+            ) : (
+              <span>Gunakan Cubit / Scroll / Double Tap untuk Zoom • Geser untuk ganti foto</span>
+            )}
+          </div>
+
+          {/* Dot indicators (≤10 foto) */}
+          {total > 1 && total <= 10 && (
+            <div className="flex items-center gap-1.5 mt-1">
+              {lightboxPhotos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setSlideDir(i > lightboxIndex ? 1 : -1);
+                    setLightboxIndex(i);
+                    resetLightboxZoom();
+                  }}
+                  className={cn(
+                    "transition-all duration-200 border border-black",
+                    i === lightboxIndex ? "w-5 h-2.5 bg-safety-orange border-white" : "w-2.5 h-2.5 bg-white/70 hover:bg-white"
+                  )}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Counter pill (>10 foto) */}
+          {total > 10 && (
+            <div className="bg-black border border-white px-3 py-0.5 mt-1">
+              <span className="text-white text-[10px] font-black tabular-nums">{lightboxIndex + 1} / {total}</span>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
