@@ -309,7 +309,11 @@ export default function App() {
       snapshot.forEach(doc => {
         list.push(doc.data());
       });
-      list.sort((a, b) => new Date(a.eventDate || a.createdAt) - new Date(b.eventDate || b.createdAt));
+      list.sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
+      });
       setEventsList(list);
     }, (err) => {
       console.error("Gagal memuat event mendatang:", err);
@@ -1527,22 +1531,50 @@ export default function App() {
 
   const handleSaveEvent = async (e) => {
     e.preventDefault();
-    if (role !== 'referee') return;
-    if (!eventFormTitle.trim()) return showError("Judul event tidak boleh kosong.");
+    if (role !== 'referee') {
+      const pin = window.prompt("Masukkan Password Wasit untuk mempublikasikan event:");
+      if (pin === appSettings.refereePin) {
+        setRole('referee');
+        localStorage.setItem('tournament_role', 'referee');
+        localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+        setSessionPinVersion(appSettings.pinVersion);
+      } else {
+        if (pin !== null) alert("Password Wasit salah!");
+        return;
+      }
+    }
+
+    if (!eventFormTitle || !eventFormTitle.trim()) {
+      showError("Judul event tidak boleh kosong.");
+      return;
+    }
 
     setIsSavingEvent(true);
     try {
-      let finalPosterUrl = eventFormPosterUrl;
+      let finalPosterUrl = eventFormPosterUrl || null;
       if (eventPosterFile) {
-        const compressed = await compressImage(eventPosterFile, 1200, 0.85);
-        const path = `events/poster_${Date.now()}_${eventPosterFile.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const url = await handleUploadImage(compressed, path);
-        if (url) {
-          finalPosterUrl = url;
+        try {
+          const compressed = await compressImage(eventPosterFile, 1200, 0.85);
+          const safeName = (eventPosterFile.name || 'poster.jpg').replace(/[^a-zA-Z0-9.]/g, '_');
+          const path = `events/poster_${Date.now()}_${safeName}`;
+          const url = await handleUploadImage(compressed, path);
+          if (url) {
+            finalPosterUrl = url;
+          } else {
+            // Fallback to base64 Data URL
+            const reader = new FileReader();
+            finalPosterUrl = await new Promise((resolve) => {
+              reader.onload = (ev) => resolve(ev.target.result);
+              reader.onerror = () => resolve(null);
+              reader.readAsDataURL(compressed instanceof Blob ? compressed : eventPosterFile);
+            });
+          }
+        } catch (imgErr) {
+          console.warn("Gagal upload gambar poster ke storage, mencoba fallback:", imgErr);
         }
       }
 
-      const participantsList = eventFormParticipantsText
+      const participantsList = (eventFormParticipantsText || '')
         .split('\n')
         .map(p => p.trim())
         .filter(p => p.length > 0);
@@ -1550,18 +1582,18 @@ export default function App() {
       const eventId = editingEvent?.id || ('event_' + Date.now());
       const eventDoc = {
         id: eventId,
-        title: eventFormTitle.trim(),
-        organizer: eventFormOrganizer.trim(),
-        category: eventFormCategory.trim(),
-        eventDate: eventFormDate.trim(),
-        eventTime: eventFormTime.trim(),
-        location: eventFormLocation.trim(),
-        prizePool: eventFormPrizePool.trim(),
-        registrationFee: eventFormRegistrationFee.trim(),
-        contactPerson: eventFormContactPerson.trim(),
-        status: eventFormStatus,
+        title: (eventFormTitle || '').trim(),
+        organizer: (eventFormOrganizer || '').trim(),
+        category: (eventFormCategory || '').trim(),
+        eventDate: (eventFormDate || '').trim(),
+        eventTime: (eventFormTime || '').trim(),
+        location: (eventFormLocation || '').trim(),
+        prizePool: (eventFormPrizePool || '').trim(),
+        registrationFee: (eventFormRegistrationFee || '').trim(),
+        contactPerson: (eventFormContactPerson || '').trim(),
+        status: eventFormStatus || 'open',
         posterUrl: finalPosterUrl || null,
-        rules: eventFormRules.trim(),
+        rules: (eventFormRules || '').trim(),
         participants: participantsList,
         updatedAt: new Date().toISOString(),
         createdAt: editingEvent?.createdAt || new Date().toISOString()
@@ -1570,27 +1602,47 @@ export default function App() {
       const eventRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'upcoming_events', 'items', eventId);
       await setDoc(eventRef, eventDoc);
 
+      setEventsList(prev => {
+        const exists = prev.some(item => item.id === eventId);
+        if (exists) {
+          return prev.map(item => item.id === eventId ? eventDoc : item);
+        }
+        return [eventDoc, ...prev];
+      });
+
       if (selectedEvent && selectedEvent.id === eventId) {
         setSelectedEvent(eventDoc);
       }
 
       setShowEventFormModal(false);
       setIsSavingEvent(false);
-      alert("Event berhasil disimpan!");
+      alert(editingEvent ? "Perubahan event berhasil disimpan!" : "Event berhasil dipublikasikan!");
     } catch (err) {
       console.error("Gagal menyimpan event:", err);
-      showError("Gagal menyimpan event.");
+      showError(`Gagal menyimpan event: ${err?.message || 'Terjadi kesalahan sistem'}`);
       setIsSavingEvent(false);
     }
   };
 
   const handleDeleteEvent = async (eventId, title) => {
-    if (role !== 'referee') return;
+    if (role !== 'referee') {
+      const pin = window.prompt("Masukkan Password Wasit untuk menghapus event:");
+      if (pin === appSettings.refereePin) {
+        setRole('referee');
+        localStorage.setItem('tournament_role', 'referee');
+        localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+        setSessionPinVersion(appSettings.pinVersion);
+      } else {
+        if (pin !== null) alert("Password Wasit salah!");
+        return;
+      }
+    }
     if (!window.confirm(`Hapus event "${title}" secara permanen?`)) return;
 
     try {
       const eventRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament', 'upcoming_events', 'items', eventId);
       await deleteDoc(eventRef);
+      setEventsList(prev => prev.filter(item => item.id !== eventId));
       if (selectedEvent?.id === eventId) {
         setSelectedEvent(null);
       }
@@ -3019,13 +3071,32 @@ export default function App() {
             </div>
 
             {/* Panitia / Wasit Add Event Button */}
-            {role === 'referee' && (
+            {role === 'referee' ? (
               <button
                 onClick={handleOpenAddEvent}
                 className="bg-success-green hover:bg-green-400 text-black px-4 py-2 font-black text-xs uppercase tracking-wider border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5 shrink-0"
               >
                 <Plus size={16} className="stroke-[3]" />
                 <span>Tambah Event</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  const pin = window.prompt("Masukkan Password Wasit untuk Menambah Event:");
+                  if (pin === appSettings.refereePin) {
+                    setRole('referee');
+                    localStorage.setItem('tournament_role', 'referee');
+                    localStorage.setItem('tournament_pin_version', appSettings.pinVersion.toString());
+                    setSessionPinVersion(appSettings.pinVersion);
+                    handleOpenAddEvent();
+                  } else if (pin !== null) {
+                    alert("Password Wasit salah!");
+                  }
+                }}
+                className="bg-black hover:bg-brutal-blue text-white px-3.5 py-2 font-black text-[10px] sm:text-xs uppercase tracking-wider border-2 border-black shadow-brutal-sm transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5 shrink-0"
+              >
+                <Key size={14} className="stroke-[2.5]" />
+                <span>Login Wasit (+ Event)</span>
               </button>
             )}
           </div>
