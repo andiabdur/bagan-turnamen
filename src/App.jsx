@@ -34,7 +34,8 @@ import {
   User,
   Key,
   ArrowLeft,
-  Edit3
+  Edit3,
+  Eye
 } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
@@ -1836,23 +1837,23 @@ export default function App() {
     const podiumPhotos = currentTournament.podiumPhotos || {};
 
     return (
-      <div className="mb-10 max-w-3xl mx-auto p-6 md:p-8 bg-white border-[3px] border-black shadow-brutal relative overflow-hidden animate-slide-up">
-        <div className="relative text-center mb-8">
-          <span className="inline-flex items-center gap-1.5 bg-safety-orange text-white px-3.5 py-1 text-[10px] font-black uppercase tracking-widest mb-2 border border-black shadow-brutal-sm">
+      <div className="mb-10 max-w-3xl mx-auto p-4 sm:p-6 md:p-8 bg-white border-[3px] border-black shadow-brutal relative overflow-hidden animate-slide-up">
+        <div className="relative text-center mb-6 sm:mb-8">
+          <span className="inline-flex items-center gap-1.5 bg-safety-orange text-white px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-widest mb-2 border border-black shadow-brutal-sm">
             <Trophy size={12} className="stroke-[2.5]" /> Podium Kejuaraan
           </span>
-          <h3 className="text-2xl font-black text-black uppercase tracking-tight">Podium Juara</h3>
-          <p className="text-xs text-black font-bold uppercase mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
+          <h3 className="text-xl sm:text-2xl font-black text-black uppercase tracking-tight">Podium Juara</h3>
+          <p className="text-[10px] sm:text-xs text-black font-bold uppercase mt-1">{currentTournament.title || 'Selamat kepada para juara'}</p>
         </div>
 
         {/* 3D Podium container */}
-        <div className="flex items-end justify-center gap-3 md:gap-6 pt-16 pb-6 select-none max-w-xl mx-auto">
+        <div className="flex items-end justify-center gap-1.5 sm:gap-4 md:gap-6 pt-10 sm:pt-16 pb-1 select-none max-w-lg mx-auto w-full px-1 sm:px-4">
           
           {/* 2nd Place: Silver (Left) */}
           {champs.j2 && (
-            <div className="flex flex-col items-center flex-1 max-w-[150px] animate-fade-in-left">
+            <div className="w-1/3 flex flex-col items-center justify-end z-10 relative animate-fade-in-left">
               {/* Avatar section */}
-              <div className="relative mb-3 flex flex-col items-center">
+              <div className="relative mb-2 sm:mb-3 flex flex-col items-center">
                 <input 
                   type="file" 
                   id="podium-upload-input-j2" 
@@ -1866,46 +1867,46 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j2')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-16 h-16 md:w-20 md:h-20 border-[3px] border-black shadow-brutal-sm overflow-hidden bg-surface-variant flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
+                    "w-11 h-11 sm:w-14 sm:h-14 md:w-18 md:h-18 border-[2px] sm:border-[3px] border-black shadow-brutal-sm overflow-hidden bg-surface-variant flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j2 ? (
                     <img src={podiumPhotos.j2} alt="Silver" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={28} className="text-black" />
+                    <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
-                      <Camera size={14} className="mb-0.5" />
-                      <span>Klik / Paste</span>
+                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                      <Camera size={12} className="mb-0.5" />
+                      <span>Foto</span>
                     </div>
                   )}
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-surface-variant text-black text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
-                  <Medal size={10} className="stroke-[2.5]" /> Silver
+                <div className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 bg-surface-variant text-black text-[7px] sm:text-[9px] font-black px-1.5 sm:px-2 py-0.5 border border-black flex items-center gap-0.5 sm:gap-1 shrink-0 whitespace-nowrap shadow-brutal-sm">
+                  <Medal size={9} className="stroke-[2.5]" /> Silver
                 </div>
               </div>
 
               {/* Name */}
-              <div className="text-center mb-2 px-1">
-                <p className="text-xs md:text-sm font-black text-black uppercase tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+              <div className="w-full text-center my-1 sm:my-2 px-0.5">
+                <p className="text-[9px] sm:text-[11px] md:text-xs font-black text-black uppercase tracking-tight truncate max-w-full block">
                   {champs.j2}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-surface-variant border-[3px] border-black shadow-brutal h-24 md:h-28 flex flex-col items-center justify-center text-black relative">
-                <span className="text-4xl md:text-5xl font-black text-black">2</span>
+              <div className="w-full bg-surface-variant border-[2px] sm:border-[3px] border-black shadow-brutal h-18 sm:h-24 md:h-30 flex flex-col items-center justify-center text-black relative">
+                <span className="text-2xl sm:text-4xl md:text-5xl font-black text-black">2</span>
               </div>
             </div>
           )}
 
           {/* 1st Place: Gold (Center) */}
           {champs.j1 && (
-            <div className="flex flex-col items-center flex-1 max-w-[170px] z-10 animate-scale-in">
+            <div className="w-1/3 flex flex-col items-center justify-end z-20 relative animate-scale-in">
               {/* Avatar section */}
-              <div className="relative mb-3 flex flex-col items-center">
+              <div className="relative mb-2 sm:mb-3 flex flex-col items-center">
                 <input 
                   type="file" 
                   id="podium-upload-input-j1" 
@@ -1919,51 +1920,51 @@ export default function App() {
                   onPaste={(e) => handlePasteImage(e, 'j1')}
                   title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                   className={cn(
-                    "w-20 h-20 md:w-24 md:h-24 border-[3px] border-black shadow-brutal overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
+                    "w-14 h-14 sm:w-18 sm:h-18 md:w-22 md:h-22 border-[2px] sm:border-[3px] border-black shadow-brutal overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                     role === 'referee' && "cursor-pointer group"
                   )}
                 >
                   {podiumPhotos.j1 ? (
                     <img src={podiumPhotos.j1} alt="Gold" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={36} className="text-black" />
+                    <User className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 text-black" />
                   )}
                   {role === 'referee' && (
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
-                      <Camera size={16} className="mb-0.5" />
-                      <span>Klik / Paste</span>
+                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                      <Camera size={14} className="mb-0.5" />
+                      <span>Foto</span>
                     </div>
                   )}
                 </div>
                 {/* Crown Icon */}
-                <div className="absolute -top-7 left-1/2 -translate-x-1/2 text-black animate-bounce" style={{ animationDuration: '3s' }}>
-                  <Crown size={28} fill="currentColor" />
+                <div className="absolute -top-5 sm:-top-7 left-1/2 -translate-x-1/2 text-black animate-bounce" style={{ animationDuration: '3s' }}>
+                  <Crown className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 stroke-[2.5]" fill="currentColor" />
                 </div>
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-black text-white text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
-                  <Trophy size={10} className="stroke-[2.5]" /> Gold
+                <div className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 bg-black text-white text-[7px] sm:text-[9px] font-black px-1.5 sm:px-2.5 py-0.5 border border-black flex items-center gap-0.5 sm:gap-1 shrink-0 whitespace-nowrap shadow-brutal-sm">
+                  <Trophy size={9} className="stroke-[2.5]" /> Gold
                 </div>
               </div>
 
               {/* Name */}
-              <div className="text-center mb-2 px-1">
-                <p className="text-sm md:text-base font-black text-black uppercase tracking-tight truncate max-w-[130px] md:max-w-[150px]">
+              <div className="w-full text-center my-1 sm:my-2 px-0.5">
+                <p className="text-[10px] sm:text-xs md:text-sm font-black text-black uppercase tracking-tight truncate max-w-full block">
                   {champs.j1}
                 </p>
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-warning-red border-[3px] border-black shadow-brutal h-32 md:h-36 flex flex-col items-center justify-center text-white relative">
-                <span className="text-5xl md:text-6xl font-black text-white">1</span>
-                <Trophy size={20} className="text-white absolute bottom-3" />
+              <div className="w-full bg-warning-red border-[2px] sm:border-[3px] border-black shadow-brutal h-24 sm:h-32 md:h-40 flex flex-col items-center justify-center text-white relative">
+                <span className="text-3xl sm:text-5xl md:text-6xl font-black text-white">1</span>
+                <Trophy size={16} className="text-white absolute bottom-2 hidden sm:block" />
               </div>
             </div>
           )}
 
           {/* 3rd Place: Bronze (Right) */}
           {(champs.j3 || (isBracket && champs.j4)) && (
-            <div className="flex flex-col items-center flex-1 max-w-[150px] animate-fade-in-right">
+            <div className="w-1/3 flex flex-col items-center justify-end z-10 relative animate-fade-in-right">
               {/* Avatar section */}
-              <div className="relative mb-3 flex flex-col items-center">
+              <div className="relative mb-2 sm:mb-3 flex flex-col items-center">
                 {/* Inputs for j3 & j4 */}
                 <input 
                   type="file" 
@@ -1984,26 +1985,25 @@ export default function App() {
 
                 {/* Show joint avatars side by side if isBracket and both exist */}
                 {isBracket && champs.j3 && champs.j4 ? (
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5 justify-center">
                     <div 
                       onClick={() => triggerPodiumPhotoUpload('j3')}
                       tabIndex={role === 'referee' ? 0 : -1}
                       onPaste={(e) => handlePasteImage(e, 'j3')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 border-2 border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
+                        "w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 border border-black sm:border-2 shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j3 ? (
                         <img src={podiumPhotos.j3} alt="Bronze 3" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-black" />
+                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
-                          <Camera size={10} className="mb-0.5" />
-                          <span>Paste</span>
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none">
+                          <Camera size={8} />
                         </div>
                       )}
                     </div>
@@ -2013,19 +2013,18 @@ export default function App() {
                       onPaste={(e) => handlePasteImage(e, 'j4')}
                       title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                       className={cn(
-                        "w-12 h-12 md:w-14 md:h-14 border-2 border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
+                        "w-6 h-6 sm:w-8 sm:h-8 md:w-11 md:h-11 border border-black sm:border-2 shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                         role === 'referee' && "cursor-pointer group"
                       )}
                     >
                       {podiumPhotos.j4 ? (
                         <img src={podiumPhotos.j4} alt="Bronze 4" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={20} className="text-black" />
+                        <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-black" />
                       )}
                       {role === 'referee' && (
-                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] font-black text-center p-0.5 uppercase leading-none">
-                          <Camera size={10} className="mb-0.5" />
-                          <span>Paste</span>
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[6px] font-black text-center p-0.5 uppercase leading-none">
+                          <Camera size={8} />
                         </div>
                       )}
                     </div>
@@ -2037,54 +2036,57 @@ export default function App() {
                     onPaste={(e) => handlePasteImage(e, 'j3')}
                     title={role === 'referee' ? "Klik untuk memilih file, atau tekan Ctrl+V/Cmd+V untuk menempel gambar" : undefined}
                     className={cn(
-                      "w-16 h-16 md:w-20 md:h-20 border-[3px] border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
+                      "w-11 h-11 sm:w-14 sm:h-14 md:w-18 md:h-18 border-[2px] sm:border-[3px] border-black shadow-brutal-sm overflow-hidden bg-white flex items-center justify-center text-black relative transition-transform hover:scale-105 focus:outline-none",
                       role === 'referee' && "cursor-pointer group"
                     )}
                   >
                     {podiumPhotos.j3 ? (
                       <img src={podiumPhotos.j3} alt="Bronze" className="w-full h-full object-cover" />
                     ) : (
-                      <User size={28} className="text-black" />
+                      <User className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-black" />
                     )}
                     {role === 'referee' && (
-                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black text-center p-1 uppercase">
-                        <Camera size={14} className="mb-0.5" />
-                        <span>Klik / Paste</span>
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[7px] sm:text-[8px] font-black text-center p-0.5 uppercase leading-none">
+                        <Camera size={12} className="mb-0.5" />
+                        <span>Foto</span>
                       </div>
                     )}
                   </div>
                 )}
                 
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-safety-orange text-white text-[9px] font-black px-2.5 py-0.5 border border-black flex items-center gap-1">
-                  <Award size={10} className="stroke-[2.5]" /> {isBracket ? "Juara 3" : "Bronze"}
+                <div className="absolute -top-2.5 sm:-top-3 left-1/2 -translate-x-1/2 bg-safety-orange text-white text-[7px] sm:text-[9px] font-black px-1.5 sm:px-2 py-0.5 border border-black flex items-center gap-0.5 sm:gap-1 shrink-0 whitespace-nowrap shadow-brutal-sm">
+                  <Award size={9} className="stroke-[2.5]" /> {isBracket ? "Juara 3" : "Bronze"}
                 </div>
               </div>
 
               {/* Name */}
-              <div className="text-center mb-2 px-1">
+              <div className="w-full text-center my-1 sm:my-2 px-0.5">
                 {isBracket && champs.j3 && champs.j4 ? (
-                  <p className="text-[10px] md:text-xs font-black text-black uppercase tracking-tight leading-tight max-w-[110px] md:max-w-[130px]">
+                  <p className="text-[8px] sm:text-[10px] md:text-xs font-black text-black uppercase tracking-tight leading-tight truncate max-w-full block">
                     {champs.j3} & {champs.j4}
                   </p>
                 ) : (
-                  <p className="text-xs md:text-sm font-black text-black uppercase tracking-tight truncate max-w-[110px] md:max-w-[130px]">
+                  <p className="text-[8px] sm:text-[10px] md:text-xs font-black text-black uppercase tracking-tight truncate max-w-full block">
                     {champs.j3}
                   </p>
                 )}
               </div>
 
               {/* 3D step block */}
-              <div className="w-full bg-safety-orange border-[3px] border-black shadow-brutal h-16 md:h-20 flex flex-col items-center justify-center text-white relative">
-                <span className="text-3xl md:text-4xl font-black text-white">3</span>
+              <div className="w-full bg-safety-orange border-[2px] sm:border-[3px] border-black shadow-brutal h-14 sm:h-18 md:h-22 flex flex-col items-center justify-center text-white relative">
+                <span className="text-xl sm:text-3xl md:text-4xl font-black text-white">3</span>
               </div>
             </div>
           )}
 
         </div>
+        
+        {/* Base ground line */}
+        <div className="w-full max-w-lg mx-auto h-2.5 sm:h-3.5 bg-black mt-0 shadow-brutal-sm border-t-2 border-black"></div>
 
         {/* 4th Place: Harapan 1 (For non-bracket format e.g. roundrobin / double) */}
         {!isBracket && champs.j4 && (
-          <div className="mt-4 max-w-md mx-auto p-4 bg-white border-[3px] border-black flex items-center justify-between shadow-brutal-sm">
+          <div className="mt-4 max-w-md mx-auto p-3 sm:p-4 bg-white border-[3px] border-black flex items-center justify-between shadow-brutal-sm">
             <input 
               type="file" 
               id="podium-upload-input-j4" 
@@ -2092,18 +2094,18 @@ export default function App() {
               accept="image/*"
               onChange={(e) => handlePodiumPhotoChange(e, 'j4')}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
               <div 
                 onClick={() => triggerPodiumPhotoUpload('j4')}
                 className={cn(
-                  "w-12 h-12 flex items-center justify-center shrink-0 border-2 border-black overflow-hidden bg-white relative transition-transform hover:scale-105",
+                  "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0 border-2 border-black overflow-hidden bg-white relative transition-transform hover:scale-105 shadow-brutal-sm",
                   role === 'referee' && "cursor-pointer group"
                 )}
               >
                 {podiumPhotos.j4 ? (
                   <img src={podiumPhotos.j4} alt="Harapan 1" className="w-full h-full object-cover" />
                 ) : (
-                  <Award size={20} className="text-black" />
+                  <Award size={18} className="text-black" />
                 )}
                 {role === 'referee' && (
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
@@ -2111,12 +2113,12 @@ export default function App() {
                   </div>
                 )}
               </div>
-              <div className="text-left">
-                <p className="text-[9px] font-black text-black uppercase tracking-widest">Juara 4 (Harapan 1)</p>
-                <p className="text-xs font-black text-black uppercase tracking-tight">{champs.j4}</p>
+              <div className="text-left min-w-0 flex-1">
+                <p className="text-[8px] sm:text-[9px] font-black text-black uppercase tracking-widest">Juara 4 (Harapan 1)</p>
+                <p className="text-xs sm:text-sm font-black text-black uppercase tracking-tight truncate">{champs.j4}</p>
               </div>
             </div>
-            <Award size={22} className="text-black mr-1" />
+            <Award size={20} className="text-black shrink-0 ml-2" />
           </div>
         )}
       </div>
@@ -2701,11 +2703,11 @@ export default function App() {
 
           {/* Section Riwayat Turnamen */}
           {archivesList.length > 0 && (
-            <div className="p-6 border-t-[3px] border-black bg-surface-variant">
+            <div className="p-4 sm:p-6 border-t-[3px] border-black bg-surface-variant">
               <h3 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                 <Archive size={14} className="text-brutal-blue" /> RIWAYAT TURNAMEN ARSIP
               </h3>
-              <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin">
                 {archivesList.map((archive) => {
                   const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
                     year: 'numeric',
@@ -2726,27 +2728,27 @@ export default function App() {
                           }
                         }
                       }}
-                      className="w-full flex items-center justify-between bg-white border-[2px] border-black hover:bg-blue-50 p-3.5 transition-all shadow-brutal-sm cursor-pointer group active:translate-x-0.5 active:translate-y-0.5 active:shadow-none"
+                      className="w-full flex items-center justify-between bg-white border-[2px] border-black hover:bg-surface-variant p-3 transition-all shadow-brutal-sm cursor-pointer group active:translate-x-0.5 active:translate-y-0.5 active:shadow-none gap-3"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-9 h-9 object-contain border border-black p-0.5 bg-white" />
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain border-2 border-black p-0.5 bg-white shrink-0 shadow-brutal-sm" />
                         ) : (
-                          <div className="bg-surface-variant text-black p-2 border border-black">
-                            <Trophy size={14} />
+                          <div className="w-10 h-10 bg-black text-white border-2 border-black flex items-center justify-center shrink-0 shadow-brutal-sm">
+                            <Trophy size={16} className="stroke-[2.5]" />
                           </div>
                         )}
-                        <div className="text-left">
-                          <h4 className="font-black text-black text-xs uppercase tracking-tight leading-none group-hover:text-brutal-blue transition-colors">
+                        <div className="text-left min-w-0 flex-1">
+                          <h4 className="font-black text-black text-xs uppercase tracking-tight leading-snug truncate group-hover:text-brutal-blue transition-colors">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-1">
+                          <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-0.5 truncate">
                             {archive.organizer} • {dateStr}
                           </p>
                         </div>
                       </div>
-                      <div className="bg-white group-hover:bg-black group-hover:text-white text-black p-1.5 border border-black transition-all">
-                        <ChevronRight size={14} />
+                      <div className="bg-black text-white p-2 border-2 border-black shadow-brutal-sm shrink-0 group-hover:bg-brutal-blue transition-all">
+                        <ChevronRight size={14} className="stroke-[3]" />
                       </div>
                     </div>
                   );
@@ -3043,17 +3045,17 @@ export default function App() {
 
       {/* Archive Management Modal */}
       {showArchiveManagement && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowArchiveManagement(false)}></div>
-          <div className="relative bg-white w-full max-w-lg p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[85vh]">
-            <h3 className="text-xl font-black text-black mb-1 flex items-center gap-2 tracking-tight uppercase">
-              <Archive className="text-black stroke-[2.5]" size={22}/> Kelola Arsip Turnamen
+          <div className="relative bg-white w-full max-w-lg p-4 sm:p-6 md:p-8 shadow-brutal animate-scale-in border-[3px] border-black flex flex-col max-h-[90vh]">
+            <h3 className="text-lg sm:text-xl font-black text-black mb-1 flex items-center gap-2 tracking-tight uppercase">
+              <Archive className="text-black stroke-[2.5]" size={20}/> Kelola Arsip Turnamen
             </h3>
-            <p className="text-xs font-bold text-black uppercase tracking-wider mb-6">Manajemen Riwayat Turnamen Wasit</p>
+            <p className="text-[10px] sm:text-xs font-bold text-black uppercase tracking-wider mb-4 sm:mb-6">Manajemen Riwayat Turnamen Wasit</p>
             
-            <div className="space-y-3 overflow-y-auto pr-2 scrollbar-thin flex-1">
+            <div className="space-y-3 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin flex-1">
               {archivesList.length === 0 ? (
-                <div className="text-center py-12 text-black font-bold uppercase">Belum ada turnamen yang diarsipkan.</div>
+                <div className="text-center py-12 text-black font-bold uppercase text-xs">Belum ada turnamen yang diarsipkan.</div>
               ) : (
                 archivesList.map((archive) => {
                   const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
@@ -3062,26 +3064,28 @@ export default function App() {
                     day: 'numeric'
                   });
                   return (
-                    <div key={archive.id} className="flex items-center justify-between bg-surface-variant border-2 border-black p-3.5 shadow-brutal-sm">
-                      <div className="flex items-center gap-3">
+                    <div key={archive.id} className="bg-surface-variant border-2 border-black p-3 sm:p-4 shadow-brutal-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                         {archive.logo ? (
-                          <img src={archive.logo} alt="Logo" className="w-10 h-10 object-contain border border-black p-1 bg-white" />
+                          <img src={archive.logo} alt="Logo" className="w-10 h-10 sm:w-12 sm:h-12 object-contain border-2 border-black p-1 bg-white shrink-0 shadow-brutal-sm" />
                         ) : (
-                          <div className="bg-white text-black p-2 border border-black">
-                            <Trophy size={16} />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white text-black p-2 border-2 border-black shrink-0 flex items-center justify-center shadow-brutal-sm">
+                            <Trophy size={18} className="stroke-[2.5]" />
                           </div>
                         )}
-                        <div className="text-left">
-                          <h4 className="font-black text-black text-xs uppercase tracking-tight leading-none">
+                        <div className="text-left min-w-0 flex-1">
+                          <h4 className="font-black text-black text-xs sm:text-sm uppercase tracking-tight leading-snug break-words">
                             {archive.title}
                           </h4>
-                          <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-1">
-                            {archive.organizer} • {dateStr}
+                          <p className="text-[9px] sm:text-[10px] text-black font-bold uppercase tracking-wider mt-1 flex flex-wrap items-center gap-1.5">
+                            <span className="text-brutal-blue font-black">{archive.organizer}</span>
+                            <span>•</span>
+                            <span>{dateStr}</span>
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-black/20">
                         <button 
                           onClick={() => {
                             setViewingArchive(archive);
@@ -3095,13 +3099,14 @@ export default function App() {
                               }
                             }
                           }}
-                          className="bg-brutal-blue hover:bg-blue-700 text-white font-black text-[10px] uppercase tracking-wider py-2 px-3 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0"
+                          className="flex-1 sm:flex-none bg-brutal-blue hover:bg-blue-700 text-white font-black text-[10px] sm:text-xs uppercase tracking-wider py-2 sm:py-2.5 px-3.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-1.5 shrink-0"
                         >
-                          Lihat / Edit
+                          <Eye size={13} />
+                          <span>Lihat / Buka</span>
                         </button>
                         <button 
                           onClick={() => handleDeleteArchive(archive.id, archive.title)}
-                          className="bg-warning-red hover:bg-red-700 text-white p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 shrink-0"
+                          className="bg-warning-red hover:bg-red-700 text-white p-2 sm:p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center shrink-0"
                           title="Hapus Arsip"
                         >
                           <Trash2 size={16} />
@@ -3113,8 +3118,8 @@ export default function App() {
               )}
             </div>
             
-            <div className="mt-6 pt-6 border-t-[3px] border-black flex justify-end">
-              <button onClick={() => setShowArchiveManagement(false)} className="bg-black hover:bg-brutal-blue text-white px-6 py-3 font-black transition-all shadow-brutal border-2 border-black active:translate-x-0.5 active:translate-y-0.5 text-xs uppercase tracking-wider">
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t-[3px] border-black flex justify-end">
+              <button onClick={() => setShowArchiveManagement(false)} className="w-full sm:w-auto bg-black hover:bg-brutal-blue text-white px-6 py-3 font-black transition-all shadow-brutal border-2 border-black active:translate-x-0.5 active:translate-y-0.5 text-xs uppercase tracking-wider text-center">
                 Selesai & Tutup
               </button>
             </div>
@@ -3633,16 +3638,16 @@ export default function App() {
 
       {/* Edit Archive Modal */}
       {showEditArchiveModal && viewingArchive && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 animate-fade-in">
           <div className="bg-white max-w-md w-full shadow-brutal border-[3px] border-black overflow-hidden animate-scale-in">
-            <div className="bg-black p-6 text-white border-b-[3px] border-black">
-              <h3 className="text-lg font-black uppercase tracking-wide flex items-center gap-2">
+            <div className="bg-black p-4 sm:p-6 text-white border-b-[3px] border-black">
+              <h3 className="text-base sm:text-lg font-black uppercase tracking-wide flex items-center gap-2">
                 <Archive size={20} /> Edit Detail Arsip
               </h3>
-              <p className="text-xs text-slate-300 font-bold uppercase mt-1">Ubah metadata untuk turnamen arsip ini</p>
+              <p className="text-[10px] sm:text-xs text-slate-300 font-bold uppercase mt-1">Ubah metadata untuk turnamen arsip ini</p>
             </div>
             
-            <form onSubmit={handleSaveArchiveEdit} onPaste={(e) => handlePasteImage(e, 'archive_logo')} className="p-6 space-y-4">
+            <form onSubmit={handleSaveArchiveEdit} onPaste={(e) => handlePasteImage(e, 'archive_logo')} className="p-4 sm:p-6 space-y-4">
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] font-black text-black uppercase tracking-widest">Judul Turnamen</label>
                 <input 
