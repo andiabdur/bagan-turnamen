@@ -1785,21 +1785,38 @@ export default function App() {
     return "Sistem Gugur Tunggal — Bagan Eliminasi Langsung";
   };
 
-  const getChampions = () => {
-    if (!activeBracket || !activeBracket.matches) return null;
+  // Compute round-robin standings
+  const computeStandings = (finalBracket) => {
+    if (!finalBracket || finalBracket.type !== 'roundrobin') return [];
+    const points = {};
+    finalBracket.matches.forEach(m => {
+      if (!points[m.player1]) points[m.player1] = { name: m.player1, w: 0, l: 0, pts: 0 };
+      if (!points[m.player2]) points[m.player2] = { name: m.player2, w: 0, l: 0, pts: 0 };
+      if (m.winner) {
+        const loser = m.winner === m.player1 ? m.player2 : m.player1;
+        points[m.winner].w += 1;
+        points[m.winner].pts += 1;
+        points[loser].l += 1;
+      }
+    });
+    return Object.values(points).sort((a, b) => b.pts - a.pts || b.w - a.w);
+  };
+
+  const getChampionsForBracket = (bracket) => {
+    if (!bracket || !bracket.matches) return null;
     let j1 = null, j2 = null, j3 = null, j4 = null;
 
-    if (activeBracket.type === 'roundrobin') {
-      const standings = computeStandings(activeBracket);
-      if (activeBracket.matches.some(m => m.winner)) {
+    if (bracket.type === 'roundrobin') {
+      const standings = computeStandings(bracket);
+      if (bracket.matches.some(m => m.winner)) {
         j1 = standings[0]?.name || null;
         j2 = standings[1]?.name || null;
         j3 = standings[2]?.name || null;
         j4 = standings[3]?.name || null;
       }
-    } else if (activeBracket.type === 'double') {
-      const fm4 = activeBracket.matches.find(m => m.id === 'fm4');
-      const fm3 = activeBracket.matches.find(m => m.id === 'fm3');
+    } else if (bracket.type === 'double') {
+      const fm4 = bracket.matches.find(m => m.id === 'fm4');
+      const fm3 = bracket.matches.find(m => m.id === 'fm3');
       j1 = fm4?.winner || null;
       if (j1 && fm4) {
         j2 = j1 === fm4.player1 ? fm4.player2 : fm4.player1;
@@ -1809,14 +1826,14 @@ export default function App() {
         j4 = j3 === fm3.player1 ? fm3.player2 : fm3.player1;
       }
     } else {
-      const totalR = activeBracket.totalRounds || 1;
-      const finalMatch = activeBracket.matches.find(m => m.round === totalR);
+      const totalR = bracket.totalRounds || 1;
+      const finalMatch = bracket.matches.find(m => m.round === totalR);
       j1 = finalMatch?.winner || null;
       if (j1 && finalMatch) {
         j2 = j1 === finalMatch.player1 ? finalMatch.player2 : finalMatch.player1;
       }
       if (totalR > 1) {
-        const sfMatches = activeBracket.matches.filter(m => m.round === totalR - 1);
+        const sfMatches = bracket.matches.filter(m => m.round === totalR - 1);
         if (sfMatches[0] && sfMatches[0].winner) {
           j3 = sfMatches[0].winner === sfMatches[0].player1 ? sfMatches[0].player2 : sfMatches[0].player1;
         }
@@ -1827,6 +1844,31 @@ export default function App() {
     }
 
     return { j1, j2, j3, j4 };
+  };
+
+  const getChampions = () => getChampionsForBracket(activeBracket);
+
+  const getArchiveChampion = (archive) => {
+    if (!archive) return null;
+    if (archive.champion) return archive.champion;
+    if (archive.winner) return archive.winner;
+    
+    // Check pools.Final or pools.FINAL
+    const finalBracket = archive.pools?.Final || archive.pools?.FINAL || archive.pools?.final;
+    if (finalBracket) {
+      const res = getChampionsForBracket(finalBracket);
+      if (res?.j1) return res.j1;
+    }
+
+    // Check all pools in archive
+    if (archive.pools) {
+      for (const p of Object.keys(archive.pools)) {
+        const res = getChampionsForBracket(archive.pools[p]);
+        if (res?.j1) return res.j1;
+      }
+    }
+
+    return null;
   };
 
   const renderPodium = () => {
@@ -2595,23 +2637,6 @@ export default function App() {
     }
   };
 
-  // Compute round-robin standings
-  const computeStandings = (finalBracket) => {
-    if (!finalBracket || finalBracket.type !== 'roundrobin') return [];
-    const points = {};
-    finalBracket.matches.forEach(m => {
-      if (!points[m.player1]) points[m.player1] = { name: m.player1, w: 0, l: 0, pts: 0 };
-      if (!points[m.player2]) points[m.player2] = { name: m.player2, w: 0, l: 0, pts: 0 };
-      if (m.winner) {
-        const loser = m.winner === m.player1 ? m.player2 : m.player1;
-        points[m.winner].w += 1;
-        points[m.winner].pts += 1;
-        points[loser].l += 1;
-      }
-    });
-    return Object.values(points).sort((a, b) => b.pts - a.pts || b.w - a.w);
-  };
-
   // Search participant handler
   const handleSearch = () => {
     const q = searchQuery.trim().toLowerCase();
@@ -2707,13 +2732,14 @@ export default function App() {
               <h3 className="text-[10px] font-black text-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                 <Archive size={14} className="text-brutal-blue" /> RIWAYAT TURNAMEN ARSIP
               </h3>
-              <div className="space-y-2.5 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin">
+              <div className="space-y-2.5 max-h-[260px] overflow-y-auto pr-1 scrollbar-thin">
                 {archivesList.map((archive) => {
                   const dateStr = new Date(archive.archivedAt).toLocaleDateString('id-ID', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                   });
+                  const champName = getArchiveChampion(archive);
                   return (
                     <div 
                       key={archive.id}
@@ -2745,6 +2771,12 @@ export default function App() {
                           <p className="text-[9px] text-black font-bold uppercase tracking-wider mt-0.5 truncate">
                             {archive.organizer} • {dateStr}
                           </p>
+                          {champName && (
+                            <div className="mt-1 flex items-center gap-1 text-[9px] font-black text-black bg-warning-red/10 border border-black/20 px-1.5 py-0.5 w-fit">
+                              <Trophy size={9} className="text-warning-red stroke-[3]" />
+                              <span className="uppercase text-[8px]">Juara: <span className="underline">{champName}</span></span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="bg-black text-white p-2 border-2 border-black shadow-brutal-sm shrink-0 group-hover:bg-brutal-blue transition-all">
@@ -3144,6 +3176,7 @@ export default function App() {
                     month: 'short',
                     day: 'numeric'
                   });
+                  const champName = getArchiveChampion(archive);
                   return (
                     <div key={archive.id} className="bg-surface-variant border-2 border-black p-3 sm:p-4 shadow-brutal-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
@@ -3163,6 +3196,12 @@ export default function App() {
                             <span>•</span>
                             <span>{dateStr}</span>
                           </p>
+                          {champName && (
+                            <div className="mt-1.5 inline-flex items-center gap-1.5 bg-black text-white px-2 py-0.5 border border-black shadow-brutal-sm text-[9px] sm:text-[10px] font-black uppercase">
+                              <Trophy size={10} className="text-warning-red stroke-[2.5]" />
+                              <span>Juara 1: <span className="text-white underline">{champName}</span></span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
@@ -3185,13 +3224,15 @@ export default function App() {
                           <Eye size={13} />
                           <span>Lihat / Buka</span>
                         </button>
-                        <button 
-                          onClick={() => handleDeleteArchive(archive.id, archive.title)}
-                          className="bg-warning-red hover:bg-red-700 text-white p-2 sm:p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center shrink-0"
-                          title="Hapus Arsip"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {role === 'referee' && (
+                          <button 
+                            onClick={() => handleDeleteArchive(archive.id, archive.title)}
+                            className="bg-warning-red hover:bg-red-700 text-white p-2 sm:p-2.5 transition-all border-2 border-black shadow-brutal-sm active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center shrink-0"
+                            title="Hapus Arsip"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

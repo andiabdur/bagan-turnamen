@@ -293,107 +293,98 @@ export default function MatchCard({
         )}
       </div>
 
-      {/* Brutalist Detail Modal */}
+      {/* In-Place Brutalist Detail Popover */}
       {showDetail && (
-        <>
-          <div 
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm animate-fade-in"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetail(false);
-            }}
-          />
-
-          <div 
-            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-sm bg-white border-[3px] border-black shadow-brutal p-5 z-[210] flex flex-col gap-4 animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex justify-between items-center border-b-[3px] border-black pb-3">
-              <div>
-                <span className="text-[10px] font-black text-white bg-black px-2 py-0.5 uppercase tracking-wider border border-black">
-                  {match.label ? match.label : `Match #${match.id.replace('fm', 'F').replace('m','')}`}
-                </span>
-                <h3 className="text-lg font-black text-black mt-1 uppercase tracking-tight">Detail Pertandingan</h3>
-              </div>
-              <button 
-                onClick={() => setShowDetail(false)}
-                className="w-8 h-8 bg-white border-[2px] border-black text-black flex items-center justify-center font-black transition-all hover:bg-black hover:text-white active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm"
-              >
-                <X size={16} className="stroke-[3]" />
-              </button>
+        <div 
+          className="absolute -inset-1.5 z-40 bg-white border-[3px] border-black shadow-brutal p-3 flex flex-col gap-2.5 animate-scale-in"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center border-b-2 border-black pb-2">
+            <div>
+              <span className="text-[9px] font-black text-white bg-black px-1.5 py-0.5 uppercase tracking-wider border border-black">
+                {match.label ? match.label : `Match #${match.id.replace('fm', 'F').replace('m','')}`}
+              </span>
+              <h4 className="text-xs font-black text-black mt-1 uppercase tracking-tight">Detail Pertandingan</h4>
             </div>
+            <button 
+              onClick={() => setShowDetail(false)}
+              className="w-6 h-6 bg-white border-2 border-black text-black flex items-center justify-center font-black transition-all hover:bg-black hover:text-white active:translate-x-0.5 active:translate-y-0.5 shadow-brutal-sm shrink-0"
+              title="Tutup detail"
+            >
+              <X size={14} className="stroke-[3]" />
+            </button>
+          </div>
 
-            {/* Players List */}
-            <div className="flex flex-col gap-3">
-              {[1, 2].map(slot => {
-                const playerName = slot === 1 ? match.player1 : match.player2;
-                const isWinner = match.winner === playerName && playerName;
-                const isDisqualified = slot === 1 ? match.player1Disqualified : match.player2Disqualified;
-                const hasPoints = (prelimPointsSystem === 'all' || 
-                                  ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
-                const points = slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0);
+          {/* Players List */}
+          <div className="flex flex-col gap-1.5">
+            {[1, 2].map(slot => {
+              const playerName = slot === 1 ? match.player1 : match.player2;
+              const isWinner = match.winner === playerName && playerName;
+              const isDisqualified = slot === 1 ? match.player1Disqualified : match.player2Disqualified;
+              const hasPoints = (prelimPointsSystem === 'all' || 
+                                ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
+              const points = slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0);
 
-                return (
-                  <div 
-                    key={slot} 
-                    className={cn(
-                      "p-3.5 border-[2px] border-black flex items-center justify-between gap-3 shadow-brutal-sm",
-                      isDisqualified ? "bg-red-50 text-black" :
-                      isWinner ? "bg-blue-50 text-black" :
-                      "bg-white text-black"
-                    )}
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className={cn(
-                        "w-3.5 h-3.5 shrink-0 border-2 border-black",
-                        isDisqualified ? "bg-warning-red" : 
-                        isWinner ? "bg-brutal-blue" : "bg-surface-variant"
-                      )}/>
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PESERTA {slot}</span>
-                        <span className="text-sm font-black text-black break-words mt-0.5 leading-tight uppercase">
-                          {playerName || 'TBA'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {isDisqualified && (
-                        <span className="text-[9px] font-black bg-warning-red text-white px-2 py-0.5 border border-black uppercase tracking-wider">
-                          DIS
-                        </span>
-                      )}
-                      {isWinner && (
-                        <span className="text-[9px] font-black bg-brutal-blue text-white px-2 py-0.5 border border-black uppercase tracking-wider flex items-center gap-1">
-                          <Trophy size={10} className="stroke-[3]" /> MENANG
-                        </span>
-                      )}
-                      {hasPoints && playerName && (
-                        <div className="bg-black text-white px-2 py-0.5 font-black text-xs border border-black">
-                          {points} PTS
-                        </div>
-                      )}
+              return (
+                <div 
+                  key={slot} 
+                  className={cn(
+                    "p-2 border-2 border-black flex items-center justify-between gap-2 shadow-brutal-sm",
+                    isDisqualified ? "bg-red-50 text-black" :
+                    isWinner ? "bg-blue-50 text-black" :
+                    "bg-white text-black"
+                  )}
+                >
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className={cn(
+                      "w-2.5 h-2.5 shrink-0 border border-black",
+                      isDisqualified ? "bg-warning-red" : 
+                      isWinner ? "bg-brutal-blue" : "bg-surface-variant"
+                    )}/>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">P{slot}</span>
+                      <span className="text-xs font-black text-black truncate mt-0.5 leading-tight uppercase">
+                        {playerName || 'TBA'}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Status info */}
-            <div className="bg-surface-variant border-[2px] border-black p-3 flex justify-between items-center">
-              <div className="flex items-center gap-1.5">
-                <Clock size={14} className="text-black stroke-[2.5]" />
-                <span className="text-[10px] font-black text-black uppercase tracking-wider">Status Match</span>
-              </div>
-              <div className="font-mono text-xs font-black text-black uppercase tracking-wide">
-                {isCall ? (isTimeOut ? "PANGGILAN HABIS" : `PANGGILAN (${formatTime(remainingTime)})`) : 
-                 isPlaying ? `BERTANDING (${formatTime(elapsed)})` :
-                 isPrep ? `PERSIAPAN (${formatTime(elapsed)})` : "BELUM DIMULAI"}
-              </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isDisqualified && (
+                      <span className="text-[8px] font-black bg-warning-red text-white px-1.5 py-0.5 border border-black uppercase">
+                        DIS
+                      </span>
+                    )}
+                    {isWinner && (
+                      <span className="text-[8px] font-black bg-brutal-blue text-white px-1.5 py-0.5 border border-black uppercase flex items-center gap-0.5">
+                        <Trophy size={8} className="stroke-[3]" /> MENANG
+                      </span>
+                    )}
+                    {hasPoints && playerName && (
+                      <div className="bg-black text-white px-1.5 py-0.5 font-black text-[10px] border border-black">
+                        {points}P
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Status info */}
+          <div className="bg-surface-variant border-2 border-black p-1.5 flex justify-between items-center mt-auto">
+            <div className="flex items-center gap-1">
+              <Clock size={11} className="text-black stroke-[2.5]" />
+              <span className="text-[8px] font-black text-black uppercase tracking-wider">Status</span>
+            </div>
+            <div className="font-mono text-[9px] font-black text-black uppercase tracking-wide">
+              {isCall ? (isTimeOut ? "HABIS" : `PANGGILAN (${formatTime(remainingTime)})`) : 
+               isPlaying ? `MAIN (${formatTime(elapsed)})` :
+               isPrep ? `PERSIAPAN (${formatTime(elapsed)})` : "BELUM MULAI"}
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
