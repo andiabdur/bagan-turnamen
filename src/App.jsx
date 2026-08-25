@@ -179,6 +179,7 @@ export default function App() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [eventPosterFile, setEventPosterFile] = useState(null);
   const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [eventUploadProgress, setEventUploadProgress] = useState(null);
   const [eventDetailTab, setEventDetailTab] = useState('info'); // 'info' | 'poster' | 'rules' | 'participants'
   const [eventParticipantSearch, setEventParticipantSearch] = useState('');
   const [eventFilterStatus, setEventFilterStatus] = useState('all'); // 'all' | 'open' | 'upcoming' | 'closed'
@@ -1599,31 +1600,72 @@ export default function App() {
     }
 
     setIsSavingEvent(true);
+    setEventUploadProgress(null);
+
     try {
       let finalPosterUrl = eventFormPosterUrl || null;
+
       if (eventPosterFile) {
-        // 1. Try Firebase Storage upload first
-        try {
-          const compressed = await compressImage(eventPosterFile, 1200, 0.82);
+        // 1. Compress image to optimal size first (1200px max, quality 0.8)
+        const compressed = await compressImage(eventPosterFile, 1200, 0.80);
+
+        // 2. Try uploadBytesResumable (exact method used in gallery upload)
+        if (storage) {
           const safeName = (eventPosterFile.name || 'poster.jpg').replace(/[^a-zA-Z0-9.]/g, '_');
-          const path = `events/poster_${Date.now()}_${safeName}`;
-          const url = await handleUploadImage(compressed, path, true);
-          if (url) {
-            finalPosterUrl = url;
+          const storagePath = `events/poster_${Date.now()}_${safeName}`;
+
+          const uploadedUrl = await new Promise((resolve) => {
+            try {
+              const storageRef = ref(storage, storagePath);
+              const task = uploadBytesResumable(storageRef, compressed);
+
+              // 8-second safety timeout so it never hangs indefinitely
+              const timer = setTimeout(() => {
+                console.warn("Storage upload timed out, switching to fast Base64 fallback...");
+                try { task.cancel(); } catch (e) {}
+                resolve(null);
+              }, 8000);
+
+              task.on(
+                'state_changed',
+                (snap) => {
+                  if (snap.totalBytes > 0) {
+                    const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+                    setEventUploadProgress(pct);
+                  }
+                },
+                (err) => {
+                  clearTimeout(timer);
+                  console.warn("Upload task error:", err);
+                  resolve(null);
+                },
+                async () => {
+                  clearTimeout(timer);
+                  try {
+                    const dlUrl = await getDownloadURL(task.snapshot.ref);
+                    resolve(dlUrl);
+                  } catch (err) {
+                    resolve(null);
+                  }
+                }
+              );
+            } catch (err) {
+              console.warn("Error starting upload task:", err);
+              resolve(null);
+            }
+          });
+
+          if (uploadedUrl) {
+            finalPosterUrl = uploadedUrl;
           }
-        } catch (storageErr) {
-          console.warn("Storage upload failed, trying Base64 fallback:", storageErr);
         }
 
-        // 2. If storage upload did not yield an HTTP URL, convert to lightweight Base64 (max 640px, safe for Firestore)
+        // 3. Fast Base64 fallback if storage was not configured or timed out / rejected
         if (!finalPosterUrl || !finalPosterUrl.startsWith('http')) {
-          try {
-            const base64 = await compressImageToBase64(eventPosterFile, 640, 0.65);
-            if (base64) {
-              finalPosterUrl = base64;
-            }
-          } catch (base64Err) {
-            console.warn("Base64 compression failed:", base64Err);
+          setEventUploadProgress(null);
+          const base64 = await compressImageToBase64(eventPosterFile, 640, 0.65);
+          if (base64) {
+            finalPosterUrl = base64;
           }
         }
       }
@@ -1670,12 +1712,14 @@ export default function App() {
 
       setShowEventFormModal(false);
       setEventPosterFile(null);
+      setEventUploadProgress(null);
       alert(editingEvent ? "Perubahan event berhasil disimpan!" : "Event berhasil dipublikasikan!");
     } catch (err) {
       console.error("Gagal menyimpan event:", err);
       showError(`Gagal menyimpan event: ${err?.message || 'Terjadi kesalahan sistem'}`);
     } finally {
       setIsSavingEvent(false);
+      setEventUploadProgress(null);
     }
   };
 
@@ -3828,7 +3872,10 @@ export default function App() {
               >
                 {isSavingEvent ? (
                   <>
-                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> MENYIMPAN...
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span> 
+                    {eventUploadProgress !== null 
+                      ? `MENGUNGGAH ${eventUploadProgress}%...` 
+                      : 'MENYIMPAN DOKUMEN...'}
                   </>
                 ) : (editingEvent ? 'SIMPAN PERUBAHAN' : 'PUBLIKASIKAN EVENT')}
               </button>
