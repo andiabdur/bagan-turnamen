@@ -1487,6 +1487,9 @@ export default function App() {
           alert("Gambar berhasil ditempel dari clipboard sebagai Logo Baru.");
         } else if (target === 'event_poster') {
           setEventPosterFile(file);
+          compressImageToBase64(file, 500, 0.60).then(base64 => {
+            if (base64) setEventFormPosterUrl(base64);
+          });
           alert("Pamflet event berhasil ditempel dari clipboard!");
         } else if (target === 'j1' || target === 'j2' || target === 'j3' || target === 'j4') {
           const compressed = await compressImage(file, 600, 0.82);
@@ -1531,6 +1534,19 @@ export default function App() {
         }
         break;
       }
+    }
+  };
+
+  const handlePosterFileChange = async (file) => {
+    if (!file) {
+      setEventPosterFile(null);
+      setEventFormPosterUrl('');
+      return;
+    }
+    setEventPosterFile(file);
+    const base64 = await compressImageToBase64(file, 500, 0.60);
+    if (base64) {
+      setEventFormPosterUrl(base64);
     }
   };
 
@@ -3799,7 +3815,7 @@ export default function App() {
                 {(eventPosterFile || eventFormPosterUrl) && (
                   <div className="relative shrink-0">
                     <img 
-                      src={eventPosterFile ? URL.createObjectURL(eventPosterFile) : eventFormPosterUrl} 
+                      src={eventFormPosterUrl || (eventPosterFile ? URL.createObjectURL(eventPosterFile) : '')} 
                       alt="Preview" 
                       className="w-14 h-14 object-cover border-2 border-black bg-white shadow-brutal-sm" 
                     />
@@ -3819,7 +3835,7 @@ export default function App() {
                 <input 
                   type="file" 
                   accept="image/*"
-                  onChange={(e) => setEventPosterFile(e.target.files[0] || null)}
+                  onChange={(e) => handlePosterFileChange(e.target.files[0] || null)}
                   className="block w-full text-xs text-black file:mr-3 file:py-2 file:px-3 file:border-2 file:border-black file:text-xs file:font-black file:bg-white file:text-black hover:file:bg-surface-variant cursor-pointer"
                 />
               </div>
