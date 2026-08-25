@@ -1621,68 +1621,11 @@ export default function App() {
     try {
       let finalPosterUrl = eventFormPosterUrl || null;
 
-      if (eventPosterFile) {
-        // 1. Compress image to optimal size first (1200px max, quality 0.8)
-        const compressed = await compressImage(eventPosterFile, 1200, 0.80);
-
-        // 2. Try uploadBytesResumable (exact method used in gallery upload)
-        if (storage) {
-          const safeName = (eventPosterFile.name || 'poster.jpg').replace(/[^a-zA-Z0-9.]/g, '_');
-          const storagePath = `events/poster_${Date.now()}_${safeName}`;
-
-          const uploadedUrl = await new Promise((resolve) => {
-            try {
-              const storageRef = ref(storage, storagePath);
-              const task = uploadBytesResumable(storageRef, compressed);
-
-              // 8-second safety timeout so it never hangs indefinitely
-              const timer = setTimeout(() => {
-                console.warn("Storage upload timed out, switching to fast Base64 fallback...");
-                try { task.cancel(); } catch (e) {}
-                resolve(null);
-              }, 8000);
-
-              task.on(
-                'state_changed',
-                (snap) => {
-                  if (snap.totalBytes > 0) {
-                    const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-                    setEventUploadProgress(pct);
-                  }
-                },
-                (err) => {
-                  clearTimeout(timer);
-                  console.warn("Upload task error:", err);
-                  resolve(null);
-                },
-                async () => {
-                  clearTimeout(timer);
-                  try {
-                    const dlUrl = await getDownloadURL(task.snapshot.ref);
-                    resolve(dlUrl);
-                  } catch (err) {
-                    resolve(null);
-                  }
-                }
-              );
-            } catch (err) {
-              console.warn("Error starting upload task:", err);
-              resolve(null);
-            }
-          });
-
-          if (uploadedUrl) {
-            finalPosterUrl = uploadedUrl;
-          }
-        }
-
-        // 3. Fast Base64 fallback if storage was not configured or timed out / rejected
-        if (!finalPosterUrl || !finalPosterUrl.startsWith('http')) {
-          setEventUploadProgress(null);
-          const base64 = await compressImageToBase64(eventPosterFile, 640, 0.65);
-          if (base64) {
-            finalPosterUrl = base64;
-          }
+      // If user selected a file and it hasn't been converted to Base64 yet
+      if (eventPosterFile && (!finalPosterUrl || !finalPosterUrl.startsWith('data:image'))) {
+        const base64 = await compressImageToBase64(eventPosterFile, 480, 0.60);
+        if (base64) {
+          finalPosterUrl = base64;
         }
       }
 
