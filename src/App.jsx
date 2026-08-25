@@ -1283,9 +1283,12 @@ export default function App() {
   };
 
   const compressImage = (file, maxPx = 1920, quality = 0.78) => new Promise((resolve) => {
+    if (!file) return resolve(file);
     const reader = new FileReader();
+    reader.onerror = () => resolve(file);
     reader.onload = (ev) => {
       const img = new Image();
+      img.onerror = () => resolve(file);
       img.onload = () => {
         let { width, height } = img;
         if (width > maxPx || height > maxPx) {
@@ -1294,7 +1297,8 @@ export default function App() {
         }
         const canvas = document.createElement('canvas');
         canvas.width = width; canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
         canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', quality);
       };
       img.src = ev.target.result;
@@ -1302,9 +1306,48 @@ export default function App() {
     reader.readAsDataURL(file);
   });
 
-  const handleUploadImage = async (file, path) => {
+  const compressImageToBase64 = (file, maxPx = 640, quality = 0.65) => new Promise((resolve) => {
+    if (!file) return resolve(null);
+    if (typeof file === 'string' && file.startsWith('data:image')) return resolve(file);
+    const reader = new FileReader();
+    reader.onerror = () => resolve(null);
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onerror = () => resolve(null);
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width >= height) { height = Math.round(height * maxPx / width); width = maxPx; }
+          else { width = Math.round(width * maxPx / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        try {
+          let base64 = canvas.toDataURL('image/jpeg', quality);
+          // If still over 350KB (can happen with complex images), scale down once more
+          if (base64 && base64.length > 350000) {
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = Math.round(width * 0.7);
+            smallCanvas.height = Math.round(height * 0.7);
+            const smallCtx = smallCanvas.getContext('2d');
+            smallCtx.drawImage(canvas, 0, 0, smallCanvas.width, smallCanvas.height);
+            base64 = smallCanvas.toDataURL('image/jpeg', 0.50);
+          }
+          resolve(base64);
+        } catch (e) {
+          resolve(null);
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  const handleUploadImage = async (file, path, suppressError = false) => {
     if (!storage) {
-      showError("Firebase Storage belum dikonfigurasi atau diaktifkan.");
+      if (!suppressError) showError("Firebase Storage belum dikonfigurasi atau diaktifkan.");
       return null;
     }
     try {
@@ -1313,9 +1356,11 @@ export default function App() {
       const downloadURL = await getDownloadURL(snapshot.ref);
       return downloadURL;
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.warn("Upload image warning:", error);
       const code = error?.code || error?.message || 'unknown';
-      showError(`Gagal mengunggah gambar ke Firebase Storage. (${code})`);
+      if (!suppressError) {
+        showError(`Gagal mengunggah gambar ke Firebase Storage. (${code})`);
+      }
       return null;
     }
   };
@@ -1325,7 +1370,11 @@ export default function App() {
     if (!file) return;
     const compressed = await compressImage(file, 600, 0.82);
     const path = `winners/${currentTournament.id || 'live'}_podium_${slot}_${Date.now()}.jpg`;
-    const url = await handleUploadImage(compressed, path);
+    let url = await handleUploadImage(compressed, path, true);
+    if (!url) {
+      // Fallback to compact base64
+      url = await compressImageToBase64(file, 400, 0.70);
+    }
     if (url) {
       // Save URL to currentTournament.podiumPhotos
       const newData = JSON.parse(JSON.stringify(currentTournament));
@@ -1553,24 +1602,29 @@ export default function App() {
     try {
       let finalPosterUrl = eventFormPosterUrl || null;
       if (eventPosterFile) {
+        // 1. Try Firebase Storage upload first
         try {
-          const compressed = await compressImage(eventPosterFile, 1200, 0.85);
+          const compressed = await compressImage(eventPosterFile, 1200, 0.82);
           const safeName = (eventPosterFile.name || 'poster.jpg').replace(/[^a-zA-Z0-9.]/g, '_');
           const path = `events/poster_${Date.now()}_${safeName}`;
-          const url = await handleUploadImage(compressed, path);
+          const url = await handleUploadImage(compressed, path, true);
           if (url) {
             finalPosterUrl = url;
-          } else {
-            // Fallback to base64 Data URL
-            const reader = new FileReader();
-            finalPosterUrl = await new Promise((resolve) => {
-              reader.onload = (ev) => resolve(ev.target.result);
-              reader.onerror = () => resolve(null);
-              reader.readAsDataURL(compressed instanceof Blob ? compressed : eventPosterFile);
-            });
           }
-        } catch (imgErr) {
-          console.warn("Gagal upload gambar poster ke storage, mencoba fallback:", imgErr);
+        } catch (storageErr) {
+          console.warn("Storage upload failed, trying Base64 fallback:", storageErr);
+        }
+
+        // 2. If storage upload did not yield an HTTP URL, convert to lightweight Base64 (max 640px, safe for Firestore)
+        if (!finalPosterUrl || !finalPosterUrl.startsWith('http')) {
+          try {
+            const base64 = await compressImageToBase64(eventPosterFile, 640, 0.65);
+            if (base64) {
+              finalPosterUrl = base64;
+            }
+          } catch (base64Err) {
+            console.warn("Base64 compression failed:", base64Err);
+          }
         }
       }
 
@@ -1615,11 +1669,12 @@ export default function App() {
       }
 
       setShowEventFormModal(false);
-      setIsSavingEvent(false);
+      setEventPosterFile(null);
       alert(editingEvent ? "Perubahan event berhasil disimpan!" : "Event berhasil dipublikasikan!");
     } catch (err) {
       console.error("Gagal menyimpan event:", err);
       showError(`Gagal menyimpan event: ${err?.message || 'Terjadi kesalahan sistem'}`);
+    } finally {
       setIsSavingEvent(false);
     }
   };
@@ -1681,7 +1736,10 @@ export default function App() {
       // Handle logo upload if a new file is selected
       if (archiveLogoFile) {
         const path = `logos/${viewingArchive.id}_logo_${Date.now()}.png`;
-        const uploadedUrl = await handleUploadImage(archiveLogoFile, path);
+        let uploadedUrl = await handleUploadImage(archiveLogoFile, path, true);
+        if (!uploadedUrl) {
+          uploadedUrl = await compressImageToBase64(archiveLogoFile, 200, 0.80);
+        }
         if (uploadedUrl) {
           logoUrl = uploadedUrl;
         }
@@ -3695,16 +3753,29 @@ export default function App() {
               </label>
               <div className="flex items-center gap-3 mt-1">
                 {(eventPosterFile || eventFormPosterUrl) && (
-                  <img 
-                    src={eventPosterFile ? URL.createObjectURL(eventPosterFile) : eventFormPosterUrl} 
-                    alt="Preview" 
-                    className="w-14 h-14 object-cover border-2 border-black bg-white shrink-0 shadow-brutal-sm" 
-                  />
+                  <div className="relative shrink-0">
+                    <img 
+                      src={eventPosterFile ? URL.createObjectURL(eventPosterFile) : eventFormPosterUrl} 
+                      alt="Preview" 
+                      className="w-14 h-14 object-cover border-2 border-black bg-white shadow-brutal-sm" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEventPosterFile(null);
+                        setEventFormPosterUrl('');
+                      }}
+                      className="absolute -top-1.5 -right-1.5 bg-warning-red text-white p-0.5 border border-black shadow hover:bg-red-700 transition-colors"
+                      title="Hapus Pamflet"
+                    >
+                      <X size={12} className="stroke-[3]" />
+                    </button>
+                  </div>
                 )}
                 <input 
                   type="file" 
                   accept="image/*"
-                  onChange={(e) => setEventPosterFile(e.target.files[0])}
+                  onChange={(e) => setEventPosterFile(e.target.files[0] || null)}
                   className="block w-full text-xs text-black file:mr-3 file:py-2 file:px-3 file:border-2 file:border-black file:text-xs file:font-black file:bg-white file:text-black hover:file:bg-surface-variant cursor-pointer"
                 />
               </div>
