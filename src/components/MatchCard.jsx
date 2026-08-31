@@ -20,6 +20,25 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+// Helper to extract tag and player name
+export function parsePlayerName(rawName) {
+  if (!rawName || typeof rawName !== 'string') {
+    return { tag: null, name: '' };
+  }
+  const str = rawName.trim();
+  const match = str.match(/^\[(.*?)\]\s*(.*)$/);
+  if (match) {
+    return {
+      tag: match[1].trim(),
+      name: match[2].trim() || match[1].trim()
+    };
+  }
+  return {
+    tag: null,
+    name: str
+  };
+}
+
 export default function MatchCard({ 
   match, 
   role, 
@@ -137,6 +156,7 @@ export default function MatchCard({
             const isDisqualified = slot === 1 ? match.player1Disqualified : match.player2Disqualified;
             const hasPoints = (prelimPointsSystem === 'all' || 
                               ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
+            const parsed = parsePlayerName(playerName);
 
             return (
               <div key={slot} className={cn(
@@ -146,7 +166,7 @@ export default function MatchCard({
                 isWinner ? "bg-brutal-blue text-white" : "bg-white hover:bg-surface-variant text-black"
               )}>
                 {/* Player Name & Action */}
-                <div className="px-3 py-2.5 flex-1 flex items-center min-w-0">
+                <div className="px-3 py-2 flex-1 flex items-center min-w-0">
                   <button 
                     onClick={() => onSetWinner(match.id, playerName)} 
                     disabled={!isReferee || !playerName} 
@@ -156,17 +176,49 @@ export default function MatchCard({
                       "w-3 h-3 shrink-0 border-2 border-black",
                       (isHighlighted || isDisqualified || isWinner) ? "bg-white" : "bg-black"
                     )}/>
-                    <span 
-                      className={cn(
-                        "text-xs md:text-sm font-black truncate leading-tight tracking-tight uppercase",
-                        !playerName ? "text-slate-400 italic normal-case" : 
-                        (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-black"
-                      )}
-                      title={playerName || 'TBA'}
-                    >
-                      {playerName || 'TBA'} {isDisqualified && <span className="text-[8px] font-black bg-black text-white px-1.5 py-0.5 ml-1 border border-white uppercase">DIS</span>}
-                    </span>
-                    {isHighlighted && <span className="ml-auto text-[8px] font-black bg-white text-black px-1.5 py-0.5 shrink-0 uppercase">DITEMUKAN</span>}
+
+                    {!playerName ? (
+                      <span className="text-xs text-slate-400 italic font-medium leading-tight">TBA</span>
+                    ) : (
+                      <div className="flex flex-col min-w-0 flex-1 justify-center py-0.5">
+                        {/* Top row: Team badge + status badges */}
+                        {(parsed.tag || isDisqualified || isHighlighted) && (
+                          <div className="flex items-center gap-1 min-w-0 flex-wrap mb-0.5">
+                            {parsed.tag && (
+                              <span className={cn(
+                                "text-[8px] font-black uppercase tracking-wider px-1 py-0.5 border leading-none shrink-0",
+                                (isHighlighted || isDisqualified || isWinner) 
+                                  ? "bg-black/30 text-white border-white/60" 
+                                  : "bg-surface-variant text-black border-black"
+                              )}>
+                                {parsed.tag}
+                              </span>
+                            )}
+                            {isDisqualified && (
+                              <span className="text-[8px] font-black bg-black text-white px-1 py-0.5 border border-white uppercase leading-none shrink-0">
+                                DIS
+                              </span>
+                            )}
+                            {isHighlighted && (
+                              <span className="text-[8px] font-black bg-white text-black px-1 py-0.5 uppercase leading-none shrink-0 ml-auto">
+                                DITEMUKAN
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Bottom row: Player Full Name */}
+                        <span 
+                          className={cn(
+                            "text-xs md:text-[13px] font-black uppercase tracking-tight leading-snug break-words line-clamp-2",
+                            (isHighlighted || isDisqualified || isWinner) ? "text-white" : "text-black"
+                          )}
+                          title={playerName}
+                        >
+                          {parsed.name}
+                        </span>
+                      </div>
+                    )}
                   </button>
                   
                   {isReferee && playerName && (
@@ -325,6 +377,7 @@ export default function MatchCard({
               const hasPoints = (prelimPointsSystem === 'all' || 
                                 ((prelimPointsSystem === 'prelim' || prelimPointsSystem === true) && match.round === 1));
               const points = slot === 1 ? (match.player1Points || 0) : (match.player2Points || 0);
+              const parsed = parsePlayerName(playerName);
 
               return (
                 <div 
@@ -343,9 +396,16 @@ export default function MatchCard({
                       isWinner ? "bg-brutal-blue" : "bg-surface-variant"
                     )}/>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">P{slot}</span>
-                      <span className="text-xs font-black text-black truncate mt-0.5 leading-tight uppercase">
-                        {playerName || 'TBA'}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">P{slot}</span>
+                        {parsed.tag && (
+                          <span className="text-[8px] font-black bg-surface-variant text-black px-1 py-0.5 border border-black uppercase leading-none">
+                            {parsed.tag}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs font-black text-black break-words mt-0.5 leading-tight uppercase">
+                        {parsed.name || playerName || 'TBA'}
                       </span>
                     </div>
                   </div>

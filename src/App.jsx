@@ -506,7 +506,7 @@ export default function App() {
 
               const multiplier = Math.pow(2, idx);
               return (
-                <div key={`${side}-${roundNum}`} className="flex flex-col" style={{ width: '280px' }}>
+                <div key={`${side}-${roundNum}`} className="flex flex-col" style={{ width: '300px' }}>
                   <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4 print:mb-2 print:h-8">
                      <span className="text-[11px] font-black text-slate-800 uppercase tracking-[0.2em]">{roundLabels[idx] || `Round ${roundNum}`}</span>
                   </div>
