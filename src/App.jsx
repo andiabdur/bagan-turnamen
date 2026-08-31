@@ -505,6 +505,7 @@ export default function App() {
               }
 
               const multiplier = Math.pow(2, idx);
+              const BASE_MATCH_HEIGHT = 240;
               return (
                 <div key={`${side}-${roundNum}`} className="flex flex-col" style={{ width: '300px' }}>
                   <div className="h-12 flex items-center border-b-2 border-slate-200 mb-10 mx-4 print:mb-2 print:h-8">
@@ -512,7 +513,7 @@ export default function App() {
                   </div>
                   <div className="flex flex-col">
                     {matches.map(match => (
-                      <div key={match.id} className="relative flex items-center px-4" style={{ height: `calc(var(--base-match-height, 180px) * ${multiplier})` }}>
+                      <div key={match.id} className="relative flex items-center px-4" style={{ height: `calc(${BASE_MATCH_HEIGHT}px * ${multiplier})` }}>
                         <MatchCard
                           match={match}
                           role={role}
@@ -526,14 +527,14 @@ export default function App() {
                         {match.nextMatchId && (side === 'left' || side === 'center') && (
                           <>
                             <div className="absolute right-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                            <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                            <div className="absolute -right-4 w-0.5 bg-slate-200" style={{ height: `calc((${BASE_MATCH_HEIGHT}px * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
                             {match.nextMatchSlot === 1 && <div className="absolute -right-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
                           </>
                         )}
                         {match.nextMatchId && side === 'right' && (
                           <>
                             <div className="absolute left-0 top-1/2 w-4 h-0.5 bg-slate-200"></div>
-                            <div className="absolute -left-4 w-0.5 bg-slate-200" style={{ height: `calc((var(--base-match-height, 180px) * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
+                            <div className="absolute -left-4 w-0.5 bg-slate-200" style={{ height: `calc((${BASE_MATCH_HEIGHT}px * ${multiplier}) / 2)`, top: match.nextMatchSlot === 1 ? '50%' : 'auto', bottom: match.nextMatchSlot === 2 ? '50%' : 'auto' }}></div>
                             {match.nextMatchSlot === 1 && <div className="absolute -left-8 top-[100%] w-4 h-0.5 bg-slate-200"></div>}
                           </>
                         )}

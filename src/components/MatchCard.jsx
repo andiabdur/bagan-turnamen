@@ -279,12 +279,12 @@ export default function MatchCard({
         {/* Referee Controls & Timer Bar */}
         {(match.playState || isReferee) && (
           <div className={cn(
-            "flex items-center justify-between px-3 py-2 border-t-[3px] border-black",
+            "flex items-center justify-between px-3 py-2 border-t-[3px] border-black min-h-[44px]",
             isPlaying ? "bg-red-50" : 
             isCall ? (isTimeOut ? "bg-red-50" : "bg-blue-50") : "bg-white"
           )}>
             <div className={cn(
-              "flex items-center gap-1 font-mono text-xs font-black", 
+              "flex items-center gap-1.5 font-mono text-xs font-black shrink-0", 
               isPlaying ? "text-warning-red animate-pulse" : 
               isCall ? (isTimeOut ? "text-warning-red animate-bounce" : "text-brutal-blue animate-pulse") : "text-black"
             )}>
@@ -292,7 +292,7 @@ export default function MatchCard({
             </div>
             
             {isReferee && (
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1.5 items-center shrink-0">
                 <button 
                   onClick={() => onSetMatchState(match.id, 'call')} 
                   className={cn(
