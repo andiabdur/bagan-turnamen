@@ -650,7 +650,42 @@ export default function App() {
     if (useLocalPool && rawNamesLocal.length === 0) return showError("Daftar nama (Lokal) tidak boleh kosong saat jalur lokal aktif.");
     
     let capacity = parseInt(bracketSize);
-    
+
+    const getPlayerBaseKey = (rawName) => {
+      if (!rawName || rawName.startsWith('BYE_')) return null;
+      let cleanName = rawName.trim();
+      let team = 'NONE';
+      let region = 'NONE';
+      const m1 = cleanName.match(/^\[(.*?)-(.*?)\]\s*(.*)$/);
+      if (m1) {
+        region = m1[1].trim().toLowerCase();
+        team = m1[2].trim().toLowerCase();
+        cleanName = m1[3].trim();
+      } else {
+        const fallbackMatch = cleanName.match(/^\[(.*?)\].*?\s*(.*)$/);
+        if (fallbackMatch && !cleanName.includes('-')) {
+          team = fallbackMatch[1].trim().toLowerCase();
+          cleanName = cleanName.substring(cleanName.indexOf(']') + 1).trim();
+        } else {
+          const m2 = cleanName.match(/^\[(.*?)\]\s*(.*)$/);
+          if (m2) {
+            team = m2[1].trim().toLowerCase();
+            cleanName = m2[2].trim();
+          }
+        }
+      }
+      let normalizedName = cleanName
+        .replace(/\s*[\(\[\{]?(?:slot|nyawa|part|sesi)?\s*[0-9]+[\)\]\}]?\s*$/i, '')
+        // Sufiks slot huruf (contoh "Budi A", "Budi (A)", "Budi-A") WAJIB didahului
+        // pemisah agar nama asli berakhiran a-d (KAKA, Bara, Yoga, Pa Syahla, Qiana)
+        // tidak ikut terpotong dan salah dianggap pemain yang sama.
+        .replace(/(?:\s+|[-_#]\s*)[\(\[\{]?(?:slot|nyawa|part)?\s*[a-d][\)\]\}]?\s*$/i, '')
+        .replace(/\s*[-_#]\s*[0-9]+$/i, '')
+        .trim().toLowerCase();
+      if (!normalizedName) normalizedName = cleanName.toLowerCase();
+      return `${team}:::${normalizedName}`;
+    };
+
     const buildPoolsMap = (namesList, startCharCode) => {
       let cap = capacity;
       if (bracketSize === 'auto') {
@@ -727,6 +762,17 @@ export default function App() {
         for (let b of map[pId]) res.push(...b);
         return res.filter(n => playerInfoMap[n]?.region === regionId);
       };
+
+      const getSamePlayerPoolCount = (map, pId, baseKey) => {
+        if (!baseKey) return 0;
+        let count = 0;
+        for (let b of map[pId]) {
+          for (let p of b) {
+            if (getPlayerBaseKey(p) === baseKey) count++;
+          }
+        }
+        return count;
+      };
       
       const getFinalHalf = (poolId) => {
         const idxx = pIds.indexOf(poolId);
@@ -753,6 +799,7 @@ export default function App() {
       for (const team of sortedTeams) {
         for (const member of teamGroups[team]) {
           const regionId = playerInfoMap[member].region;
+          const memBaseKey = getPlayerBaseKey(member);
           let validOptions = [];
           
           for (const pid of pIds) {
@@ -765,6 +812,7 @@ export default function App() {
           
           validOptions.forEach(opt => {
             const teamId = playerInfoMap[member].team;
+            opt.samePlayerPoolCount = getSamePlayerPoolCount(mapObj, opt.poolId, memBaseKey);
             opt.teamPoolCount = getTeamPoolMembers(mapObj, opt.poolId, teamId).length;
             opt.teamHalfCount = getTeamHalfCount(mapObj, opt.poolId, teamId);
             opt.regionPoolCount = regionId !== 'NONE' ? getRegionPoolMembers(mapObj, opt.poolId, regionId).length : 0;
@@ -774,15 +822,18 @@ export default function App() {
             for (let b of mapObj[opt.poolId]) pFlat.push(...b);
             opt.totalPoolLength = pFlat.length;
             opt.totalBlockLength = mapObj[opt.poolId][opt.bIdx].length;
+            opt.randomTieBreaker = Math.random();
           });
           
           validOptions.sort((a, b) => {
+            if (a.samePlayerPoolCount !== b.samePlayerPoolCount) return a.samePlayerPoolCount - b.samePlayerPoolCount;
             if (a.teamBlockCount !== b.teamBlockCount) return a.teamBlockCount - b.teamBlockCount;
             if (a.teamPoolCount !== b.teamPoolCount) return a.teamPoolCount - b.teamPoolCount;
             if (a.teamHalfCount !== b.teamHalfCount) return a.teamHalfCount - b.teamHalfCount;
             if (a.regionPoolCount !== b.regionPoolCount) return a.regionPoolCount - b.regionPoolCount;
             if (a.totalPoolLength !== b.totalPoolLength) return a.totalPoolLength - b.totalPoolLength;
-            return a.totalBlockLength - b.totalBlockLength;
+            if (a.totalBlockLength !== b.totalBlockLength) return a.totalBlockLength - b.totalBlockLength;
+            return a.randomTieBreaker - b.randomTieBreaker;
           });
           
           const chosen = validOptions[0];
@@ -835,79 +886,138 @@ export default function App() {
       isArchived: false
     };
 
+    const clashHistory = new Set();
     const firstRoundOpponents = {};
 
-    // 6. Bangun Bracket Dinamis (Bagan Pertama / Utama)
-    poolIds.forEach(poolId => {
-      poolsMap[poolId].forEach(b => {
-        let bestBlock = [...b];
-        let bestConflictCount = Infinity;
+    const optimizePoolPairings = (poolPlayers, infoMap, isOpen, clashHist) => {
+      const poolCap = poolPlayers.length;
+      let bestOrder = [...poolPlayers];
+      let bestScore = Infinity;
+      let bestOrderWithClash = [...poolPlayers];
+      let bestScoreWithClash = Infinity;
+      let foundValid = false;
 
-        for (let attempt = 0; attempt < 100; attempt++) {
-          const shuffled = [...b].sort(() => Math.random() - 0.5);
-          let conflicts = 0;
-          for (let j = 0; j < shuffled.length; j += 2) {
-            if (j + 1 < shuffled.length) {
-              const p1 = shuffled[j];
-              const p2 = shuffled[j + 1];
-              if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
-              const info1 = playerInfoMap[p1];
-              const info2 = playerInfoMap[p2];
-              if (info1 && info2) {
-                if (info1.team === info2.team) conflicts += 10;
-                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) conflicts += 5;
-              }
-            }
+      for (let attempt = 0; attempt < 2500; attempt++) {
+        const cand = [...poolPlayers];
+        for (let i = cand.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [cand[i], cand[j]] = [cand[j], cand[i]];
+        }
+
+        let isValid = true;
+        let score = 0;
+        let clashPenalties = 0;
+
+        for (let i = 0; i < poolCap; i += 2) {
+          const p1 = cand[i];
+          const p2 = cand[i + 1];
+          const isBye1 = p1.startsWith('BYE_');
+          const isBye2 = p2.startsWith('BYE_');
+
+          if (isBye1 && isBye2) {
+            score += 50000;
+            continue;
           }
-          if (conflicts === 0) {
-            bestBlock = shuffled;
+          if (isBye1 || isBye2) continue;
+
+          const base1 = getPlayerBaseKey(p1);
+          const base2 = getPlayerBaseKey(p2);
+
+          // Self clash (slot milik pemain yang sama dilarang bertemu)
+          if (base1 && base2 && base1 === base2) {
+            isValid = false;
+            clashPenalties += 2000000;
             break;
           }
-          if (conflicts < bestConflictCount) {
-            bestBlock = shuffled;
-            bestConflictCount = conflicts;
-          }
-        }
-        
-        for (let i = 0; i < b.length; i++) {
-          b[i] = bestBlock[i];
-        }
-      });
-      const poolNames = poolsMap[poolId].flat();
-      const poolCap = poolNames.length;
 
-      // Reorder pairs supaya setim/sedaerah masuk section bracket berbeda (R2=4, R3=8, R4=16)
-      {
-        const pairs = [];
-        for (let i = 0; i < poolCap; i += 2) pairs.push([poolNames[i], poolNames[i + 1]]);
-        let bestPairs = [...pairs], bestScore = Infinity;
-        for (let attempt = 0; attempt < 300; attempt++) {
-          const sp = [...pairs].sort(() => Math.random() - 0.5);
-          const flat = sp.flat();
-          let score = 0;
-          for (const [sSize, w] of [[4, 1000], [8, 300], [16, 100], [32, 30]]) {
-            if (sSize > poolCap) break;
-            for (let s = 0; s < poolCap; s += sSize) {
-              const sec = flat.slice(s, s + sSize);
-              const tc = {}, rc = {};
-              sec.forEach(p => {
-                if (p.startsWith('BYE_')) return;
-                const info = playerInfoMap[p];
-                if (!info) return;
-                if (info.team !== 'SOLO') tc[info.team] = (tc[info.team] || 0) + 1;
-                if (isOpenTournament && info.region !== 'NONE') rc[info.region] = (rc[info.region] || 0) + 1;
-              });
-              for (const k in tc) if (tc[k] > 1) score += (tc[k] - 1) * w;
-              if (isOpenTournament) for (const k in rc) if (rc[k] > 1) score += (rc[k] - 1) * (w >> 1);
+          // Cek bentrok lawan babak 1 dari pool lain atau babak nyawa 1
+          if (
+            (base1 && base2 && (clashHist.has(`${base1} <vs> ${base2}`) || clashHist.has(`${base2} <vs> ${base1}`))) ||
+            clashHist.has(`${p1} <vs> ${p2}`) || clashHist.has(`${p2} <vs> ${p1}`)
+          ) {
+            isValid = false;
+            clashPenalties += 1000000;
+            break;
+          }
+
+          const inf1 = infoMap[p1];
+          const inf2 = infoMap[p2];
+          if (inf1 && inf2) {
+            if (inf1.team !== 'NONE' && inf1.team !== 'SOLO' && inf1.team === inf2.team) {
+              score += 20000;
+            }
+            if (isOpen && inf1.region !== 'NONE' && inf1.region === inf2.region) {
+              score += 10000;
             }
           }
-          if (score < bestScore) { bestScore = score; bestPairs = sp; }
-          if (score === 0) break;
         }
-        const reordered = bestPairs.flat();
-        for (let i = 0; i < poolCap; i++) poolNames[i] = reordered[i];
+
+        // Evaluasi sebaran kuarter dan separuh bagan
+        const quarterSize = poolCap / 4;
+        const halfSize = poolCap / 2;
+        for (const [sSize, w] of [[quarterSize, 1000], [halfSize, 300]]) {
+          if (sSize < 2) continue;
+          for (let s = 0; s < poolCap; s += sSize) {
+            const sec = cand.slice(s, s + sSize);
+            const tc = {}, rc = {}, pc = {};
+            sec.forEach(p => {
+              if (p.startsWith('BYE_')) return;
+              const bk = getPlayerBaseKey(p);
+              if (bk) pc[bk] = (pc[bk] || 0) + 1;
+              const inf = infoMap[p];
+              if (!inf) return;
+              if (inf.team !== 'NONE' && inf.team !== 'SOLO') tc[inf.team] = (tc[inf.team] || 0) + 1;
+              if (isOpen && inf.region !== 'NONE') rc[inf.region] = (rc[inf.region] || 0) + 1;
+            });
+            for (const k in pc) if (pc[k] > 1) score += (pc[k] - 1) * 30000;
+            for (const k in tc) if (tc[k] > 1) score += (tc[k] - 1) * w;
+            if (isOpen) for (const k in rc) if (rc[k] > 1) score += (rc[k] - 1) * (w >> 1);
+          }
+        }
+
+        if (isValid) {
+          if (score === 0) {
+            bestOrder = cand;
+            bestScore = 0;
+            foundValid = true;
+            break;
+          }
+          if (score < bestScore) {
+            bestOrder = cand;
+            bestScore = score;
+            foundValid = true;
+          }
+        } else {
+          if (score + clashPenalties < bestScoreWithClash) {
+            bestOrderWithClash = cand;
+            bestScoreWithClash = score + clashPenalties;
+          }
+        }
       }
 
+      const finalOrder = foundValid ? bestOrder : bestOrderWithClash;
+
+      // Daftarkan seluruh pasangan R1 ke clashHistory
+      for (let i = 0; i < poolCap; i += 2) {
+        const p1 = finalOrder[i];
+        const p2 = finalOrder[i + 1];
+        if (!p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
+          const b1 = getPlayerBaseKey(p1);
+          const b2 = getPlayerBaseKey(p2);
+          if (b1 && b2) {
+            clashHist.add(`${b1} <vs> ${b2}`);
+            clashHist.add(`${b2} <vs> ${b1}`);
+          }
+          clashHist.add(`${p1} <vs> ${p2}`);
+          clashHist.add(`${p2} <vs> ${p1}`);
+        }
+      }
+
+      return { bestOrder: finalOrder, bestScore: foundValid ? bestScore : bestScoreWithClash, foundValid };
+    };
+
+    const buildBracketMatches = (poolNames, opponentsDict) => {
+      const poolCap = poolNames.length;
       let matches = [];
       let matchIdCounter = 1;
       let currentRoundMatches = [];
@@ -917,26 +1027,27 @@ export default function App() {
         const p2 = poolNames[i + 1];
         const match = {
           id: `m${matchIdCounter++}`,
-          round: 1, 
-          player1: p1.startsWith('BYE_') ? null : p1, 
-          player2: p2.startsWith('BYE_') ? null : p2, 
-          winner: null, 
-          nextMatchId: null, 
+          round: 1,
+          player1: p1.startsWith('BYE_') ? null : p1,
+          player2: p2.startsWith('BYE_') ? null : p2,
+          winner: null,
+          nextMatchId: null,
           nextMatchSlot: null,
           player1Points: 0,
           player2Points: 0
         };
 
-        // Catat lawan babak 1 untuk penegakan "beda lawan" di bagan selanjutnya jika doubleLife aktif
         if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
-          firstRoundOpponents[p1] = p2;
-          firstRoundOpponents[p2] = p1;
+          if (opponentsDict) {
+            opponentsDict[p1] = p2;
+            opponentsDict[p2] = p1;
+          }
         }
 
         // Auto-winner for BYE
         if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
         if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
-        
+
         matches.push(match);
         currentRoundMatches.push(match);
       }
@@ -946,11 +1057,19 @@ export default function App() {
       while (prevMatches.length > 1) {
         currentRoundMatches = [];
         for (let i = 0; i < prevMatches.length; i += 2) {
-          const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
-          
+          const match = {
+            id: `m${matchIdCounter++}`,
+            round: roundNum,
+            player1: null,
+            player2: null,
+            winner: null,
+            nextMatchId: null,
+            nextMatchSlot: null
+          };
+
           // Carry over winners from Round 1 BYEs
           if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
-          if (prevMatches[i+1].winner) match.player2 = prevMatches[i+1].winner;
+          if (prevMatches[i + 1].winner) match.player2 = prevMatches[i + 1].winner;
 
           matches.push(match);
           currentRoundMatches.push(match);
@@ -962,7 +1081,15 @@ export default function App() {
         prevMatches = currentRoundMatches;
         roundNum++;
       }
-      newData.pools[poolId] = { matches, totalRounds: roundNum - 1 };
+      return { matches, totalRounds: roundNum - 1 };
+    };
+
+    // 6. Bangun Bracket Dinamis (Bagan Pertama / Utama)
+    poolIds.forEach(poolId => {
+      const rawPoolPlayers = poolsMap[poolId].flat();
+      const { bestOrder } = optimizePoolPairings(rawPoolPlayers, playerInfoMap, isOpenTournament, clashHistory);
+      const { matches, totalRounds } = buildBracketMatches(bestOrder, firstRoundOpponents);
+      newData.pools[poolId] = { matches, totalRounds };
     });
 
     // 7. Jika doubleLife Aktif, Bangun Bagan Kedua (Crossover: A→C, B→D)
@@ -970,250 +1097,20 @@ export default function App() {
     // Setiap peserta dari Pool B mendapat nyawa ke-2 di Pool D dengan lawan BERBEDA dari babak 1 Pool B.
     // Struktur Final: SF1 = Juara A vs Juara C, SF2 = Juara B vs Juara D.
     if (doubleLife) {
-      // Crossover mapping: Pool A (idx 0) → Pool C (idx 0 + poolIds.length), Pool B (idx 1) → Pool D, dst.
       const set2PoolIds = Array.from({ length: poolIds.length }, (_, i) =>
         String.fromCharCode(65 + poolIds.length + i)
       );
 
       poolIds.forEach((srcPoolId, pIdx) => {
-        const crossPoolId = set2PoolIds[pIdx]; // A→C, B→D, C→E (jika ada), dll.
-        
-        // Ambil pemain dari pool sumber (nyawa 1) untuk dikocok ulang di pool silang
+        const crossPoolId = set2PoolIds[pIdx]; // A→C, B→D, dll.
         const srcPlayers = poolsMap[srcPoolId].flat();
-        const poolCap = srcPlayers.length;
 
-        let bestShuffle = [...srcPlayers];
-        let bestScore = Infinity;
-        let attempts = 0;
-        let shuffled = [...srcPlayers];
+        const { bestOrder } = optimizePoolPairings(srcPlayers, playerInfoMap, isOpenTournament, clashHistory);
+        const { matches, totalRounds } = buildBracketMatches(bestOrder, firstRoundOpponents);
 
-        // Fisher-Yates shuffle per-pool: cari urutan terbaik dengan:
-        // 1. Tidak ada pasangan R1 yang sama dengan nyawa 1 (beda lawan - WAJIB)
-        // 2. Minimalisir bentrok tim & daerah dalam R1 nyawa 2 serta sebaran Kuarter & Half
-        while (attempts < 1500) {
-          attempts++;
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-
-          let isOpponentValid = true;
-          let score = 0;
-
-          for (let mIdx = 0; mIdx < poolCap; mIdx += 2) {
-            const p1 = shuffled[mIdx];
-            const p2 = shuffled[mIdx + 1];
-            if (p1 && p2 && !p1.startsWith('BYE_') && !p2.startsWith('BYE_')) {
-              // WAJIB: tidak boleh bertemu lawan yang sama seperti babak 1 nyawa 1
-              if (firstRoundOpponents[p1] === p2) {
-                isOpponentValid = false;
-                break;
-              }
-              const info1 = playerInfoMap[p1];
-              const info2 = playerInfoMap[p2];
-              if (info1 && info2) {
-                if (info1.team === info2.team) score += 100;
-                if (isOpenTournament && info1.region !== 'NONE' && info1.region === info2.region) score += 50;
-              }
-            }
-          }
-
-          if (isOpponentValid) {
-            // Smart distribution penalty: avoid putting same team/region in same block, quarter, or half
-            const teamQuarterCounts = {};
-            const teamHalfCounts = {};
-            const teamBlockCounts = {};
-            
-            const regionQuarterCounts = {};
-            const regionHalfCounts = {};
-            const regionBlockCounts = {};
-
-            const blockSize = poolCap / 8;
-            const quarterSize = poolCap / 4;
-            const halfSize = poolCap / 2;
-
-            for (let i = 0; i < poolCap; i++) {
-              const p = shuffled[i];
-              if (p.startsWith('BYE_')) continue;
-              const info = playerInfoMap[p];
-              if (!info) continue;
-
-              const bIdx = Math.floor(i / blockSize);
-              const qIdx = Math.floor(i / quarterSize);
-              const hIdx = Math.floor(i / halfSize);
-
-              // Team Check
-              if (info.team !== 'SOLO' && info.team !== 'BYE') {
-                const qKey = info.team + '_' + qIdx;
-                const hKey = info.team + '_' + hIdx;
-                const bKey = info.team + '_' + bIdx;
-
-                teamQuarterCounts[qKey] = (teamQuarterCounts[qKey] || 0) + 1;
-                teamHalfCounts[hKey] = (teamHalfCounts[hKey] || 0) + 1;
-                teamBlockCounts[bKey] = (teamBlockCounts[bKey] || 0) + 1;
-              }
-
-              // Region Check
-              if (isOpenTournament && info.region !== 'NONE' && info.region !== 'BYE') {
-                const qKey = info.region + '_' + qIdx;
-                const hKey = info.region + '_' + hIdx;
-                const bKey = info.region + '_' + bIdx;
-
-                regionQuarterCounts[qKey] = (regionQuarterCounts[qKey] || 0) + 1;
-                regionHalfCounts[hKey] = (regionHalfCounts[hKey] || 0) + 1;
-                regionBlockCounts[bKey] = (regionBlockCounts[bKey] || 0) + 1;
-              }
-            }
-
-            // Add team penalties
-            for (const key in teamBlockCounts) {
-              if (teamBlockCounts[key] > 1) {
-                score += (teamBlockCounts[key] - 1) * 1000;
-              }
-            }
-            for (const key in teamQuarterCounts) {
-              if (teamQuarterCounts[key] > 1) {
-                score += (teamQuarterCounts[key] - 1) * 300;
-              }
-            }
-            for (const key in teamHalfCounts) {
-              if (teamHalfCounts[key] > 1) {
-                score += (teamHalfCounts[key] - 1) * 100;
-              }
-            }
-
-            // Add region penalties (lower weight than team)
-            if (isOpenTournament) {
-              for (const key in regionBlockCounts) {
-                if (regionBlockCounts[key] > 1) {
-                  score += (regionBlockCounts[key] - 1) * 500;
-                }
-              }
-              for (const key in regionQuarterCounts) {
-                if (regionQuarterCounts[key] > 1) {
-                  score += (regionQuarterCounts[key] - 1) * 150;
-                }
-              }
-              for (const key in regionHalfCounts) {
-                if (regionHalfCounts[key] > 1) {
-                  score += (regionHalfCounts[key] - 1) * 50;
-                }
-              }
-            }
-
-            if (score === 0) { bestShuffle = [...shuffled]; bestScore = 0; break; }
-            if (score < bestScore) { bestShuffle = [...shuffled]; bestScore = score; }
-          }
-        }
-
-        // Bangun bracket untuk pool silang menggunakan bestShuffle
-        const poolNames = bestShuffle;
-
-        // Reorder pairs supaya setim/sedaerah masuk section bracket berbeda (R2=4, R3=8, R4=16)
-        {
-          const pairs = [];
-          for (let i = 0; i < poolCap; i += 2) pairs.push([poolNames[i], poolNames[i + 1]]);
-          let bestPairs = [...pairs], bestScore = Infinity;
-          for (let attempt = 0; attempt < 300; attempt++) {
-            const sp = [...pairs].sort(() => Math.random() - 0.5);
-            const flat = sp.flat();
-            let score = 0;
-            for (const [sSize, w] of [[4, 1000], [8, 300], [16, 100], [32, 30]]) {
-              if (sSize > poolCap) break;
-              for (let s = 0; s < poolCap; s += sSize) {
-                const sec = flat.slice(s, s + sSize);
-                const tc = {}, rc = {};
-                sec.forEach(p => {
-                  if (p.startsWith('BYE_')) return;
-                  const info = playerInfoMap[p];
-                  if (!info) return;
-                  if (info.team !== 'SOLO') tc[info.team] = (tc[info.team] || 0) + 1;
-                  if (isOpenTournament && info.region !== 'NONE') rc[info.region] = (rc[info.region] || 0) + 1;
-                });
-                for (const k in tc) if (tc[k] > 1) score += (tc[k] - 1) * w;
-                if (isOpenTournament) for (const k in rc) if (rc[k] > 1) score += (rc[k] - 1) * (w >> 1);
-              }
-            }
-            if (score < bestScore) { bestScore = score; bestPairs = sp; }
-            if (score === 0) break;
-          }
-          const reordered = bestPairs.flat();
-          for (let i = 0; i < poolCap; i++) poolNames[i] = reordered[i];
-        }
-
-        let matches = [];
-        let matchIdCounter = 1;
-        let currentRoundMatches = [];
-
-        // Kocok tiap blok dalam pool untuk pastikan R1 beda lawan & minim bentrok
-        const blockSize = poolCap / 8;
-        for (let bStart = 0; bStart < poolCap; bStart += blockSize) {
-          const block = poolNames.slice(bStart, bStart + blockSize);
-          let bestBlock = [...block];
-          let bestBlockConflict = Infinity;
-
-          for (let attempt = 0; attempt < 100; attempt++) {
-            const sb = [...block].sort(() => Math.random() - 0.5);
-            let conflicts = 0;
-            for (let j = 0; j < sb.length; j += 2) {
-              if (j + 1 < sb.length) {
-                const p1 = sb[j], p2 = sb[j + 1];
-                if (p1.startsWith('BYE_') || p2.startsWith('BYE_')) continue;
-                if (firstRoundOpponents[p1] === p2) conflicts += 20;
-                const i1 = playerInfoMap[p1], i2 = playerInfoMap[p2];
-                if (i1 && i2) {
-                  if (i1.team === i2.team) conflicts += 10;
-                  if (isOpenTournament && i1.region !== 'NONE' && i1.region === i2.region) conflicts += 5;
-                }
-              }
-            }
-            if (conflicts < bestBlockConflict) { bestBlock = sb; bestBlockConflict = conflicts; }
-            if (conflicts === 0) break;
-          }
-          for (let k = 0; k < block.length; k++) poolNames[bStart + k] = bestBlock[k];
-        }
-
-        for (let i = 0; i < poolCap; i += 2) {
-          const p1 = poolNames[i];
-          const p2 = poolNames[i + 1];
-          const match = {
-            id: `m${matchIdCounter++}`,
-            round: 1,
-            player1: p1.startsWith('BYE_') ? null : p1,
-            player2: p2.startsWith('BYE_') ? null : p2,
-            winner: null,
-            nextMatchId: null,
-            nextMatchSlot: null,
-            player1Points: 0,
-            player2Points: 0
-          };
-          if (p1.startsWith('BYE_') && p2 && !p2.startsWith('BYE_')) match.winner = p2;
-          if (p2.startsWith('BYE_') && p1 && !p1.startsWith('BYE_')) match.winner = p1;
-          matches.push(match);
-          currentRoundMatches.push(match);
-        }
-
-        let roundNum = 2;
-        let prevMatches = currentRoundMatches;
-        while (prevMatches.length > 1) {
-          currentRoundMatches = [];
-          for (let i = 0; i < prevMatches.length; i += 2) {
-            const match = { id: `m${matchIdCounter++}`, round: roundNum, player1: null, player2: null, winner: null, nextMatchId: null, nextMatchSlot: null };
-            if (prevMatches[i].winner) match.player1 = prevMatches[i].winner;
-            if (prevMatches[i + 1].winner) match.player2 = prevMatches[i + 1].winner;
-            matches.push(match);
-            currentRoundMatches.push(match);
-            prevMatches[i].nextMatchId = match.id;
-            prevMatches[i].nextMatchSlot = 1;
-            prevMatches[i + 1].nextMatchId = match.id;
-            prevMatches[i + 1].nextMatchSlot = 2;
-          }
-          prevMatches = currentRoundMatches;
-          roundNum++;
-        }
         newData.pools[crossPoolId] = {
           matches,
-          totalRounds: roundNum - 1,
+          totalRounds,
           crossoverOf: srcPoolId // Tandai bahwa ini adalah nyawa 2 dari pool sumber
         };
       });
