@@ -907,6 +907,9 @@ export default function App() {
         let isValid = true;
         let score = 0;
         let clashPenalties = 0;
+        // Pasangan yang terbentuk DI DALAM kandidat ini, agar dua slot pemain X
+        // tidak bertemu dua slot pemain Y pada pool yang sama.
+        const localPairs = new Set();
 
         for (let i = 0; i < poolCap; i += 2) {
           const p1 = cand[i];
@@ -938,6 +941,19 @@ export default function App() {
             isValid = false;
             clashPenalties += 1000000;
             break;
+          }
+
+          // Cek bentrok lawan DI DALAM kandidat/pool yang sama.
+          // Contoh kasus: "Player1 1 vs Player3 1" dan "Player1 2 vs Player3 2"
+          // pada satu pool membuat kedua pemain bertemu lawan yang sama.
+          if (base1 && base2) {
+            const localKey = base1 < base2 ? `${base1} <vs> ${base2}` : `${base2} <vs> ${base1}`;
+            if (localPairs.has(localKey)) {
+              isValid = false;
+              clashPenalties += 1000000;
+              break;
+            }
+            localPairs.add(localKey);
           }
 
           const inf1 = infoMap[p1];
